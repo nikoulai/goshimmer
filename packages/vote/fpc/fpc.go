@@ -121,6 +121,13 @@ func (f *FPC) Round(rand float64) error {
 		// number of rounds and clear those who failed to be finalized in MaxRoundsPerVoteContext.
 		f.finalizeOpinions()
 	}
+
+	// mark a round being done, even though there's no opinion,
+	// so this voting context will be cleared eventually
+	for voteObjectID := range f.ctxs {
+		f.ctxs[voteObjectID].Rounds++
+	}
+
 	// query for opinions on the current vote contexts
 	queriedOpinions, err := f.queryOpinions()
 	if err == nil {
@@ -222,7 +229,10 @@ func (f *FPC) queryOpinions() ([]opinion.QueriedOpinions, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	totalMana := totalOpinionGiversMana + ownMana
+
+	fmt.Printf("Total Mana %f, Own Mana %f\n", totalMana, ownMana)
 
 	// votes per id
 	var voteMapMu sync.Mutex
@@ -245,6 +255,7 @@ func (f *FPC) queryOpinions() ([]opinion.QueriedOpinions, error) {
 			opinions, err := opinionGiverToQuery.Query(queryCtx, conflictIDs, timestampIDs)
 			if err != nil || len(opinions) != len(conflictIDs)+len(timestampIDs) {
 				// ignore opinions
+				fmt.Println("############## // ignore opinions ##############", err, opinions)
 				return
 			}
 
@@ -305,18 +316,20 @@ func (f *FPC) queryOpinions() ([]opinion.QueriedOpinions, error) {
 			}
 		}
 
-		// mark a round being done, even though there's no opinion,
-		// so this voting context will be cleared eventually
-		f.ctxs[id].Rounds++
-		if votedCount < f.paras.MinOpinionsReceived {
-			continue
-		}
 		f.ctxs[id].Weights = vote.VotingWeights{
 			OwnWeight:    ownMana,
 			TotalWeights: totalMana,
 		}
+
+		if votedCount < f.paras.MinOpinionsReceived {
+			continue
+		}
+
 		f.ctxs[id].ProportionLiked = likedSum / float64(votedCount)
+		fmt.Printf("ProportionLiked for %s - %f\n", id, f.ctxs[id].ProportionLiked)
 	}
+
+	fmt.Println("End Quering")
 
 	return allQueriedOpinions, nil
 }
@@ -358,6 +371,8 @@ func (f *FPC) biasTowardsOwnOpinion(voteCtx *vote.Context) float64 {
 	totalMana := voteCtx.Weights.TotalWeights
 	ownMana := voteCtx.Weights.OwnWeight
 
+	fmt.Printf("biasTowardsOwnOpinion: T: %f O: %f \n", totalMana, ownMana)
+
 	if ownMana == 0 || totalMana == 0 {
 		return voteCtx.ProportionLiked
 	}
@@ -385,11 +400,13 @@ func ManaBasedSampling(opinionGivers []opinion.OpinionGiver, maxQuerySampleSize,
 		totalConsensusMana += opinionGivers[i].Mana()
 		totals = append(totals, totalConsensusMana)
 	}
+	fmt.Println("totalConsensusMana: ", totalConsensusMana)
 
 	// check if total mana is almost zero
 
 	if math.Abs(totalConsensusMana) <= toleranceTotalMana {
 		// fallback to uniform sampling
+		fmt.Println("fallback to uniform sampling")
 		return UniformSampling(opinionGivers, maxQuerySampleSize, querySampleSize, rng), 0
 	}
 
@@ -403,6 +420,10 @@ func ManaBasedSampling(opinionGivers []opinion.OpinionGiver, maxQuerySampleSize,
 				break
 			}
 		}
+	}
+	fmt.Println("opinionGiversToQuery")
+	for k := range opinionGiversToQuery {
+		fmt.Println(k.ID().String())
 	}
 	return opinionGiversToQuery, totalConsensusMana
 }

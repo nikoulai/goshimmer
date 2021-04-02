@@ -46,7 +46,7 @@ func DefaultParameters() *Parameters {
 		TotalRoundsFinalization:             10,
 		TotalRoundsFixedThreshold:           3,
 		TotalRoundsCoolingOffPeriod:         0,
-		MaxRoundsPerVoteContext:             100,
+		MaxRoundsPerVoteContext:             30,
 		QueryTimeout:                        1500 * time.Millisecond,
 	}
 

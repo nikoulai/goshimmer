@@ -34,6 +34,10 @@ func main() {
 		fmt.Println(err)
 		return
 	}
+	if _, err := clients[1].SendFaucetRequest(walletseed.NewSeed().Address(0).Address().Base58()); err != nil {
+		fmt.Println(err)
+		return
+	}
 
 	var myOutputID string
 	var confirmed bool
@@ -90,7 +94,7 @@ func main() {
 			destAddr := receiverSeeds[i].Address(0)
 
 			output := ledgerstate.NewSigLockedColoredOutput(ledgerstate.NewColoredBalances(map[ledgerstate.Color]uint64{
-				ledgerstate.ColorIOTA: uint64(1337),
+				ledgerstate.ColorIOTA: uint64(1000000),
 			}), destAddr.Address())
 			txEssence := ledgerstate.NewTransactionEssence(0, time.Now(), identity.ID{}, identity.ID{}, ledgerstate.NewInputs(ledgerstate.NewUTXOInput(out)), ledgerstate.NewOutputs(output))
 			kp := *mySeed.KeyPair(0)
@@ -111,6 +115,7 @@ func main() {
 
 			fmt.Printf("issued conflict transaction %s\n", conflictingMsgIDs[i])
 		}(i)
+		time.Sleep(5 * time.Second)
 	}
 	wg.Wait()
 }

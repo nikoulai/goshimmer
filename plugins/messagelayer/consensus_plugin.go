@@ -120,6 +120,25 @@ func configureFPC(plugin *node.Plugin) {
 		}
 		peersQueried := len(roundStats.QueriedOpinions)
 		voteContextsCount := len(roundStats.ActiveVoteContexts)
+
+		fmt.Println("Round Executed")
+		for _, ctx := range roundStats.ActiveVoteContexts {
+			fmt.Println("ID ", ctx.ID)
+			fmt.Println("Opinions ", ctx.Opinions)
+			fmt.Println("ProportionLiked ", ctx.ProportionLiked)
+			fmt.Println("Rounds ", ctx.Rounds)
+			fmt.Println("Weights ", ctx.Weights)
+		}
+
+		ownMana, err := OwnManaRetriever()
+		fmt.Println("Own mana: ", ownMana, err)
+
+		manaMap, t, err := GetManaMap(mana.ConsensusMana)
+		fmt.Println("Mana Map: ", t, err)
+		for k, v := range manaMap {
+			fmt.Printf("%s : %f\n", k.String(), v)
+		}
+
 		plugin.LogDebugf("executed round with rand %0.4f for %d vote contexts on %d peers, took %v", roundStats.RandUsed, voteContextsCount, peersQueried, roundStats.Duration)
 	}))
 
@@ -607,10 +626,6 @@ func readStatement(messageID tangle.MessageID) {
 
 		issuerID := identity.NewID(msg.IssuerPublicKey())
 
-		// check if the Mana threshold of the issuer is ok
-		if !checkEnoughMana(issuerID, StatementParameters.ReadManaThreshold) {
-			return
-		}
 		// Skip ourselves
 		if issuerID == local.GetInstance().ID() {
 			return
