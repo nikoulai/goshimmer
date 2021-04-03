@@ -2,6 +2,7 @@ package ledgerstate
 
 import (
 	"bytes"
+	"fmt"
 	"sort"
 	"strconv"
 	"strings"
@@ -897,6 +898,8 @@ func (a *AggregatedBranch) SetLiked(liked bool) (modified bool) {
 	a.likedMutex.Lock()
 	defer a.likedMutex.Unlock()
 
+	fmt.Println("Setting like to branch: ", a.ID().Base58(), liked)
+
 	if a.liked == liked {
 		return
 	}
@@ -1064,12 +1067,15 @@ func ChildBranchFromBytes(bytes []byte) (childBranch *ChildBranch, consumedBytes
 	}
 	consumedBytes = marshalUtil.ReadOffset()
 
+	fmt.Println("ConsumedBytes: ", consumedBytes)
+
 	return
 }
 
 // ChildBranchFromMarshalUtil unmarshals an ChildBranch using a MarshalUtil (for easier unmarshaling).
 func ChildBranchFromMarshalUtil(marshalUtil *marshalutil.MarshalUtil) (childBranch *ChildBranch, err error) {
 	childBranch = &ChildBranch{}
+	fmt.Println("Len: ", len(marshalUtil.Bytes()))
 	if childBranch.parentBranchID, err = BranchIDFromMarshalUtil(marshalUtil); err != nil {
 		err = xerrors.Errorf("failed to parse parent BranchID from MarshalUtil: %w", err)
 		return
@@ -1083,16 +1089,20 @@ func ChildBranchFromMarshalUtil(marshalUtil *marshalutil.MarshalUtil) (childBran
 		return
 	}
 
+	fmt.Println("ChildBranchFromMarshalUtil", childBranch)
+
 	return
 }
 
 // ChildBranchFromObjectStorage is a factory method that creates a new ChildBranch instance from a storage key of the
 // object storage. It is used by the object storage, to create new instances of this entity.
-func ChildBranchFromObjectStorage(key []byte, _ []byte) (result objectstorage.StorableObject, err error) {
-	if result, _, err = ChildBranchFromBytes(key); err != nil {
+func ChildBranchFromObjectStorage(key []byte, value []byte) (result objectstorage.StorableObject, err error) {
+	if result, _, err = ChildBranchFromBytes(byteutils.ConcatBytes(key, value)); err != nil {
 		err = xerrors.Errorf("failed to parse ChildBranch from bytes: %w", err)
 		return
 	}
+
+	fmt.Println("From ObjectStorage: ", value)
 
 	return
 }

@@ -93,6 +93,7 @@ func (b *BranchDAG) UpdateConflictBranchParents(conflictBranchID BranchID, newPa
 	for newParentBranchID := range newParentBranchIDs {
 		if _, exists := oldParentBranchIDs[newParentBranchID]; !exists {
 			if cachedChildBranch, stored := b.childBranchStorage.StoreIfAbsent(NewChildBranch(newParentBranchID, conflictBranchID, ConflictBranchType)); stored {
+				fmt.Println("1: ", conflictBranchID.Base58())
 				cachedChildBranch.Release()
 			}
 		}
@@ -546,6 +547,7 @@ func (b *BranchDAG) createConflictBranchFromNormalizedParentBranchIDs(branchID B
 		// store child references
 		for parentBranchID := range normalizedParentBranchIDs {
 			if cachedChildBranch, stored := b.childBranchStorage.StoreIfAbsent(NewChildBranch(parentBranchID, branchID, ConflictBranchType)); stored {
+				fmt.Println("2: ", branchID.Base58())
 				cachedChildBranch.Release()
 			}
 		}
@@ -588,9 +590,32 @@ func (b *BranchDAG) aggregateNormalizedBranches(normalizedBranchIDs BranchIDs) (
 
 	if newBranchCreated {
 		for parentBranchID := range normalizedBranchIDs {
-			if cachedChildBranch, stored := b.childBranchStorage.StoreIfAbsent(NewChildBranch(parentBranchID, aggregatedBranch.ID(), AggregatedBranchType)); stored {
-				cachedChildBranch.Release()
+			newChildBranch := NewChildBranch(parentBranchID, aggregatedBranch.ID(), AggregatedBranchType)
+			cachedChildBranch, stored := b.childBranchStorage.StoreIfAbsent(newChildBranch)
+			if stored {
+				fmt.Println("3: ", aggregatedBranch.ID().Base58())
+				fmt.Println("child branch type ", newChildBranch.ChildBranchType())
+
+				// cachedChildBranch.Release()
 			}
+			c := &CachedChildBranch{CachedObject: cachedChildBranch}
+			c.Consume(func(childBranch *ChildBranch) {
+				fmt.Println("cached child branch type", childBranch.childBranchType)
+			})
+
+			// cachedChildBranch := &CachedChildBranch{CachedObject: b.childBranchStorage.ComputeIfAbsent(byteutils.ConcatBytes(parentBranchID.Bytes(), newChildBranch.ChildBranchID().Bytes()), func(key []byte) objectstorage.StorableObject {
+			// 	fmt.Println("3: ", aggregatedBranch.ID().Base58())
+
+			// 	newChildBranch.Persist()
+			// 	newChildBranch.SetModified()
+
+			// 	return newChildBranch
+			// })}
+
+			// if cachedChildBranch != nil {
+			// 	cachedChildBranch.Release()
+			// }
+
 		}
 
 		for normalizedBranchID := range normalizedBranchIDs {
@@ -954,21 +979,33 @@ func (b *BranchDAG) setBranchFinalized(cachedBranch *CachedBranch, finalized boo
 func (b *BranchDAG) updateLikedOfAggregatedChildBranches(branchID BranchID, liked bool) (err error) {
 	// initialize stack with children of type AggregatedBranch of the passed in Branch (we only update the liked
 	// status of AggregatedBranches as their status entirely depends on their parents)
+
+	fmt.Println("updateLikedOfAggregatedChildBranches")
+
 	branchStack := list.New()
 	b.ChildBranches(branchID).Consume(func(childBranch *ChildBranch) {
+		fmt.Println("inside updateLikedOfAggregatedChildBranches: ", childBranch.childBranchID.Base58())
+		fmt.Println(" Type ", childBranch.ChildBranchType())
+		fmt.Println(" ", childBranch)
+		b.Branch(childBranch.childBranchID).Consume(func(branch Branch) {
+			fmt.Println("Inside Consume: ", branch.ID().Base58(), branch.Type())
+		})
 		if childBranch.ChildBranchType() == AggregatedBranchType {
+			fmt.Println("childBranch.ChildBranchType() == AggregatedBranchType")
 			branchStack.PushBack(childBranch.ChildBranchID())
 		}
 	})
 
 	// iterate through stack
 	for branchStack.Len() >= 1 {
+		fmt.Println("Inside branchStack ")
 		// retrieve first element from the stack
 		currentEntry := branchStack.Front()
 		branchStack.Remove(currentEntry)
 
 		if err = b.updateLikedOfAggregatedBranch(b.Branch(currentEntry.Value.(BranchID)), liked); err != nil {
 			err = xerrors.Errorf("failed to update liked flag of AggregatedBranch with %s: %w", currentEntry.Value.(BranchID), err)
+			fmt.Println(err)
 			return
 		}
 	}
@@ -982,13 +1019,17 @@ func (b *BranchDAG) updateLikedOfAggregatedBranch(currentCachedBranch *CachedBra
 	// release current CachedBranch
 	defer currentCachedBranch.Release()
 
+	fmt.Println("updateLikedOfAggregatedBranch")
+
 	// unwrap current CachedBranch
 	currentBranch, typeErr := currentCachedBranch.UnwrapAggregatedBranch()
 	if typeErr != nil {
+		fmt.Println("failed to load AggregatedBranch")
 		err = xerrors.Errorf("failed to load AggregatedBranch with %s: %w", currentCachedBranch.ID(), typeErr)
 		return
 	}
 	if currentBranch == nil {
+		fmt.Println("failed to load AggregatedBranch")
 		err = xerrors.Errorf("failed to load AggregatedBranch with %s: %w", currentCachedBranch.ID(), cerrors.ErrFatal)
 		return
 	}

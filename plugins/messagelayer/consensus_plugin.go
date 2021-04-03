@@ -75,6 +75,12 @@ func configureConsensusPlugin(plugin *node.Plugin) {
 
 	// subscribe to message-layer
 	Tangle().ConsensusManager.Events.MessageOpinionFormed.Attach(events.NewClosure(readStatement))
+
+	Tangle().LedgerState.BranchDAG.Events.BranchLiked.Attach(events.NewClosure(func(newBranchEvent *ledgerstate.BranchDAGEvent) {
+		newBranchEvent.Branch.Consume(func(branch ledgerstate.Branch) {
+			plugin.LogInfo("########### Branch LikedEvent: ", branch.ID().Base58())
+		})
+	}))
 }
 
 func runConsensusPlugin(plugin *node.Plugin) {
