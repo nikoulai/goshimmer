@@ -2,6 +2,7 @@ package ledgerstate
 
 import (
 	"bytes"
+	"encoding/hex"
 	"fmt"
 	"sort"
 	"strconv"
@@ -1068,6 +1069,7 @@ func ChildBranchFromBytes(bytes []byte) (childBranch *ChildBranch, consumedBytes
 	consumedBytes = marshalUtil.ReadOffset()
 
 	fmt.Println("ConsumedBytes: ", consumedBytes)
+	fmt.Println("Just want to double check ", childBranch)
 
 	return
 }
@@ -1103,6 +1105,8 @@ func ChildBranchFromObjectStorage(key []byte, value []byte) (result objectstorag
 	}
 
 	fmt.Println("From ObjectStorage: ", value)
+
+	fmt.Println("Key ", len(key), hex.EncodeToString(key))
 
 	return
 }
@@ -1144,7 +1148,7 @@ func (c *ChildBranch) Update(objectstorage.StorableObject) {
 // ObjectStorageKey returns the key that is used to store the object in the database. It is required to match the
 // StorableObject interface.
 func (c *ChildBranch) ObjectStorageKey() (objectStorageKey []byte) {
-	return marshalutil.New(ConflictIDLength + BranchIDLength).
+	return marshalutil.New(BranchIDLength * 2).
 		WriteBytes(c.parentBranchID.Bytes()).
 		WriteBytes(c.childBranchID.Bytes()).
 		Bytes()
