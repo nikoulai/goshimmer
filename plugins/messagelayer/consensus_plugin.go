@@ -116,25 +116,26 @@ func configureFPC(plugin *node.Plugin) {
 
 	Voter().Events().RoundExecuted.Attach(events.NewClosure(func(roundStats *vote.RoundStats) {
 		if StatementParameters.WriteStatement && checkEnoughMana(local.GetInstance().ID(), StatementParameters.WriteManaThreshold) {
+			fmt.Println("=== make statement ===", roundStats.ActiveVoteContexts)
 			makeStatement(roundStats, broadcastStatement)
 		}
 		peersQueried := len(roundStats.QueriedOpinions)
 		voteContextsCount := len(roundStats.ActiveVoteContexts)
 
-		fmt.Println("Round Executed")
+		fmt.Println("=== Round Executed, peersQueried", peersQueried, "voteContextsCount", voteContextsCount)
 		for _, ctx := range roundStats.ActiveVoteContexts {
-			fmt.Println("ID ", ctx.ID)
-			fmt.Println("Opinions ", ctx.Opinions)
-			fmt.Println("ProportionLiked ", ctx.ProportionLiked)
-			fmt.Println("Rounds ", ctx.Rounds)
-			fmt.Println("Weights ", ctx.Weights)
+			fmt.Println("   === ctxID ", ctx.ID)
+			fmt.Println("   === Opinions ", ctx.Opinions)
+			fmt.Println("   === ProportionLiked ", ctx.ProportionLiked)
+			fmt.Println("   === Rounds ", ctx.Rounds)
+			fmt.Println("   === Weights own / total ", ctx.Weights.OwnWeight, ctx.Weights.TotalWeights)
 		}
 
 		ownMana, err := OwnManaRetriever()
-		fmt.Println("Own mana: ", ownMana, err)
+		fmt.Println("   === Own mana: ", ownMana, err)
 
 		manaMap, t, err := GetManaMap(mana.ConsensusMana)
-		fmt.Println("Mana Map: ", t, err)
+		fmt.Println("   === Mana Map: ", t, err)
 		for k, v := range manaMap {
 			fmt.Printf("%s : %f\n", k.String(), v)
 		}

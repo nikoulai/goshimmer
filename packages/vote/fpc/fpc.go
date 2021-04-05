@@ -111,6 +111,7 @@ func (f *FPC) Events() vote.Events {
 // queries for opinions.
 func (f *FPC) Round(rand float64) error {
 	start := time.Now()
+	fmt.Println("~~~~~~~~~~~~~~~~~~~~~ new Round ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
 	// enqueue new voting contexts
 	f.enqueue()
 	// we can only form opinions when the last round was actually executed successfully
@@ -139,6 +140,16 @@ func (f *FPC) Round(rand float64) error {
 			ActiveVoteContexts: f.ctxs,
 			QueriedOpinions:    queriedOpinions,
 		}
+
+		fmt.Println("### Round Executed, peersQueried", len(roundStats.QueriedOpinions), "voteContextsCount", len(roundStats.ActiveVoteContexts))
+		for _, ctx := range roundStats.ActiveVoteContexts {
+			fmt.Println("   ### ctxID ", ctx.ID)
+			fmt.Println("   ### Opinions ", ctx.Opinions)
+			fmt.Println("   ### ProportionLiked ", ctx.ProportionLiked)
+			fmt.Println("   ### Rounds ", ctx.Rounds)
+			fmt.Println("   ### Weights own / total ", ctx.Weights.OwnWeight, ctx.Weights.TotalWeights)
+		}
+
 		// TODO: add possibility to check whether an event handler is registered
 		// in order to prevent the collection of the round stats data if not needed
 		f.events.RoundExecuted.Trigger(roundStats)
@@ -154,6 +165,9 @@ func (f *FPC) enqueue() {
 	defer f.ctxsMu.Unlock()
 	for ele := f.queue.Front(); ele != nil; ele = f.queue.Front() {
 		voteCtx := ele.Value.(*vote.Context)
+		if f.ctxs[voteCtx.ID] != nil {
+			fmt.Printf("--- enequeue:f.ctxs[voteCtx.ID] != nil, voteCtx already exists.")
+		}
 		f.ctxs[voteCtx.ID] = voteCtx
 		f.queue.Remove(ele)
 		delete(f.queueSet, voteCtx.ID)
@@ -172,9 +186,14 @@ func (f *FPC) formOpinions(rand float64) {
 		}
 		lowerThreshold, upperThreshold := f.setThreshold(voteCtx)
 
-		eta := f.biasTowardsOwnOpinion(voteCtx)
-
-		if eta >= RandUniformThreshold(rand, lowerThreshold, upperThreshold) {
+		biasedProportionLiked := f.biasTowardsOwnOpinion(voteCtx)
+		// catch error in biasedProportionLiked
+		if biasedProportionLiked < 0 {
+			fmt.Println("... Error in biasedProportionLiked: ", biasedProportionLiked, "; skipping round")
+			// TODO skip vote here
+			continue
+		}
+		if biasedProportionLiked >= RandUniformThreshold(rand, lowerThreshold, upperThreshold) {
 			voteCtx.AddOpinion(opinion.Like)
 			continue
 		}
@@ -201,14 +220,18 @@ func (f *FPC) finalizeOpinions() {
 
 // queries the opinions of QuerySampleSize amount of OpinionGivers.
 func (f *FPC) queryOpinions() ([]opinion.QueriedOpinions, error) {
+	fmt.Println(":::: queryOpinions ::::::::::::::::::::::::::::::")
 	conflictIDs, timestampIDs := f.voteContextIDs()
+	fmt.Println("   ::: len(conflictIDs), len(timestampIDs) ", len(conflictIDs), len(timestampIDs))
 
 	// nothing to vote on
 	if len(conflictIDs) == 0 && len(timestampIDs) == 0 {
+		fmt.Println(":::: nothing to vote on")
 		return nil, nil
 	}
 
 	opinionGivers, err := f.opinionGiverFunc()
+	fmt.Println(":::: opinionGivers: ", opinionGivers)
 	if err != nil {
 		return nil, err
 	}
@@ -223,6 +246,8 @@ func (f *FPC) queryOpinions() ([]opinion.QueriedOpinions, error) {
 	// but use its opinion N selected times.
 
 	opinionGiversToQuery, totalOpinionGiversMana := ManaBasedSampling(opinionGivers, f.paras.MaxQuerySampleSize, f.paras.QuerySampleSize, f.opinionGiverRng)
+	fmt.Println(":::: opinionGiversToQuery: ", opinionGiversToQuery)
+	fmt.Println(":::: totalOpinionGiversMana: ", totalOpinionGiversMana)
 
 	// get own mana and calculate total mana
 	ownMana, err := f.ownWeightRetrieverFunc()
@@ -232,18 +257,21 @@ func (f *FPC) queryOpinions() ([]opinion.QueriedOpinions, error) {
 
 	totalMana := totalOpinionGiversMana + ownMana
 
-	fmt.Printf("Total Mana %f, Own Mana %f\n", totalMana, ownMana)
+	fmt.Println(":::: Mana, Own / Total ", ownMana, totalMana)
 
 	// votes per id
-	var voteMapMu sync.Mutex
-	voteMap := map[string]opinion.Opinions{}
+	// var voteMapMu sync.Mutex
+	// voteMap := map[string]opinion.Opinions{}
+	voteMap, voteMapMu := f.createVoteMapForConflicts()
 
 	// holds queried opinions
 	allQueriedOpinions := []opinion.QueriedOpinions{}
 
-	// send queries
+	// send queries, organise voteMap
 	var wg sync.WaitGroup
+	fmt.Println(">>> send queries, organise voteMap ")
 	for opinionGiverToQuery, selectedCount := range opinionGiversToQuery {
+		fmt.Println("   >>> opinionGiverToQuery /// selectedCount: ", opinionGiverToQuery, " /// ", selectedCount)
 		wg.Add(1)
 		go func(opinionGiverToQuery opinion.OpinionGiver, selectedCount int) {
 			defer wg.Done()
@@ -251,11 +279,14 @@ func (f *FPC) queryOpinions() ([]opinion.QueriedOpinions, error) {
 			queryCtx, cancel := context.WithTimeout(context.Background(), f.paras.QueryTimeout)
 			defer cancel()
 
-			// query
+			// query (from statements and direct)
 			opinions, err := opinionGiverToQuery.Query(queryCtx, conflictIDs, timestampIDs)
 			if err != nil || len(opinions) != len(conflictIDs)+len(timestampIDs) {
 				// ignore opinions
-				fmt.Println("############## // ignore opinions ##############", err, opinions)
+				fmt.Println("   >>>  ignore opinions: ERR /// opinions : ", err, " /// ", opinions)
+
+				// TODO this will leave the voteMap empty, which is a problem
+
 				return
 			}
 
@@ -270,16 +301,21 @@ func (f *FPC) queryOpinions() ([]opinion.QueriedOpinions, error) {
 			defer voteMapMu.Unlock()
 			for i, id := range conflictIDs {
 				votes, has := voteMap[id]
+				fmt.Println("   ### id, votes, has of voteMap[id]: ", id, votes, has)
 				if !has {
 					votes = opinion.Opinions{}
 				}
+				fmt.Println("   ### resulting votes: ", votes)
 				// reuse the opinion N times selected.
 				// note this is always at least 1.
 				for j := 0; j < selectedCount; j++ {
 					votes = append(votes, opinions[i])
 				}
+				fmt.Println("   ### resulting votes: ", votes)
 				queriedOpinions.Opinions[id] = opinions[i]
+				fmt.Println("   ### voteMap before: ", voteMap)
 				voteMap[id] = votes
+				fmt.Println("   ### voteMap after: ", voteMap)
 			}
 			for i, id := range timestampIDs {
 				votes, has := voteMap[id]
@@ -302,7 +338,14 @@ func (f *FPC) queryOpinions() ([]opinion.QueriedOpinions, error) {
 	f.ctxsMu.RLock()
 	defer f.ctxsMu.RUnlock()
 	// compute liked proportion
+	fmt.Println(">>>> compute liked proportion, len(voteMap):", len(voteMap))
 	for id, votes := range voteMap {
+		f.ctxs[id].Weights = vote.VotingWeights{
+			OwnWeight:    ownMana,
+			TotalWeights: totalMana,
+		}
+
+		fmt.Println("    >>>> id, len(votes): ", id, len(votes))
 		var likedSum float64
 
 		votedCount := len(votes)
@@ -316,10 +359,7 @@ func (f *FPC) queryOpinions() ([]opinion.QueriedOpinions, error) {
 			}
 		}
 
-		f.ctxs[id].Weights = vote.VotingWeights{
-			OwnWeight:    ownMana,
-			TotalWeights: totalMana,
-		}
+		fmt.Println("    >>>> Weights Own / Total : ", f.ctxs[id].Weights.OwnWeight, f.ctxs[id].Weights.TotalWeights)
 
 		if votedCount < f.paras.MinOpinionsReceived {
 			continue
@@ -329,7 +369,7 @@ func (f *FPC) queryOpinions() ([]opinion.QueriedOpinions, error) {
 		fmt.Printf("ProportionLiked for %s - %f\n", id, f.ctxs[id].ProportionLiked)
 	}
 
-	fmt.Println("End Quering")
+	fmt.Println(":::: End Quering")
 
 	return allQueriedOpinions, nil
 }
@@ -370,18 +410,30 @@ func (f *FPC) setThreshold(voteCtx *vote.Context) (float64, float64) {
 func (f *FPC) biasTowardsOwnOpinion(voteCtx *vote.Context) float64 {
 	totalMana := voteCtx.Weights.TotalWeights
 	ownMana := voteCtx.Weights.OwnWeight
+	fmt.Printf("... biasTowardsOwnOpinion: T: %f O: %f \n", totalMana, ownMana)
 
-	fmt.Printf("biasTowardsOwnOpinion: T: %f O: %f \n", totalMana, ownMana)
+	if ownMana > 0 && totalMana == 0 {
+		fmt.Println("... Error in voteCtx Weights ")
+		return -1
+	}
 
-	if ownMana == 0 || totalMana == 0 {
+	ownOpinion := opinion.ConvertOpinionToFloat64(voteCtx.LastOpinion())
+	// if voteCtx.ProportionLiked there are several reasons why this can happen:
+	// node may not be able to communicate, or all requested nodes are down
+	if voteCtx.ProportionLiked == -1 {
 		return voteCtx.ProportionLiked
 	}
-	ownOpinion := opinion.ConvertOpinionToFloat64(voteCtx.LastOpinion())
+	// the following can happen when there is no mana and uniform sampling
+	if ownMana == 0 || totalMana == 0 {
+		return voteCtx.ProportionLiked // return result of uniform sampling, ignore own opinion
+	}
+	// catch error in own opinion
 	if ownOpinion < 0 {
 		return voteCtx.ProportionLiked
 	}
-	eta := ownMana/totalMana*ownOpinion + (1-ownMana/totalMana)*voteCtx.ProportionLiked
-	return eta
+
+	newProportionLiked := ownMana/totalMana*ownOpinion + (1-ownMana/totalMana)*voteCtx.ProportionLiked
+	return newProportionLiked
 }
 
 // SetOpinionGiverRng sets random number generator in the FPC instance
@@ -436,4 +488,23 @@ func UniformSampling(opinionGivers []opinion.OpinionGiver, maxQuerySampleSize, q
 		opinionGiversToQuery[selected]++
 	}
 	return opinionGiversToQuery
+}
+
+// create a voteMap for the stored conflicts and timestamps
+func (f *FPC) createVoteMapForConflicts() (map[string]opinion.Opinions, sync.Mutex) {
+	var voteMapMu sync.Mutex
+	voteMap := map[string]opinion.Opinions{}
+
+	conflictIDs, timestampIDs := f.voteContextIDs()
+
+	voteMapMu.Lock()
+	defer voteMapMu.Unlock()
+	for _, id := range conflictIDs {
+		voteMap[id] = opinion.Opinions{}
+	}
+	for _, id := range timestampIDs {
+		voteMap[id] = opinion.Opinions{}
+	}
+
+	return voteMap, voteMapMu
 }
