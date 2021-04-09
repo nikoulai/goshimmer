@@ -194,7 +194,6 @@ base58:BZx5tDLymckUV5wiswXJtajgQrBEzTBBRR4uGfr1YNGS
       context: ./
       dockerfile: Dockerfile
     container_name: iota_goshimmer
-    restart: unless-stopped
     command: &gt;
       --node.enablePlugins=prometheus
       --autopeering.seed=&quot;base64:gP0uRLhwBG2yJJmnLySX4S4R5G250Z3dbN9yBR6VSyY=&quot;
