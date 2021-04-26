@@ -47,7 +47,7 @@ func Plugin() *node.Plugin {
 
 // GetMessage is the handler for the /messages/:messageID endpoint.
 func GetMessage(c echo.Context) (err error) {
-	messageID, err := messageIDFromContext(c)
+	messageID, err := MessageIDFromContext(c)
 	if err != nil {
 		return c.JSON(http.StatusBadRequest, jsonmodels.NewErrorResponse(err))
 	}
@@ -86,7 +86,7 @@ func GetMessage(c echo.Context) (err error) {
 
 // GetMessageMetadata is the handler for the /messages/:messageID/metadata endpoint.
 func GetMessageMetadata(c echo.Context) (err error) {
-	messageID, err := messageIDFromContext(c)
+	messageID, err := MessageIDFromContext(c)
 	if err != nil {
 		return c.JSON(http.StatusBadRequest, jsonmodels.NewErrorResponse(err))
 	}
@@ -106,7 +106,7 @@ func GetMessageMetadata(c echo.Context) (err error) {
 
 // GetMessageConsensusMetadata is the handler for the /messages/:messageID/consensus endpoint.
 func GetMessageConsensusMetadata(c echo.Context) (err error) {
-	messageID, err := messageIDFromContext(c)
+	messageID, err := MessageIDFromContext(c)
 	if err != nil {
 		return c.JSON(http.StatusBadRequest, jsonmodels.NewErrorResponse(err))
 	}
@@ -152,11 +152,11 @@ func PostPayload(c echo.Context) error {
 
 // endregion ///////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-// region messageIDFromContext /////////////////////////////////////////////////////////////////////////////////////////
+// region MessageIDFromContext /////////////////////////////////////////////////////////////////////////////////////////
 
-// messageIDFromContext determines the MessageID from the messageID parameter in an echo.Context. It expects it to
+// MessageIDFromContext determines the MessageID from the messageID parameter in an echo.Context. It expects it to
 // either be a base58 encoded string or the builtin alias EmptyMessageID.
-func messageIDFromContext(c echo.Context) (messageID tangle.MessageID, err error) {
+func MessageIDFromContext(c echo.Context) (messageID tangle.MessageID, err error) {
 	switch messageIDString := c.Param("messageID"); messageIDString {
 	case "EmptyMessageID":
 		messageID = tangle.EmptyMessageID

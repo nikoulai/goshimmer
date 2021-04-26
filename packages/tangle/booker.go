@@ -5,6 +5,7 @@ import (
 	"sort"
 	"strconv"
 	"sync"
+	"time"
 
 	"github.com/iotaledger/hive.go/byteutils"
 	"github.com/iotaledger/hive.go/cerrors"
@@ -67,6 +68,10 @@ func (b *Booker) Setup() {
 // BookMessage tries to book the given Message (and potentially its contained Transaction) into the LedgerState and the Tangle.
 // It fires a MessageBooked event if it succeeds.
 func (b *Booker) BookMessage(messageID MessageID) (err error) {
+	fmt.Println("Booking...", messageID)
+
+	start := time.Now()
+
 	b.tangle.Storage.Message(messageID).Consume(func(message *Message) {
 		b.tangle.Storage.MessageMetadata(messageID).Consume(func(messageMetadata *MessageMetadata) {
 			branchIDOfPayload, bookingErr := b.bookPayload(message)
@@ -94,6 +99,11 @@ func (b *Booker) BookMessage(messageID MessageID) (err error) {
 			}
 
 			messageMetadata.SetBooked(true)
+
+			dur := time.Since(start)
+			if dur > 1*time.Second {
+				fmt.Printf("took %s to book %s\n", dur, messageID)
+			}
 
 			b.Events.MessageBooked.Trigger(message.ID())
 		})
