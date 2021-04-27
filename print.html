@@ -2575,7 +2575,7 @@ if output.InclusionState.Confirmed {
 <p><img src="tooling/../../images/docker-network.png" alt="Docker network" /></p>
 <h2 id="how-to-use-the-tool"><a class="header" href="#how-to-use-the-tool">How to use the tool</a></h2>
 <p>In the docker network run for example</p>
-<pre><code>./run.sh 5 1
+<pre><code>./run.sh 5 1 1
 </code></pre>
 <p>The command <code>./run.sh</code> spins up a GoShimmer network within Docker as schematically shown in the figure above. The first integer input defines the number of <code>peer_replicas</code> <code>N</code>. The second argument is optional for activating the Grafana dashboard, where </p>
 <ul>
@@ -2583,6 +2583,11 @@ if output.InclusionState.Confirmed {
 <li>1: Grafana enabled</li>
 </ul>
 <p>More details on how to set up the dashboard can be found <a href="https://github.com/iotaledger/goshimmer/wiki/Setup-up-a-GoShimmer-node-(Joining-the-pollen-testnet)#setting-up-the-grafana-dashboard">here</a>.</p>
+<p>The third argument is optional for activating a dRNG committee, where</p>
+<ul>
+<li>default (no argument) or 0: dRNG disabled</li>
+<li>1: dRNG enabled</li>
+</ul>
 <p>The peers can communicate freely within the Docker network 
 while the analysis and visualizer dashboard, as well as the <code>master_peer's</code> dashboard and web API are reachable from the host system on the respective ports.</p>
 <p>The settings for the different containers (<code>entry_node</code>, <code>peer_master</code>, <code>peer_replica</code>) can be modified in <code>docker-compose.yml</code>.</p>
