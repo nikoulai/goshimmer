@@ -177,13 +177,13 @@
 <pre><code class="language-go">    defer func() {
         cerr := f.Close()
         if err == nil {
-            err = xerrors.Errorf(&quot;failed to close file: %w&quot;, cerr)
+            err = errors.Wrap(cerr, &quot;failed to close file&quot;)
         }
     }()
 </code></pre>
 <ul>
-<li>Wrap errors with <code>xerrors.Errorf()</code> when returning them to the caller. It adds the stack trace and a custom message to the error. Without that information investigating an issue is very hard.</li>
-<li>Use <code>xerrors.Is()</code> instead of direct errors comparison. This function unwraps errors recursively. <a href="https://github.com/iotaledger/goshimmer/pull/1113/files#diff-05fdc081489a8d5a61224d812f9bbd7bc77edf9769ed00d95ea024d2a44a699aL62">Example</a>.</li>
+<li>Wrap errors with <code>errors.Wrap()</code> when returning them to the caller. It adds the stack trace and a custom message to the error. Without that information investigating an issue is very hard.</li>
+<li>Use <code>errors.Is()</code> instead of direct errors comparison. This function unwraps errors recursively. <a href="https://github.com/iotaledger/goshimmer/pull/1113/files#diff-05fdc081489a8d5a61224d812f9bbd7bc77edf9769ed00d95ea024d2a44a699aL62">Example</a>.</li>
 <li>Propagate <code>ctx</code> and use APIs that accept <code>ctx</code>, start exposing APIs that accept <code>ctx</code>. Context is a native way for timeouts/cancellation in Go. It allows writing more resilient and fault tolerant code. <a href="https://github.com/iotaledger/goshimmer/pull/1113/files#diff-f2820ed0d3d4d9ea05b78b1dd3978dbcf9401c8caaa8cc40cc1c0342a55379fcL35">Example</a>.</li>
 <li>Don’t shadow builtin functions like copy, len, new etc. <a href="https://github.com/iotaledger/goshimmer/pull/1113/files#diff-f07268750a44da26386469c1b1e93574a678c3d418fce9e1f186d5f1991a92eaL14">Example</a>.</li>
 <li>Don’t shadow imported packages. <a href="https://github.com/iotaledger/goshimmer/blob/f75ce47eeaa3bf930b368754ac24b72f768a5964/plugins/webapi/value/sendtransactionbyjson.go#L172">Example</a>.</li>
@@ -195,15 +195,14 @@
 <li>Treat comments as regular text/documentation. Start with a capital letter, set space after <code>//</code> and end them with a dot. It’s a good habit since Go package docs are generated automatically from the comments and displayed on the godoc site.</li>
 </ul>
 <h2 id="error-handling"><a class="header" href="#error-handling">Error handling</a></h2>
-<p>We use the new error wrapping API and behavior introduced with Go 1.13 but we use the &quot;golang.org/x/xerrors&quot; drop-in replacement which follows the Go 2 design draft and which enables us to have a stack trace for every &quot;wrapping&quot; of the error.</p>
-<p>Errors should always be wrapped an annotated with an additional message at each step. The following example shows how errors are wrapped and turned into the corresponding sentinel errors.</p>
+<p>We use the new error wrapping API and behavior introduced with Go 1.13 but we use the &quot;github.com/cockroachdb/errors&quot; drop-in replacement which follows the Go 2 design draft and which enables us to have a stack trace for every &quot;wrapping&quot; of the error.</p>
+<p>Errors should always be wrapped and annotated with an additional message at each step. The following example shows how errors are wrapped and turned into the corresponding sentinel errors.</p>
 <pre><code class="language-go">package example
 
 import (
-    &quot;errors&quot;
     &quot;3rdPartyLibrary&quot;
 
-    &quot;golang.org/x/xerrors&quot;
+    &quot;github.com/cockroachdb/errors&quot;
 )
 
 // define error variables to make errors identifiable (sentinel errors)
@@ -212,7 +211,7 @@ var ErrSentinel = errors.New(&quot;identifiable error&quot;)
 // turn anonymous 3rd party errors into identifiable ones
 func SentinelErrFrom3rdParty() (result interface{}, err error)
     if result, err = 3rdPartyLibrary.DoSomething(); err != nil {
-        err = xerrors.Errorf(&quot;failed to do something (%v): %w&quot;, err, ErrSentinel)
+        err = errors.Errorf(&quot;failed to do something (%v): %w&quot;, err, ErrSentinel)
         return
     }
 
@@ -221,23 +220,23 @@ func SentinelErrFrom3rdParty() (result interface{}, err error)
 
 // wrap recursive errors at each step
 func WrappedErrFromInternalCall() error {
-    return xerrors.Errorf(&quot;wrapped internal error: %w&quot;, SentinelErrFrom3rdParty())
+    return errors.Errorf(&quot;wrapped internal error: %w&quot;, SentinelErrFrom3rdParty())
 }
 
 // create &quot;new&quot; identifiable internal errors that are not originating in 3rd party libs
 func ErrFromInternalCall() error {
-    return xerrors.Errorf(&quot;internal error: %w&quot;, ErrSentinel)
+    return errors.Errorf(&quot;internal error: %w&quot;, ErrSentinel)
 }
 
 // main function
 func main() {
     err1 := WrappedErrFromInternalCall()
-    if xerrors.Is(err1, ErrSentinel) {
+    if errors.Is(err1, ErrSentinel) {
         fmt.Printf(&quot;%v\n&quot;, err1)
     }
 
     err2 := ErrFromInternalCall()
-    if xerrors.Is(err2 , ErrSentinel) {
+    if errors.Is(err2 , ErrSentinel) {
         fmt.Printf(&quot;%v\n&quot;, err2 )
     }
 }
