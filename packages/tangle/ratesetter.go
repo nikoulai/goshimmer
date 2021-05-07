@@ -1,6 +1,7 @@
 package tangle
 
 import (
+	"fmt"
 	"math"
 	"sync"
 	"time"
@@ -121,16 +122,16 @@ func (r *RateSetter) Shutdown() {
 }
 
 func (r *RateSetter) rateSetting(messageID MessageID) {
-	cachedMessage := r.tangle.Storage.Message(messageID)
 	var isIssuer bool
-	cachedMessage.Consume(func(message *Message) {
+	r.tangle.Storage.Message(messageID).Consume(func(message *Message) {
 		nodeID := identity.NewID(message.IssuerPublicKey())
 		isIssuer = r.self == nodeID
 	})
+
 	if !isIssuer {
 		return
 	}
-
+	fmt.Println("rate setter get a message :", messageID)
 	if r.haltUpdate > 0 {
 		r.haltUpdate--
 		return

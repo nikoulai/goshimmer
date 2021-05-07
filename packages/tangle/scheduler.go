@@ -24,7 +24,7 @@ const (
 var ErrNotRunning = xerrors.New("scheduler is not running")
 
 var (
-	submitWorkerCount     = 4
+	submitWorkerCount     = 1
 	submitWorkerQueueSize = 250
 	submitWorkerPool      *workerpool.WorkerPool
 )
@@ -48,7 +48,6 @@ type Scheduler struct {
 	Events           *SchedulerEvents
 	tangle           *Tangle
 	self             identity.ID
-	mu               sync.Mutex
 	buffer           *schedulerutils.BufferQueue
 	deficits         map[identity.ID]float64
 	onMessageSolid   *events.Closure
@@ -136,17 +135,24 @@ func (s *Scheduler) Setup() {
 
 // SubmitAndReadyMessage submits the message to the scheduler and makes it ready when it's parents are booked.
 func (s *Scheduler) SubmitAndReadyMessage(messageID MessageID) {
+	fmt.Println("message solid: SCH: ", messageID.Base58())
 	// submit the message to the scheduler and marks it ready right away
-	err := s.Submit(messageID)
+	force := false
+	if !s.running.Load() {
+		force = true
+	}
+	err := s.Submit(messageID, force)
 	if err != nil {
 		s.tangle.Events.Error.Trigger(xerrors.Errorf("failed to submit: %w", err))
 		return
 	}
+	fmt.Println("message submitted: SCH: ", messageID.Base58())
 	err = s.Ready(messageID)
 	if err != nil {
 		s.tangle.Events.Error.Trigger(xerrors.Errorf("failed to ready: %w", err))
 		return
 	}
+	fmt.Println("message ready: SCH: ", messageID.Base58())
 }
 
 // SetRate sets the rate of the scheduler.
@@ -167,12 +173,10 @@ func (s *Scheduler) Submit(messageID MessageID, force ...bool) (err error) {
 	}
 
 	if !s.tangle.Storage.Message(messageID).Consume(func(message *Message) {
-		s.mu.Lock()
-		defer s.mu.Unlock()
-
 		nodeID := identity.NewID(message.IssuerPublicKey())
 		// get the current access mana inside the lock
 		mana := s.tangle.Options.SchedulerParams.AccessManaRetrieveFunc(nodeID)
+		fmt.Println(nodeID, "has aMana: ", mana)
 		if mana <= 0 {
 			err = schedulerutils.ErrInvalidMana
 			s.Events.MessageDiscarded.Trigger(messageID)
@@ -196,8 +200,6 @@ func (s *Scheduler) Submit(messageID MessageID, force ...bool) (err error) {
 // If that message is already marked as ready, Unsubmit has no effect.
 func (s *Scheduler) Unsubmit(messageID MessageID) (err error) {
 	if !s.tangle.Storage.Message(messageID).Consume(func(message *Message) {
-		s.mu.Lock()
-		defer s.mu.Unlock()
 		s.buffer.Unsubmit(message)
 	}) {
 		err = xerrors.Errorf("failed to get message '%x' from storage", messageID)
@@ -209,8 +211,6 @@ func (s *Scheduler) Unsubmit(messageID MessageID) (err error) {
 // If Ready is called without a previous Submit, it has no effect.
 func (s *Scheduler) Ready(messageID MessageID) (err error) {
 	if !s.tangle.Storage.Message(messageID).Consume(func(message *Message) {
-		s.mu.Lock()
-		defer s.mu.Unlock()
 		s.buffer.Ready(message)
 	}) {
 		err = xerrors.Errorf("failed to get message '%x' from storage", messageID)
@@ -227,7 +227,7 @@ func (s *Scheduler) parentsBooked(messageID MessageID) (parentsBooked bool) {
 			}
 
 			if !s.tangle.Storage.MessageMetadata(parent.ID).Consume(func(messageMetadata *MessageMetadata) {
-				parentsBooked = parentsBooked && messageMetadata.IsBooked()
+				parentsBooked = messageMetadata.IsBooked()
 			}) {
 				parentsBooked = false
 			}
@@ -241,8 +241,6 @@ func (s *Scheduler) schedule() *Message {
 	if !s.running.Load() {
 		fmt.Println("after shutdown: in scheduler")
 	}
-	s.mu.Lock()
-	defer s.mu.Unlock()
 
 	// no messages submitted
 	if s.buffer.Size() == 0 {
@@ -283,18 +281,23 @@ func (s *Scheduler) schedule() *Message {
 	// TODO: eventually this should be handled outside the scheduler by only calling Ready() when the parents are booked
 	if !s.parentsBooked(s.buffer.Current().Front().(*Message).ID()) {
 		fmt.Println("not parents booked -- nodeID", s.buffer.Current().NodeID().String(), " -- message: ", s.buffer.Current().Front().(*Message).ID())
-		cachedMessage := s.tangle.Storage.Message(s.buffer.Current().Front().(*Message).ID())
-		if cachedMessage.Exists() {
-			message := cachedMessage.Unwrap()
-			cachedMessage.Release()
-			message.ForEachParent(func(parent Parent) {
-				fmt.Println("solidifying parent: ", parent.ID.Base58())
-				s.tangle.Solidifier.Solidify(parent.ID)
-				if err := s.Submit(parent.ID, true); err == nil {
-					_ = s.Ready(parent.ID)
-				}
-			})
-		}
+		s.buffer.PopFront()
+		// s.tangle.Storage.Message(s.buffer.Current().Front().(*Message).ID()).Consume(func(message *Message) {
+		// 	message.ForEachParent(func(parent Parent) {
+		// 		fmt.Println("solidifying parent: ", parent.ID.Base58())
+		// 		// remove msg itself, otherwise it will process it repeatedly
+		// 		msg := s.buffer.PopFront()
+		// 		// hack: solidify parents
+		// 		s.tangle.Solidifier.Solidify(parent.ID)
+		// 		if err := s.Submit(parent.ID, true); err == nil {
+		// 			_ = s.Ready(parent.ID)
+		// 		}
+		// 		// push your self again
+		// 		if err := s.Submit(msg.(*Message).ID(), true); err == nil {
+		// 			_ = s.Ready(msg.(*Message).ID())
+		// 		}
+		// 	})
+		// })
 		return nil
 	}
 	// remove the message from the buffer and adjust node's deficit

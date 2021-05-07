@@ -79,6 +79,11 @@ func configure(plugin *node.Plugin) {
 		Tangle().ProcessGossipMessage(message.Bytes(), local.GetInstance().Peer)
 	}))
 
+	// Messages created by the node need to pass through the normal flow.
+	Tangle().MessageFactory.Events.MessageConstructed.Attach(events.NewClosure(func(message *tangle.Message) {
+		Tangle().ProcessGossipMessage(message.Bytes(), local.GetInstance().Peer)
+	}))
+
 	Tangle().RateSetter.Events.MessageDiscarded.Attach(events.NewClosure(func(messageID tangle.MessageID) {
 		plugin.LogInfof("issuing queue is full. Message discarded. %s", messageID.Base58())
 	}))

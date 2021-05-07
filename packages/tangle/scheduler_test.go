@@ -356,15 +356,15 @@ func TestSchedulerParallelSubmit(t *testing.T) {
 
 	// generate the messages we want to solidify
 	messages := make(map[MessageID]*Message, totalMsgCount)
-	for i := 0; i < totalMsgCount/2; i++ {
+	for i := 0; i < totalMsgCount; i++ {
 		msg := newMessage(selfNode.PublicKey())
 		messages[msg.ID()] = msg
 	}
 
-	for i := 0; i < totalMsgCount/2; i++ {
-		msg := newMessage(peerNode.PublicKey())
-		messages[msg.ID()] = msg
-	}
+	// for i := 0; i < totalMsgCount/2; i++ {
+	// 	msg := newMessage(peerNode.PublicKey())
+	// 	messages[msg.ID()] = msg
+	// }
 
 	tangle.Solidifier.Events.MessageSolid.Attach(events.NewClosure(func(messageID MessageID) {
 		t.Logf(messageID.Base58(), " solid")
