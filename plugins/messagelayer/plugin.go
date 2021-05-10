@@ -1,20 +1,19 @@
 package messagelayer
 
 import (
-	"errors"
 	"os"
 	"sync"
 	"time"
+
+	"github.com/cockroachdb/errors"
 
 	"github.com/iotaledger/hive.go/daemon"
 	"github.com/iotaledger/hive.go/events"
 	"github.com/iotaledger/hive.go/identity"
 	"github.com/iotaledger/hive.go/node"
 	"github.com/labstack/gommon/log"
-	"golang.org/x/xerrors"
 
 	"github.com/iotaledger/goshimmer/packages/consensus/fcob"
-	"github.com/iotaledger/goshimmer/packages/epochs"
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/goshimmer/packages/mana"
 	"github.com/iotaledger/goshimmer/packages/shutdown"
@@ -61,27 +60,16 @@ func configure(plugin *node.Plugin) {
 		plugin.LogInfo(info)
 	}))
 
-	Tangle().Parser.Events.MessageRejected.Attach(events.NewClosure(func(rejectedEvent *tangle.MessageRejectedEvent, err error) {
-		plugin.LogError("message rejected: ", rejectedEvent.Message.ID().Base58(), " err: ", err.Error())
-		plugin.LogError(rejectedEvent.Message)
-	}))
-
-	Tangle().Parser.Events.BytesRejected.Attach(events.NewClosure(func(ev *tangle.BytesRejectedEvent, err error) {
-		msg, _, err1 := tangle.MessageFromBytes(ev.Bytes)
-		if err1 == nil {
-			plugin.LogInfo("bytes rejected. ", msg.ID().Base58(), " err: ", err.Error())
-		}
-	}))
-
 	// Messages created by the node need to pass through the normal flow.
 	Tangle().RateSetter.Events.MessageIssued.Attach(events.NewClosure(func(message *tangle.Message) {
-		plugin.LogInfo("rate setter issued message: %s", message.ID().Base58())
+		plugin.LogInfo("issued message: %s", message.ID().Base58())
 		Tangle().ProcessGossipMessage(message.Bytes(), local.GetInstance().Peer)
 	}))
 
-	// Messages created by the node need to pass through the normal flow.
-	Tangle().MessageFactory.Events.MessageConstructed.Attach(events.NewClosure(func(message *tangle.Message) {
-		Tangle().ProcessGossipMessage(message.Bytes(), local.GetInstance().Peer)
+	Tangle().Storage.Events.MessageStored.Attach(events.NewClosure(func(messageID tangle.MessageID) {
+		Tangle().Storage.Message(messageID).Consume(func(message *tangle.Message) {
+			Tangle().WeightProvider.Update(message.IssuingTime(), identity.NewID(message.IssuerPublicKey()))
+		})
 	}))
 
 	Tangle().RateSetter.Events.MessageDiscarded.Attach(events.NewClosure(func(messageID tangle.MessageID) {
@@ -104,10 +92,6 @@ func configure(plugin *node.Plugin) {
 		plugin.LogInfo("Message invalid: ", messageID.Base58())
 	}))
 
-	//Tangle().Scheduler.Events.MessageScheduled.Attach(events.NewClosure(func(messageID tangle.MessageID) {
-	//	plugin.LogInfo("message scheduled: ", messageID.Base58())
-	//}))
-
 	Tangle().FifoScheduler.Events.MessageDiscarded.Attach(events.NewClosure(func(messageID tangle.MessageID) {
 		plugin.LogInfof("Message discarded in FifoScheduler %s", messageID.Base58())
 	}))
@@ -119,10 +103,6 @@ func configure(plugin *node.Plugin) {
 	Tangle().Booker.Events.MessageBooked.Attach(events.NewClosure(func(messageID tangle.MessageID) {
 		plugin.LogInfo("message booked in message layer: ", messageID.Base58())
 	}))
-
-	//Tangle().Solidifier.Events.MessageSolid.Attach(events.NewClosure(func(messageID tangle.MessageID) {
-	//	plugin.LogInfo("message solid: ", messageID.Base58())
-	//}))
 
 	Tangle().Events.SyncChanged.Attach(events.NewClosure(func(ev *tangle.SyncChangedEvent) {
 		plugin.LogInfo("Sync changed: ", ev.Synced)
@@ -159,13 +139,6 @@ func configure(plugin *node.Plugin) {
 
 	fcob.LikedThreshold = time.Duration(Parameters.FCOB.AverageNetworkDelay) * time.Second
 	fcob.LocallyFinalizedThreshold = time.Duration(Parameters.FCOB.AverageNetworkDelay*2) * time.Second
-
-	// set up epochsManager so that we mark nodes as active
-	Tangle().Booker.Events.MessageBooked.Attach(events.NewClosure(func(messageID tangle.MessageID) {
-		Tangle().Storage.Message(messageID).Consume(func(message *tangle.Message) {
-			EpochsManager().Update(message.IssuingTime(), identity.NewID(message.IssuerPublicKey()))
-		})
-	}))
 
 	configureApprovalWeight()
 }
@@ -206,9 +179,10 @@ func Tangle() *tangle.Tangle {
 				Beta:    &RateSetterParameters.Beta,
 				Initial: &RateSetterParameters.Initial,
 			}),
-			tangle.ApprovalWeights(tangle.WeightProviderFromEpochsManager(EpochsManager())),
 			tangle.SyncTimeWindow(Parameters.TangleTimeWindow),
 		)
+
+		tangleInstance.WeightProvider = tangle.NewCManaWeightProvider(GetCMana, tangleInstance.TimeManager.Time)
 
 		tangleInstance.Setup()
 	})
@@ -235,6 +209,8 @@ func ConsensusMechanism() *fcob.ConsensusMechanism {
 
 // endregion ///////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+// region Scheduler ///////////////////////////////////////////////////////////////////////////////////////////
+
 func schedulerRate(durationString string) time.Duration {
 	duration, err := time.ParseDuration(durationString)
 	// if parseDuration failed, scheduler will take default value (5ms)
@@ -258,22 +234,6 @@ func totalAccessManaRetriever() float64 {
 		return 0
 	}
 	return totalMana
-}
-
-// region Epochs ///////////////////////////////////////////////////////////////////////////////////////////////////////
-
-var (
-	epochsManager     *epochs.Manager
-	epochsManagerOnce sync.Once
-)
-
-// EpochsManager returns the instance of the epochs manager.
-func EpochsManager() *epochs.Manager {
-	epochsManagerOnce.Do(func() {
-		epochsManager = epochs.NewManager(epochs.Store(database.Store()), epochs.ManaRetriever(ManaEpoch), epochs.CacheTime(0))
-	})
-
-	return epochsManager
 }
 
 // endregion ///////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -329,7 +289,7 @@ func AwaitMessageToBeBooked(f func() (*tangle.Message, error), txID ledgerstate.
 	result := <-issueResult
 
 	if result.err != nil || result.msg == nil {
-		return nil, xerrors.Errorf("Failed to issue transaction %s: %w", txID.String(), result.err)
+		return nil, errors.Errorf("Failed to issue transaction %s: %w", txID.String(), result.err)
 	}
 
 	select {
