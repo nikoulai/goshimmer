@@ -140,13 +140,15 @@
                             <i id="git-repository-button" class="fa fa-github"></i>
                         </a>
                         
+                        
+
                     </div>
                 </div>
 
                 
                 <div id="search-wrapper" class="hidden">
                     <form id="searchbar-outer" class="searchbar-outer">
-                        <input type="search" name="search" id="searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="searchresults-outer" aria-describedby="searchresults-header">
+                        <input type="search" id="searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="searchresults-outer" aria-describedby="searchresults-header">
                     </form>
                     <div id="searchresults-outer" class="searchresults-outer hidden">
                         <div id="searchresults-header" class="searchresults-header"></div>
@@ -757,13 +759,13 @@ for nodeID, e := range res.Logs {
 <tr><td align="left"><code>amount</code></td><td align="left">float64</td><td align="left">The amount of revoked mana.</td></tr>
 <tr><td align="left"><code>inputID</code></td><td align="left">string</td><td align="left">The input ID of revoked mana.</td></tr>
 </tbody></table>
-<h2 id="valueallowedmanapledge"><a class="header" href="#valueallowedmanapledge"><code>/value/allowedManaPledge</code></a></h2>
+<h2 id="manaallowedmanapledge"><a class="header" href="#manaallowedmanapledge"><code>/mana/allowedManaPledge</code></a></h2>
 <p>This returns the list of allowed mana pledge node IDs.</p>
 <h3 id="parameters-10"><a class="header" href="#parameters-10">Parameters</a></h3>
 <p>None.</p>
 <h3 id="examples-10"><a class="header" href="#examples-10">Examples</a></h3>
 <h4 id="curl-10"><a class="header" href="#curl-10">cURL</a></h4>
-<pre><code class="language-shell">curl http://localhost:8080/value/allowedManaPledge \
+<pre><code class="language-shell">curl http://localhost:8080/mana/allowedManaPledge \
 -X GET \
 -H 'Content-Type: application/json'
 </code></pre>
@@ -807,7 +809,7 @@ for _, id := range res.Consensus.Allowed {
 <h4 id="allowedpledge"><a class="header" href="#allowedpledge"><code>AllowedPledge</code></a></h4>
 <table><thead><tr><th align="left">field</th><th align="left">Type</th><th align="left">Description</th></tr></thead><tbody>
 <tr><td align="left"><code>isFilterEnabled</code></td><td align="left">bool</td><td align="left">A flag shows that if mana pledge filter is enabled.</td></tr>
-<tr><td align="left"><code>allowed</code></td><td align="left">[]string</td><td align="left">A list of node ID that allow to be pledged mana.</td></tr>
+<tr><td align="left"><code>allowed</code></td><td align="left">[]string</td><td align="left">A list of node ID that allow to be pledged mana. This list has effect only if <code>isFilterEnabled</code> is <code>true</code></td></tr>
 </tbody></table>
 
                     </main>

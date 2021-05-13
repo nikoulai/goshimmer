@@ -142,13 +142,15 @@
                             <i id="git-repository-button" class="fa fa-github"></i>
                         </a>
                         
+                        
+
                     </div>
                 </div>
 
                 
                 <div id="search-wrapper" class="hidden">
                     <form id="searchbar-outer" class="searchbar-outer">
-                        <input type="search" name="search" id="searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="searchresults-outer" aria-describedby="searchresults-header">
+                        <input type="search" id="searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="searchresults-outer" aria-describedby="searchresults-header">
                     </form>
                     <div id="searchresults-outer" class="searchresults-outer hidden">
                         <div id="searchresults-header" class="searchresults-header"></div>
@@ -173,7 +175,7 @@
 <p>Welcome to the GoShimmer docs!</p>
 <p>GoShimmer is a prototype node software exploring the implementation of <a href="https://coordicide.iota.org/">the Coordicide project</a>. This wiki helps the reader to understand the basic concepts and ideas behind the Coordicide and how its modules are implemented in GoShimmer.</p>
 <p>Due to the prototypical nature of the project, things written today may not be reflecting how things are tomorrow. We seek to keep the docs as updated as possible, since it is also used as guide for our team. If you find any inconsistencies, feel free to contact us on Discord or better, <a href="https://github.com/iotaledger/goshimmer/issues/new/choose">create an issue on this repository</a>.</p>
-<h1 id="faq"><a class="header" href="#faq">FAQ</a></h1>
+<div id="chapter_begin" style="break-before: page; page-break-before: always;"></div><h1 id="faq"><a class="header" href="#faq">FAQ</a></h1>
 <h3 id="what-is-goshimmer"><a class="header" href="#what-is-goshimmer">What is GoShimmer?</a></h3>
 <p>GoShimmer is a research and engineering project from the IOTA Foundation seeking to evaluate Coordicide concepts by implementing them in a node software.</p>
 <h3 id="what-kind-of-confirmation-time-can-i-expect"><a class="header" href="#what-kind-of-confirmation-time-can-i-expect">What kind of confirmation time can I expect?</a></h3>
@@ -188,8 +190,8 @@
 <p>If you have funds and are simultaneously issuing transactions spending those, then with high certainty your transactions are going to be rejected by the network. This goes even so far, that your funds will be blocked indefinitely (this might change in the future). If you issue a transaction, await the average network delay and then issue the double spend, then the first issued transaction should usually become confirmed and the 2nd one rejected.</p>
 <h3 id="whos-the-target-audience-for-operating-a-goshimmer-node"><a class="header" href="#whos-the-target-audience-for-operating-a-goshimmer-node">Who's the target audience for operating a GoShimmer node?</a></h3>
 <p>We are mainly interested in individuals helping us out who have a strong IT background, since we simply lack time to help people with things like setting up their nodes, fixing their NAT configs, teaching them how to use Linux and so on. People interested in trying out the bleeding edge of IOTA development and providing meaningful feedback or problem reporting (in form of issues) are welcome. Again, our primary focus is on testing out Coordicide components rather than giving people of any knowledge-level the easiest way to operate a node.</p>
-<h1 id="tutorials"><a class="header" href="#tutorials">Tutorials</a></h1>
-<h1 id="setting-up-a-goshimmer-node"><a class="header" href="#setting-up-a-goshimmer-node">Setting up a GoShimmer node</a></h1>
+<div id="chapter_begin" style="break-before: page; page-break-before: always;"></div><h1 id="tutorials"><a class="header" href="#tutorials">Tutorials</a></h1>
+<div id="chapter_begin" style="break-before: page; page-break-before: always;"></div><h1 id="setting-up-a-goshimmer-node"><a class="header" href="#setting-up-a-goshimmer-node">Setting up a GoShimmer node</a></h1>
 <p>This page describes how to setup your own GoShimmer node in the Pollen testnet with Docker.</p>
 <blockquote>
 <p>DISCLAIMER: <strong>Note that there will be breaking changes frequently (approx. bi-weekly) where the entire network needs to upgrade. If you don't have time to continuously monitor and upgrade your node, then running a GoShimmer node might not be for you.</strong>  We want to emphasize that running a GoShimmer node requires proper knowledge in Linux and IT related topics such as networking and so on. It is not meant as a node to be run by people with little experience in the mentioned fields. <strong>Do not plan to run any production level services on your node/network.</strong></p>
@@ -590,7 +592,7 @@ $ cp local_dashboard.json grafana/dashboards
 <li><code>username</code>: admin</li>
 <li><code>password</code>: admin</li>
 </ul>
-<h1 id="how-to-obtain-tokens-from-the-faucet"><a class="header" href="#how-to-obtain-tokens-from-the-faucet">How to obtain tokens from the faucet</a></h1>
+<div id="chapter_begin" style="break-before: page; page-break-before: always;"></div><h1 id="how-to-obtain-tokens-from-the-faucet"><a class="header" href="#how-to-obtain-tokens-from-the-faucet">How to obtain tokens from the faucet</a></h1>
 <h2 id="the-faucet-dapp"><a class="header" href="#the-faucet-dapp">The faucet dApp</a></h2>
 <p>The faucet is a dApp built on top of the <a href="tutorials/../concepts/layers.html">value and communication layer</a>. It sends IOTA tokens to addresses by listening to faucet request messages. A faucet message is a Message containing an address encoded in Base58, and it is retrievable via <a href="tutorials/../apis/communication.html"><code>FindMessageByID()</code></a>.
 After sending a faucet request message, you can check your balances via <a href="tutorials/../apis/value.html"><code>GetUnspentOutputs()</code></a>.</p>
@@ -642,14 +644,14 @@ messageID, err := goshimAPI.SendFaucetRequest(addr.String())
 <img src="https://user-images.githubusercontent.com/11289354/88525200-e0fc7000-d02c-11ea-9f7f-a545cf14b318.png" width="450">
 <p>When the faucet request is successful, you can check the received balances:</p>
 <img src="https://user-images.githubusercontent.com/11289354/88525478-38024500-d02d-11ea-92c7-25c80eb6a947.png" width="450">
-<h1 id="the-wallet-library"><a class="header" href="#the-wallet-library">The wallet library</a></h1>
+<div id="chapter_begin" style="break-before: page; page-break-before: always;"></div><h1 id="the-wallet-library"><a class="header" href="#the-wallet-library">The wallet library</a></h1>
 <p>This page describes how to use the wallet library.</p>
 <p>GoShimmer ships with a very basic wallet library so that developers and testers can use it to move tokens around.</p>
 <p>To demonstrate its functionalities we have developed a simple command line interface (cli-wallet). 
 You can have a look at its source code to have an idea about how the wallet library can be used. </p>
 <p>The cli-wallet supports the following commands:</p>
 <img src="https://user-images.githubusercontent.com/11289354/88368467-b8703e00-cdc0-11ea-83b2-757c8b9e25c8.png" height="400">
-<h1 id="how-to-create-a-simple-dapp"><a class="header" href="#how-to-create-a-simple-dapp">How to create a simple dApp</a></h1>
+<div id="chapter_begin" style="break-before: page; page-break-before: always;"></div><h1 id="how-to-create-a-simple-dapp"><a class="header" href="#how-to-create-a-simple-dapp">How to create a simple dApp</a></h1>
 <blockquote>
 <p>This guide is meant for developers familiar with the Go programming language.</p>
 </blockquote>
@@ -759,7 +761,7 @@ func onReceiveMessageFromMessageLayer(cachedMessage *message.CachedMessage, cach
 	sendToRemoteLog(networkDelayObject, now)
 }
 </code></pre>
-<h1 id="create-a-static-identity"><a class="header" href="#create-a-static-identity">Create a static identity</a></h1>
+<div id="chapter_begin" style="break-before: page; page-break-before: always;"></div><h1 id="create-a-static-identity"><a class="header" href="#create-a-static-identity">Create a static identity</a></h1>
 <p>To create a static GoShimmer identity, you will need to generate a random 32byte autopeering seed. You can use <code>openssl</code> or the <code>rand-seed</code> tool we provide under the GoShimmer folder <code>tools/rand-seed</code>.
 For example, by running:</p>
 <ul>
@@ -807,9 +809,9 @@ base58:BZx5tDLymckUV5wiswXJtajgQrBEzTBBRR4uGfr1YNGS
       - &quot;8080:8080/tcp&quot; # webApi
       - &quot;8081:8081/tcp&quot; # dashboard
 </code></pre>
-<h1 id="drng-api"><a class="header" href="#drng-api">dRNG API</a></h1>
+<div id="chapter_begin" style="break-before: page; page-break-before: always;"></div><h1 id="drng-api"><a class="header" href="#drng-api">dRNG API</a></h1>
 <p>All the steps are described in the <a href="https://github.com/iotaledger/drng/wiki">dRNG wiki</a>.</p>
-<h1 id="setting-up-monitoring-dashboard"><a class="header" href="#setting-up-monitoring-dashboard">Setting up Monitoring Dashboard</a></h1>
+<div id="chapter_begin" style="break-before: page; page-break-before: always;"></div><h1 id="setting-up-monitoring-dashboard"><a class="header" href="#setting-up-monitoring-dashboard">Setting up Monitoring Dashboard</a></h1>
 <h2 id="motivation"><a class="header" href="#motivation">Motivation</a></h2>
 <p>GoShimmer is shipped with its internal node dashboard that you can reach at <code>127.0.0.1:8081</code> by default. While this dashboard provides some basic metrics information, its main functionality is to provide a graphical interface to interact with your node.</p>
 <p>Node operators who wish to have more insights into what is happening within their node have the option to enable a <a href="https://prometheus.io/">Prometheus</a> exporter plugin that gathers important metrics about their node. To visualize these metrics, a <a href="https://grafana.com/oss/grafana/">Grafana Dashboard</a> is utilized.</p>
@@ -1099,8 +1101,8 @@ Default login credentials are:
 <li>Click on <strong>Import</strong>. Paste the content of <a href="https://github.com/iotaledger/goshimmer/blob/develop/tools/monitoring/grafana/dashboards/local_dashboard.json">local_dashboard.json</a> in the <strong>Import via panel json</strong>, or download the life and use the <strong>Upload .json file</strong> option.</li>
 <li>Now you can open <strong>GoShimmer Local Metrics</strong> dashboard under <strong>Dashboards</strong>. Don't forget to start your node and run Prometheus!</li>
 </ol>
-<h1 id="application-logic"><a class="header" href="#application-logic">Application logic</a></h1>
-<h1 id="protocol-high-level-overview"><a class="header" href="#protocol-high-level-overview">Protocol high-level overview</a></h1>
+<div id="chapter_begin" style="break-before: page; page-break-before: always;"></div><h1 id="application-logic"><a class="header" href="#application-logic">Application logic</a></h1>
+<div id="chapter_begin" style="break-before: page; page-break-before: always;"></div><h1 id="protocol-high-level-overview"><a class="header" href="#protocol-high-level-overview">Protocol high-level overview</a></h1>
 <p>To orientate the reader, we provide a high-level overview of the protocol, following the natural life cycle of a message. The first module used—while the message is still being created—, is the <strong>Tip Selection</strong>(ADD LINK) module. Here, the node must choose a certain number (from two to eight) of other messages to reference, meaning that the newly created message will be cryptographically attached to these referenced messages. An honest node must always choose tips uniformly at random from a tip pool, i.e., from a set of still unreferenced messages that satisfy a certain set of conditions, as discussed on INSERT LINK. In the diagram below, the issuance process being described now is represented in the context of the complete protocol. </p>
 <p><img src="application_logic/Protocol_overview_own_message.png" alt="title" /></p>
 <p>Each node in the network has limited bandwidth, CPU, and memory. In order to avoid any node from being overloaded, the right to write in everybody else's Tangle is regulated by the <strong>Rate and Congestion Control Module</strong>. The first one dictates the maximum rate of issuance of messages by the introduction of a small amount of proof of work. However, if an attacker accelerates the message issuance—effectively flooding the network—, the difficulty of the proof of work for that node will increase exponentially. Eventually, the attacker will be incapable of issuing new messages. </p>
@@ -1136,8 +1138,8 @@ Default login credentials are:
 <li><strong>Grade 4</strong>: If the message achieved grade 3 and 30 minutes (??????????) have passed since the timestamp of the message</li>
 </ol>
 <p>For more details on the grades above, see LINK.</p>
-<h1 id="implementation-design"><a class="header" href="#implementation-design">Implementation design</a></h1>
-<h1 id="event-driven-model"><a class="header" href="#event-driven-model">Event driven model</a></h1>
+<div id="chapter_begin" style="break-before: page; page-break-before: always;"></div><h1 id="implementation-design"><a class="header" href="#implementation-design">Implementation design</a></h1>
+<div id="chapter_begin" style="break-before: page; page-break-before: always;"></div><h1 id="event-driven-model"><a class="header" href="#event-driven-model">Event driven model</a></h1>
 <p>Event driven model is popular approach often used for example in GUI applications, where a program is waiting for some external event to take place (e.g. mouse click) in order to perform some action.
 In case of GoShimmer there is no GUI, however it applies this architecture approach as it's really flexible and is used to handle communication with other nodes and other internal parts. 
 In GoShimmer some of those events can be e.g. arrival of new tangle message, peering request or plugin start. 
@@ -1203,7 +1205,7 @@ One thing to note, is that functions are not passed directly - first they are wr
 <pre><code class="language-go">somePlugin Plugin
 ThisEvent.Trigger(&amp;somePlugin)
 </code></pre>
-<h1 id="dependency-of-packages-and-plugins"><a class="header" href="#dependency-of-packages-and-plugins">Dependency of packages and plugins</a></h1>
+<div id="chapter_begin" style="break-before: page; page-break-before: always;"></div><h1 id="dependency-of-packages-and-plugins"><a class="header" href="#dependency-of-packages-and-plugins">Dependency of packages and plugins</a></h1>
 <p>In GoShimmer, new features are added through the <a href="implementation_design/plugin.html">plugin system</a>.
 When creating a new plugin, it must implement an interface shared with all other plugins, so it's easy to add new
 plugins and change their internal implementation without worrying about compatibility. 
@@ -1216,7 +1218,7 @@ The package should contain all struct and interface definitions used, as well as
 It should not reference any <code>plugin</code> packages from the <code>plugin/</code> directory as this could lead to circular dependencies between packages.</p>
 <p>There are no special interfaces or requirements that packages in the <code>packages/</code> directory are forced to follow. However, they should be independent of other packages if possible, 
 to avoid problems due to changing interfaces in other packages.</p>
-<h1 id="plugin-system"><a class="header" href="#plugin-system">Plugin system</a></h1>
+<div id="chapter_begin" style="break-before: page; page-break-before: always;"></div><h1 id="plugin-system"><a class="header" href="#plugin-system">Plugin system</a></h1>
 <p>GoShimmer is a complex application that is used in a research environment where requirements often changed and new ideas arise. 
 The Plugin system allows to quickly and easily add and remove modules that need to be started. However, one thing that might be non-intuitive about the use of plugins is that it's taken to an extreme - everything is run through plugins. 
 The only code that is not executed through a plugin system is the code responsible for configuring and starting the plugins.
@@ -1371,7 +1373,7 @@ if err := daemon.BackgroundWorker(backgroundWorkerName, start, shutdown.Priority
 	log.Panicf(&quot;Failed to start as daemon: %s&quot;, err)
 }
 </code></pre>
-<h1 id="configuration-parameters"><a class="header" href="#configuration-parameters">Configuration parameters</a></h1>
+<div id="chapter_begin" style="break-before: page; page-break-before: always;"></div><h1 id="configuration-parameters"><a class="header" href="#configuration-parameters">Configuration parameters</a></h1>
 <h2 id="customizing-configuration"><a class="header" href="#customizing-configuration">Customizing configuration</a></h2>
 <p>Users can pass configuration parameters in two ways when running GoShimmer. One way is through a JSON configuration file and another way is through command line arguments.
 Settings passed through command line arguments take precedence. The JSON configuration file is structured as a JSON object containing parameters and their values.
@@ -1450,7 +1452,7 @@ func init() {
 <p>In order to access the parameter value, a user can simply access the structure's field: <code>Parameters.ParamName</code> or <code>Parameters.ParamGroup.DetailedParam1</code> 
 and it will be populated either with the default value or values passed through a JSON config or command-line argument. </p>
 <p>This approach makes it more simple to define new parameters as well as makes accessing configuration values more clear. </p>
-<h1 id="object-storage"><a class="header" href="#object-storage">Object storage</a></h1>
+<div id="chapter_begin" style="break-before: page; page-break-before: always;"></div><h1 id="object-storage"><a class="header" href="#object-storage">Object storage</a></h1>
 <p>In GoShimmer <code>ObjectStorage</code>  is used as a base data structure for many data collection elements such as <code>branchStorage</code>, <code>conflictStorage</code>, <code>messageStorage</code> and others.
 It can be described by the following characteristics, it:</p>
 <ul>
@@ -1614,8 +1616,8 @@ cachedMessage := messageStorage.ComputeIfAbsent(newMessage, remappingFunction)
 </code></pre>
 </li>
 </ul>
-<h1 id="api"><a class="header" href="#api">API</a></h1>
-<h1 id="client-lib-interaction-with-layers"><a class="header" href="#client-lib-interaction-with-layers">Client Lib: Interaction with layers</a></h1>
+<div id="chapter_begin" style="break-before: page; page-break-before: always;"></div><h1 id="api"><a class="header" href="#api">API</a></h1>
+<div id="chapter_begin" style="break-before: page; page-break-before: always;"></div><h1 id="client-lib-interaction-with-layers"><a class="header" href="#client-lib-interaction-with-layers">Client Lib: Interaction with layers</a></h1>
 <blockquote>
 <p>This guide is meant for developers familiar with the Go programming language.</p>
 </blockquote>
@@ -1632,7 +1634,7 @@ cachedMessage := messageStorage.ComputeIfAbsent(newMessage, remappingFunction)
 </code></pre>
 <h4 id="a-note-about-errors"><a class="header" href="#a-note-about-errors">A note about errors</a></h4>
 <p>The API issues HTTP calls to the defined GoShimmer node. Non 200 HTTP OK status codes will reflect themselves as <code>error</code> in the returned arguments. Meaning that for example calling for attachments with a non existing/available transaction on a node, will return an <code>error</code> from the respective function. (There might be exceptions to this rule)</p>
-<h1 id="webapi---clientlib"><a class="header" href="#webapi---clientlib">WebAPI - clientLib</a></h1>
+<div id="chapter_begin" style="break-before: page; page-break-before: always;"></div><h1 id="webapi---clientlib"><a class="header" href="#webapi---clientlib">WebAPI - clientLib</a></h1>
 <p>The web API interface allows to access functionality of the node software via exposed http endpoints.</p>
 <h2 id="how-to-use-the-api"><a class="header" href="#how-to-use-the-api">How to use the API</a></h2>
 <p>The default port to access the web API is set to <code>8080:8080/tcp</code> in <code>docker-compose.yml</code>, where the first port number is the internal port number within the node software, and the second for the access from an http port. An example where these two would be set to different values, or the external port is not utilized, can be found in the docker-network tool (see also the <code>docker-compose.yml</code> file in the docker-network tool folder).</p>
@@ -1684,7 +1686,7 @@ return c.JSON(http.StatusOK, Response{ID: msg.ID().String()})
 <pre><code>can be sent to `http://127.0.0.1:8080/data`, which will issue a data message containing &quot;HelloWor&quot; (note that in this  example the data input is size limited.)
  
 </code></pre>
-<h1 id="mana-api-methods"><a class="header" href="#mana-api-methods">Mana API Methods</a></h1>
+<div id="chapter_begin" style="break-before: page; page-break-before: always;"></div><h1 id="mana-api-methods"><a class="header" href="#mana-api-methods">Mana API Methods</a></h1>
 <p>The mana APIs provide methods for people to retrieve the amount of access/consensus mana of nodes and outputs, as well as the event logs.</p>
 <p>HTTP APIs:</p>
 <ul>
@@ -2274,13 +2276,13 @@ for nodeID, e := range res.Logs {
 <tr><td align="left"><code>amount</code></td><td align="left">float64</td><td align="left">The amount of revoked mana.</td></tr>
 <tr><td align="left"><code>inputID</code></td><td align="left">string</td><td align="left">The input ID of revoked mana.</td></tr>
 </tbody></table>
-<h2 id="valueallowedmanapledge"><a class="header" href="#valueallowedmanapledge"><code>/value/allowedManaPledge</code></a></h2>
+<h2 id="manaallowedmanapledge"><a class="header" href="#manaallowedmanapledge"><code>/mana/allowedManaPledge</code></a></h2>
 <p>This returns the list of allowed mana pledge node IDs.</p>
 <h3 id="parameters-10"><a class="header" href="#parameters-10">Parameters</a></h3>
 <p>None.</p>
 <h3 id="examples-10"><a class="header" href="#examples-10">Examples</a></h3>
 <h4 id="curl-10"><a class="header" href="#curl-10">cURL</a></h4>
-<pre><code class="language-shell">curl http://localhost:8080/value/allowedManaPledge \
+<pre><code class="language-shell">curl http://localhost:8080/mana/allowedManaPledge \
 -X GET \
 -H 'Content-Type: application/json'
 </code></pre>
@@ -2324,9 +2326,9 @@ for _, id := range res.Consensus.Allowed {
 <h4 id="allowedpledge"><a class="header" href="#allowedpledge"><code>AllowedPledge</code></a></h4>
 <table><thead><tr><th align="left">field</th><th align="left">Type</th><th align="left">Description</th></tr></thead><tbody>
 <tr><td align="left"><code>isFilterEnabled</code></td><td align="left">bool</td><td align="left">A flag shows that if mana pledge filter is enabled.</td></tr>
-<tr><td align="left"><code>allowed</code></td><td align="left">[]string</td><td align="left">A list of node ID that allow to be pledged mana.</td></tr>
+<tr><td align="left"><code>allowed</code></td><td align="left">[]string</td><td align="left">A list of node ID that allow to be pledged mana. This list has effect only if <code>isFilterEnabled</code> is <code>true</code></td></tr>
 </tbody></table>
-<p>The dRNG module provides API to retrieve both information on the committees as well as the latest randomness.</p>
+<div id="chapter_begin" style="break-before: page; page-break-before: always;"></div><p>The dRNG module provides API to retrieve both information on the committees as well as the latest randomness.</p>
 <pre><code class="language-bash">curl --request GET \
   --url http://&lt;address&gt;:&lt;port&gt;/drng/info/committee
 </code></pre>
@@ -2383,7 +2385,7 @@ for _, id := range res.Consensus.Allowed {
   ]
 }
 </code></pre>
-<h1 id="communication-layer-apis"><a class="header" href="#communication-layer-apis">Communication Layer APIs</a></h1>
+<div id="chapter_begin" style="break-before: page; page-break-before: always;"></div><h1 id="communication-layer-apis"><a class="header" href="#communication-layer-apis">Communication Layer APIs</a></h1>
 <p>The communication layer represents the base Tangle layer where so called <code>Messages</code> are gossiped around. A <code>Message</code> contains payloads and it is up to upper layers to interpret and derive functionality out of them.</p>
 <p>The API provides three functions to interact with this primitive layer:</p>
 <ul>
@@ -2420,7 +2422,7 @@ fmt.Println(string(message.Payload))
 <pre><code class="language-go">helloPayload := payload.NewData([]byte{&quot;Hello Goshimmer World!&quot;})
 messageID, err := goshimAPI.SendPayload(helloPayload.Bytes())
 </code></pre>
-<h1 id="value-layer-apis"><a class="header" href="#value-layer-apis">Value Layer APIs</a></h1>
+<div id="chapter_begin" style="break-before: page; page-break-before: always;"></div><h1 id="value-layer-apis"><a class="header" href="#value-layer-apis">Value Layer APIs</a></h1>
 <p>The value layer builds on top of the communication layer. It encapsulates the functionality of token transfers, ledger representation, conflict state and consensus via FPC.</p>
 <p>Note that the value layer operates on <code>Value Objects</code> which is a payload type which is transferred via <code>Messages</code>. A <code>Value Object</code> encapsulates the transaction spending <a href="https://en.wikipedia.org/wiki/Unspent_transaction_output">UTXOs</a> to new outputs and references two other <code>Value Objects</code>. Please refer to <a href="apis/../concepts/layers.html">concepts &amp; layers</a> for a more in depth explanation of the value layer.</p>
 <p>The API provides multiple functions to interact with the value layer and retrieve/issue the corresponding objects described above.</p>
@@ -2519,8 +2521,8 @@ if output.InclusionState.Confirmed {
 </code></pre>
 <p>The color will then be equivalent to the transaction ID.</p>
 <p>Note that coloring tokens doesn't increase/decrease the supply of tokens by any means. It merely colors the tokens and it is up to applications to interpret their intend.</p>
-<h1 id="tooling"><a class="header" href="#tooling">Tooling</a></h1>
-<h1 id="docker-private-network"><a class="header" href="#docker-private-network">Docker private network</a></h1>
+<div id="chapter_begin" style="break-before: page; page-break-before: always;"></div><h1 id="tooling"><a class="header" href="#tooling">Tooling</a></h1>
+<div id="chapter_begin" style="break-before: page; page-break-before: always;"></div><h1 id="docker-private-network"><a class="header" href="#docker-private-network">Docker private network</a></h1>
 <p>We provide a tool at <code>tools/docker-network</code> with which a local test network can be set up locally with docker. </p>
 <p><img src="tooling/../../images/docker-network.png" alt="Docker network" /></p>
 <h2 id="how-to-use-the-tool"><a class="header" href="#how-to-use-the-tool">How to use the tool</a></h2>
@@ -2606,7 +2608,7 @@ that specifies the number of tips that nodes should retain. This setting exists 
     &quot;tangleWidth&quot;: 10
   },
 </code></pre>
-<h1 id="integration-tests-with-docker"><a class="header" href="#integration-tests-with-docker">Integration tests with Docker</a></h1>
+<div id="chapter_begin" style="break-before: page; page-break-before: always;"></div><h1 id="integration-tests-with-docker"><a class="header" href="#integration-tests-with-docker">Integration tests with Docker</a></h1>
 <p><img src="tooling/../../images/integration-testing.png" alt="Integration testing" /></p>
 <p>Running the integration tests spins up a <code>tester</code> container within which every test can specify its own GoShimmer network with Docker as schematically shown in the figure above.</p>
 <p>Peers can communicate freely within their Docker network and this is exactly how the tests are run using the <code>tester</code> container.
@@ -2636,8 +2638,8 @@ defer n.Shutdown()
 <p>Useful for development is to only execute the test you're currently building. For that matter, simply modify the <code>docker-compose.yml</code> file as follows:</p>
 <pre><code class="language-yaml">entrypoint: go test ./tests -run &lt;YOUR_TEST_NAME&gt; -v -mod=readonly
 </code></pre>
-<h1 id="specification-of-implementation"><a class="header" href="#specification-of-implementation">Specification of Implementation</a></h1>
-<h1 id="mana-implementation"><a class="header" href="#mana-implementation">Mana Implementation</a></h1>
+<div id="chapter_begin" style="break-before: page; page-break-before: always;"></div><h1 id="specification-of-implementation"><a class="header" href="#specification-of-implementation">Specification of Implementation</a></h1>
+<div id="chapter_begin" style="break-before: page; page-break-before: always;"></div><h1 id="mana-implementation"><a class="header" href="#mana-implementation">Mana Implementation</a></h1>
 <p>This document provides a high level overview of how mana is implemented in GoShimmer.</p>
 <h2 id="introduction"><a class="header" href="#introduction">Introduction</a></h2>
 <p>Mana is a reputation system for nodes within the IOTA network.</p>
@@ -3138,7 +3140,7 @@ data but can only visualize time series. Therefore, both of these ways will be u
 <li>Some previously described metrics could be visualized here as well, to give the chance to people without
 a node to take a look. As an input, a high mana node's perception should be used.</li>
 </ul>
-<h1 id="markers"><a class="header" href="#markers">Markers</a></h1>
+<div id="chapter_begin" style="break-before: page; page-break-before: always;"></div><h1 id="markers"><a class="header" href="#markers">Markers</a></h1>
 <h2 id="summary"><a class="header" href="#summary">Summary</a></h2>
 <p>In order to know whether a message in the Tangle is orphaned or not, we introduce <strong>grades of finality</strong> to interpret the status of a message. The higher grade of finality is determined by the <strong>approval weight</strong>, which is the proportion of active consensus mana approving a given message.</p>
 <p>In order to compute the approval weight of a given message  we need to traverse the Tangle from the message to the tips and sum up the active consensus mana of all the messages in its future cone. A <strong>marker</strong> is a tool to efficiently estimate the approval weight of a message and that reduces the portion of the Tangle we need to walk, and which finally results in the grade of finality.</p>
@@ -3523,8 +3525,8 @@ func (m *Manager) IsInPastCone(earlierMarkers *MarkersPair, laterMarkers *Marker
 <p>To approximate the approval weight of a message, we simply retrieve the approval weight of its <code>FM</code> list. Since the message is in the past cone of its <code>FM</code>s, the approval weight and the finality will be at least the same as its <code>FM</code>s. This will of course be a lower bound (which is the “safe” bound), but if the markers are set frequently enough, it should be a good approximation.</p>
 <p>Details of managing approval weight of each marker and approval weight calculation of each messages refer to the Approval Weight Spec.
 &gt;:mega: Add link here. </p>
-<h1 id="concepts"><a class="header" href="#concepts">Concepts</a></h1>
-<h1 id="glossary-1"><a class="header" href="#glossary-1">Glossary</a></h1>
+<div id="chapter_begin" style="break-before: page; page-break-before: always;"></div><h1 id="concepts"><a class="header" href="#concepts">Concepts</a></h1>
+<div id="chapter_begin" style="break-before: page; page-break-before: always;"></div><h1 id="glossary-1"><a class="header" href="#glossary-1">Glossary</a></h1>
 <hr />
 <h2 id="consensus"><a class="header" href="#consensus">CONSENSUS</a></h2>
 <p>Agreement on a specific datum or value in distributed multi-agent systems, in the presence of faulty processes.</p>
@@ -3629,7 +3631,7 @@ func (m *Manager) IsInPastCone(earlierMarkers *MarkersPair, laterMarkers *Marker
 <hr />
 <h2 id="markers-1"><a class="header" href="#markers-1">MARKERS</a></h2>
 <p>A tool that exists only locally and allows performing certain calculations more efficiently. Such as approval weight calculation or the existence of certain messages in the past or future cone of another message.</p>
-<h1 id="layers"><a class="header" href="#layers">Layers</a></h1>
+<div id="chapter_begin" style="break-before: page; page-break-before: always;"></div><h1 id="layers"><a class="header" href="#layers">Layers</a></h1>
 <blockquote>
 <p>DISCLAIMER: The described layers describe how things are implemented in GoShimmer. They might not reflect final Coordicide specification or implementations.</p>
 </blockquote>
@@ -3782,8 +3784,8 @@ That is, after the vote a transaction is either confirmed (definitely liked) or 
 <p>If <code>u</code> approves <code>v</code>, then <code>g(v) ≥ g(u)</code>, that is, if a node likes u then it likes any transaction <code>u</code> approves, and if the node dislikes <code>v</code> then it dislikes any transaction that approve <code>v</code>. </p>
 <p>Another way of saying it is that if we like <code>v</code> then we like all of its past cone, and if we dislike <code>v</code> we dislike all of its future cone.
 The votes of any node will follow the monotonicity rule.</p>
-<h1 id="team-resources"><a class="header" href="#team-resources">Team resources</a></h1>
-<h1 id="how-to-do-a-release"><a class="header" href="#how-to-do-a-release">How to do a release</a></h1>
+<div id="chapter_begin" style="break-before: page; page-break-before: always;"></div><h1 id="team-resources"><a class="header" href="#team-resources">Team resources</a></h1>
+<div id="chapter_begin" style="break-before: page; page-break-before: always;"></div><h1 id="how-to-do-a-release"><a class="header" href="#how-to-do-a-release">How to do a release</a></h1>
 <ol>
 <li>Create a PR into <code>develop</code> updating the banner version (<code>plugins/banner.AppVersion</code>) and mentioning the changes in <code>CHANGELOG.md</code></li>
 <li>Create a PR merging <code>develop</code> into <code>master</code></li>
@@ -3796,7 +3798,7 @@ The votes of any node will follow the monotonicity rule.</p>
 <li>Pull newest image</li>
 <li>Start the node</li>
 </ol>
-<h1 id="code-guidelines"><a class="header" href="#code-guidelines">Code guidelines</a></h1>
+<div id="chapter_begin" style="break-before: page; page-break-before: always;"></div><h1 id="code-guidelines"><a class="header" href="#code-guidelines">Code guidelines</a></h1>
 <h2 id="general-guidelines"><a class="header" href="#general-guidelines">General guidelines</a></h2>
 <ul>
 <li>Don’t use <code>log.Fatal()</code> or <code>os.Exit()</code> outside of the main. It immediately terminates the program and all defers are ignored and no graceful shutdown is possible. It can lead to inconsistencies. Propagate the error up to the main and let the main function exit instead. Avoid panics as well, almost always use errors. <a href="https://github.com/iotaledger/goshimmer/blob/f75ce47eeaa3bf930b368754ac24b72f768a5964/plugins/autopeering/autopeering.go#L135">Example</a>.</li>
@@ -3870,7 +3872,7 @@ func main() {
     }
 }
 </code></pre>
-<h1 id="golangci-lint"><a class="header" href="#golangci-lint">golangci-lint</a></h1>
+<div id="chapter_begin" style="break-before: page; page-break-before: always;"></div><h1 id="golangci-lint"><a class="header" href="#golangci-lint">golangci-lint</a></h1>
 <h2 id="overview-1"><a class="header" href="#overview-1">Overview</a></h2>
 <p>We use golangci-lint v1.38.0 to run various types of linters on our codebase. All settings are stored in the <code>.golangci.yml</code> file.
 golangci-lint is very flexible and customizable. Check the docs to see how configuration works https://golangci-lint.run/usage/configuration/</p>
@@ -3912,7 +3914,7 @@ If you already enabled it in the configuration json file as described above and 
 try to set the following env variables when building the docker image:</p>
 <pre><code>DOCKER_BUILDKIT=1 COMPOSE_DOCKER_CLI_BUILD=1 docker build -t iotaledger/goshimmer .
 </code></pre>
-<h1 id="goshimmer-analysis-dashboard"><a class="header" href="#goshimmer-analysis-dashboard">GoShimmer Analysis Dashboard</a></h1>
+<div id="chapter_begin" style="break-before: page; page-break-before: always;"></div><h1 id="goshimmer-analysis-dashboard"><a class="header" href="#goshimmer-analysis-dashboard">GoShimmer Analysis Dashboard</a></h1>
 <p>Programmed using modern web technologies.</p>
 <h3 id="dashboard-in-dev-mode"><a class="header" href="#dashboard-in-dev-mode">Dashboard in dev mode</a></h3>
 <ol>
