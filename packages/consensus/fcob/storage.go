@@ -50,6 +50,18 @@ func NewStorage(store kvstore.KVStore) (storage *Storage) {
 	return
 }
 
+func (s *Storage) OpinionStorageSize() uint64 {
+	return s.opinionStorage.PersistedSize()
+}
+
+func (s *Storage) TimestampOpinionStorageSize() uint64 {
+	return s.timestampOpinionStorage.PersistedSize()
+}
+
+func (s *Storage) MessageMetadataStorageSize() uint64 {
+	return s.messageMetadataStorage.PersistedSize()
+}
+
 // OpinionEssence returns the OpinionEssence (i.e., a copy of the triple{timestamp, liked, levelOfKnowledge})
 // of given transactionID.
 func (s *Storage) OpinionEssence(transactionID ledgerstate.TransactionID) (opinion OpinionEssence) {
@@ -76,65 +88,25 @@ func (s *Storage) MessageMetadata(messageID tangle.MessageID) (cachedMessageMeta
 }
 
 // StoreTimestampOpinion stores the TimestampOpinion in the object Storage. It returns true if it was stored or updated.
-func (s *Storage) StoreTimestampOpinion(timestampOpinion *TimestampOpinion) (modified bool) {
-	cachedTimestampOpinion := &CachedTimestampOpinion{CachedObject: s.timestampOpinionStorage.ComputeIfAbsent(timestampOpinion.MessageID.Bytes(), func(key []byte) objectstorage.StorableObject {
-		timestampOpinion.SetModified()
-		timestampOpinion.Persist()
-		modified = true
+func (s *Storage) StoreTimestampOpinion(timestampOpinion *TimestampOpinion) (stored bool) {
+	cachedTimestampOpinion, stored := s.timestampOpinionStorage.StoreIfAbsent(timestampOpinion)
 
-		return timestampOpinion
-	})}
-
-	if modified {
+	if stored {
 		cachedTimestampOpinion.Release()
 		return
 	}
-
-	cachedTimestampOpinion.Consume(func(loadedTimestampOpinion *TimestampOpinion) {
-		if loadedTimestampOpinion.Equals(timestampOpinion) {
-			return
-		}
-
-		loadedTimestampOpinion.LoK = timestampOpinion.LoK
-		loadedTimestampOpinion.Value = timestampOpinion.Value
-
-		timestampOpinion.SetModified()
-		timestampOpinion.Persist()
-		modified = true
-	})
 
 	return
 }
 
 // StoreMessageMetadata stores the MessageMetadata in the object Storage. It returns true if it was stored or updated.
-func (s *Storage) StoreMessageMetadata(messageMetadata *MessageMetadata) (modified bool) {
-	cachedMessageMetadata := &CachedMessageMetadata{CachedObject: s.messageMetadataStorage.ComputeIfAbsent(messageMetadata.id.Bytes(), func(key []byte) objectstorage.StorableObject {
-		messageMetadata.SetModified()
-		messageMetadata.Persist()
-		modified = true
+func (s *Storage) StoreMessageMetadata(messageMetadata *MessageMetadata) (stored bool) {
+	cachedMessageMetadata, stored := s.messageMetadataStorage.StoreIfAbsent(messageMetadata)
 
-		return messageMetadata
-	})}
-
-	if modified {
+	if stored {
 		cachedMessageMetadata.Release()
 		return
 	}
-
-	cachedMessageMetadata.Consume(func(loadedMessageMetadata *MessageMetadata) {
-		if loadedMessageMetadata.id == messageMetadata.id {
-			return
-		}
-
-		loadedMessageMetadata.messageOpinionFormed = messageMetadata.messageOpinionFormed
-		loadedMessageMetadata.payloadOpinionFormed = messageMetadata.payloadOpinionFormed
-		loadedMessageMetadata.timestampOpinionFormed = messageMetadata.timestampOpinionFormed
-		loadedMessageMetadata.messageOpinionTriggered = messageMetadata.messageOpinionTriggered
-
-		messageMetadata.SetModified()
-		messageMetadata.Persist()
-		modified = true
-	})
 
 	return
 }
@@ -161,7 +133,7 @@ const (
 	PrefixMessageMetadata
 
 	// cacheTime defines the duration that the object Storage caches objects.
-	cacheTime = 0 * time.Second
+	cacheTime = 1 * time.Second
 )
 
 // endregion ///////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -272,7 +244,6 @@ func (m *MessageMetadata) SetPayloadOpinionFormed(payloadOpinionFormed bool) (mo
 	modified = true
 
 	m.SetModified()
-	m.Persist()
 
 	return
 }
@@ -299,7 +270,6 @@ func (m *MessageMetadata) SetTimestampOpinionFormed(timestampOpinionFormed bool)
 	modified = true
 
 	m.SetModified()
-	m.Persist()
 
 	return
 }
@@ -337,7 +307,6 @@ func (m *MessageMetadata) SetMessageOpinionFormed(messageOpinionFormed bool) (mo
 	modified = true
 
 	m.SetModified()
-	m.Persist()
 
 	return
 }
@@ -364,7 +333,6 @@ func (m *MessageMetadata) SetMessageOpinionTriggered(messageOpinionTriggered boo
 	modified = true
 
 	m.SetModified()
-	m.Persist()
 
 	return
 }
@@ -400,7 +368,7 @@ func (m *MessageMetadata) ObjectStorageKey() []byte {
 // ObjectStorageValue marshals the MessageMetadata into a sequence of bytes that are used as the value part in the
 // object Storage.
 func (m *MessageMetadata) ObjectStorageValue() []byte {
-	return marshalutil.New(3 * marshalutil.BoolSize).
+	return marshalutil.New(4*marshalutil.BoolSize + marshalutil.TimeSize).
 		WriteBool(m.PayloadOpinionFormed()).
 		WriteBool(m.TimestampOpinionFormed()).
 		WriteBool(m.MessageOpinionFormed()).
