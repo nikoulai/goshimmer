@@ -3384,6 +3384,8 @@ while the analysis and visualizer dashboard, as well as the <code>master_peer's<
 <p>It is therefore possible to send messages to the local network via the <code>master_peer</code>. Log messages of a specific containter can be followed via </p>
 <pre><code>docker logs --follow CONTAINERNAME
 </code></pre>
+<h2 id="snapshot-tool"><a class="header" href="#snapshot-tool">Snapshot tool</a></h2>
+<p>A snapshot tool is provided in the tools folder. The snapshot file that is created must be moved into the <code>integration-tests/assets</code> folder. There, rename and replace the existing bin file (<code>7R1itJx5hVuo9w9hjg5cwKFmek4HMSoBDgJZN8hKGxih.bin</code>). After restarting the docker network the snapshot file will be loaded.</p>
 <h2 id="how-to-use-message-approval-check-tool"><a class="header" href="#how-to-use-message-approval-check-tool">How to use message approval check tool</a></h2>
 <p><code>get_approval_csv.sh</code> script helps you conveniently trigger the message approval checks on all nodes in the docker
 network, and gather their results in the <code>csv</code> folder.</p>
