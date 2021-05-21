@@ -676,7 +676,8 @@ to generate addresses and sign transactions. The generated seed is persisted in 
 	  &quot;username&quot;: &quot;goshimmer&quot;,
 	  &quot;password&quot;: &quot;goshimmer&quot;
 	},
-	&quot;reuse_addresses&quot;: false
+	&quot;reuse_addresses&quot;: false,
+	&quot;faucetPowDifficulty&quot;: 25
 }
 </code></pre>
 <ul>
@@ -684,6 +685,7 @@ to generate addresses and sign transactions. The generated seed is persisted in 
 <li>If the node has basic authentication enabled, you may configure your wallet with a username and password.</li>
 <li>The <code>resuse_addresses</code> option specifies if the wallet should treat addresses as reusable, or whether it should try to
 spend from any wallet address only once.</li>
+<li><code>faucetPowDifficulty</code> defines the difficulty of the faucet request POW the wallet should do.</li>
 </ul>
 <p>To perform the wallet initialization, run the <code>init</code> command of the wallet:</p>
 <pre><code class="language-bash">./cli-wallet init
@@ -757,6 +759,29 @@ STATUS  BALANCE                 COLOR                                           
 <p>1000 IOTA tokens were tagged with the color <code>HJdkZkn6MKda9fNuXFQZ8Dzdzu1wvuSUQp8QX1AMH4wn</code> to create <code>MyUniqueToken</code>.
 The IOTA balance is decremented, but we have received assets in return for the used IOTAs. The created asset tokens
 behave exactly like an IOTA token, they can be transferred without fees to any address.</p>
+<h3 id="fetching-info-of-a-digital-asset"><a class="header" href="#fetching-info-of-a-digital-asset">Fetching Info of a Digital Asset</a></h3>
+<p>In the previous step we have created a digital asset called <code>MyUniqueToken</code>. It's name, symbol and initial supply
+is known to the wallet because we provided this input while creating it. The network however doesn't store this
+information, it only knows its unique identifier, the assetID (or color).
+To help others discover the attributes of the asset, upon asset creation, the <code>cli-wallet</code> automatically sends this
+information to a metadata registry service.
+When you receive an asset unknown locally to your wallet, it queries this registry service for the metadata. You can
+also query this metadata yourself by running the <code>asset-info</code> command in the wallet:</p>
+<pre><code class="language-bash">./cli-wallet asset-info -id HJdkZkn6MKda9fNuXFQZ8Dzdzu1wvuSUQp8QX1AMH4wn
+</code></pre>
+<pre><code class="language-bash">IOTA Pollen CLI-Wallet 0.2
+
+Asset Info
+
+PROPERTY                        VALUE
+-----------------------         --------------------------------------------
+Name                            MyUniqueToken
+Symbol                          MUT
+AssetID(color)                  HJdkZkn6MKda9fNuXFQZ8Dzdzu1wvuSUQp8QX1AMH4wn
+Initial Supply                  1000
+Creating Transaction            G7ergf7YzVUSqQMS69jGexYtihbhpsvELEsPHWToYtKj
+Network                         test
+</code></pre>
 <h2 id="sending-tokens-and-assets"><a class="header" href="#sending-tokens-and-assets">Sending Tokens and Assets</a></h2>
 <p>Funds in IOTA are tied to addresses. Only the owner of the private key behind the address is able to spend (move) the funds,
 let them be IOTA tokens or digital assets. In previous steps, we have requested funds from the faucet, which actually sent
