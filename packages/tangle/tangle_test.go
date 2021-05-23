@@ -217,7 +217,7 @@ func TestTangle_MissingMessages(t *testing.T) {
 	)
 
 	// create badger store
-	badger, err := testutil.BadgerDB(t)
+	badger, err := testutil.PebbleDB(t)
 	require.NoError(t, err)
 
 	// create the tangle
@@ -367,7 +367,7 @@ func TestTangle_Flow(t *testing.T) {
 		messageWorkerQueueSize = 1000
 	)
 	// create badger store
-	badger, err := testutil.BadgerDB(t)
+	badger, err := testutil.PebbleDB(t)
 	require.NoError(t, err)
 
 	// map to keep track of the tips
