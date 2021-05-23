@@ -7,6 +7,7 @@ require (
 	github.com/StackExchange/wmi v0.0.0-20190523213315-cbe66965904d // indirect
 	github.com/beevik/ntp v0.3.0
 	github.com/cockroachdb/errors v1.8.4
+	github.com/cockroachdb/pebble v0.0.0-20210520205706-edcfca5432fb // indirect
 	github.com/dgraph-io/badger/v2 v2.0.3
 	github.com/drand/drand v1.1.1
 	github.com/drand/kyber v1.1.2
@@ -15,7 +16,7 @@ require (
 	github.com/golang/protobuf v1.4.3
 	github.com/golang/snappy v0.0.2 // indirect
 	github.com/gorilla/websocket v1.4.2
-	github.com/iotaledger/hive.go v0.0.0-20210427112115-75c7ebf4ebbb
+	github.com/iotaledger/hive.go v0.0.0-20210521235256-53707d3d14ce
 	github.com/kr/pretty v0.2.1 // indirect
 	github.com/labstack/echo v3.3.10+incompatible
 	github.com/labstack/gommon v0.3.0
