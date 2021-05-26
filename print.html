@@ -393,37 +393,47 @@ Pulling goshimmer (iotaledger/goshimmer:0.2.0)...
 <p>When the node starts for the first time, it must synchronize its state with the rest of the network. GoShimmer currently uses the Tangle Time to help nodes determine their synced status.</p>
 <h4 id="dashboard"><a class="header" href="#dashboard">Dashboard</a></h4>
 <p>The dashboard of your GoShimmer node should be accessible via <code>http://&lt;your-ip&gt;:8081</code>. If your node is still synchronizing, you might see a higher inflow of MPS.</p>
-<p><img src="https://i.imgur.com/8xAvi7X.png" alt="" /></p>
+<p><img src="https://user-images.githubusercontent.com/11289354/119599542-c3985e00-be17-11eb-8769-7e639f365ae5.png" alt="" /></p>
 <p>After a while, your node's dashboard should also display up to 8 neighbors:
 <img src="https://i.imgur.com/gAyAXK9.png" alt="" /></p>
 <h4 id="http-api"><a class="header" href="#http-api">HTTP API</a></h4>
 <p>GoShimmer also exposes an HTTP API. To check whether that works correctly, you can access it via <code>http://&lt;your-ip&gt;:8080/info</code> which should return a JSON response in the form of:</p>
 <pre><code>{
-  &quot;version&quot;: &quot;v0.2.0&quot;,
-  &quot;synced&quot;: true,
-  &quot;identityID&quot;: &quot;69RxiehGQ2c&quot;,
-  &quot;publicKey&quot;: &quot;52Gzw9bo7k2dARFi4yxtt3B8xMht5UeFQX7pWdLFnxV5&quot;,
+  &quot;version&quot;: &quot;v0.6.2&quot;,
+  &quot;networkVersion&quot;: 30,
+  &quot;tangleTime&quot;: {
+    &quot;messageID&quot;: &quot;6ndfmfogpH9H8C9X9Fbb7Jmuf8RJHQgSjsHNPdKUUhoJ&quot;,
+    &quot;time&quot;: 1621879864032595415,
+    &quot;synced&quot;: true
+  },
+  &quot;identityID&quot;: &quot;D9SPFofAGhA5V9QRDngc1E8qG9bTrnATmpZMdoyRiBoW&quot;,
+  &quot;identityIDShort&quot;: &quot;XBgY5DsUPng&quot;,
+  &quot;publicKey&quot;: &quot;9DB3j9cWYSuEEtkvanrzqkzCQMdH1FGv3TawJdVbDxkd&quot;,
+  &quot;solidMessageCount&quot;: 74088,
+  &quot;totalMessageCount&quot;: 74088,
   &quot;enabledPlugins&quot;: [
-    &quot;Analysis-Client&quot;,
-    &quot;Autopeering&quot;,
-    &quot;CLI&quot;,
-    &quot;Config&quot;,
-    &quot;DRNG&quot;,
-    &quot;Dashboard&quot;,
-    &quot;Database&quot;,
-    &quot;Gossip&quot;,
     ...
-    &quot;WebAPI info Endpoint&quot;,
-    &quot;WebAPI message Endpoint&quot;
   ],
   &quot;disabledPlugins&quot;: [
-    &quot;Analysis-Dashboard&quot;,
-    &quot;Analysis-Server&quot;,
-    &quot;Banner&quot;,
-    &quot;Bootstrap&quot;,
-    &quot;Faucet&quot;,
-    &quot;WebAPI Auth&quot;
-  ]
+    ...
+  ],
+  &quot;mana&quot;: {
+    &quot;access&quot;: 1,
+    &quot;accessTimestamp&quot;: &quot;2021-05-24T20:11:05.451224937+02:00&quot;,
+    &quot;consensus&quot;: 10439991680906,
+    &quot;consensusTimestamp&quot;: &quot;2021-05-24T20:11:05.451228137+02:00&quot;
+  },
+  &quot;manaDelegationAddress&quot;: &quot;1HMQic52dz3xLY2aeDXcDhX53LgbsHghdfD8eGXR1qVHy&quot;,
+  &quot;mana_decay&quot;: 0.00003209,
+  &quot;scheduler&quot;: {
+    &quot;running&quot;: true,
+    &quot;rate&quot;: &quot;5ms&quot;,
+    &quot;nodeQueueSizes&quot;: {}
+  },
+  &quot;rateSetter&quot;: {
+    &quot;rate&quot;: 20000,
+    &quot;size&quot;: 0
+  }
 }
 </code></pre>
 <h2 id="managing-the-goshimmer-node-lifecycle"><a class="header" href="#managing-the-goshimmer-node-lifecycle">Managing the GoShimmer node lifecycle</a></h2>
@@ -594,20 +604,18 @@ $ cp local_dashboard.json grafana/dashboards
 </ul>
 <div id="chapter_begin" style="break-before: page; page-break-before: always;"></div><h1 id="how-to-obtain-tokens-from-the-faucet"><a class="header" href="#how-to-obtain-tokens-from-the-faucet">How to obtain tokens from the faucet</a></h1>
 <h2 id="the-faucet-dapp"><a class="header" href="#the-faucet-dapp">The faucet dApp</a></h2>
-<p>The faucet is a dApp built on top of the <a href="tutorials/../concepts/layers.html">value and communication layer</a>. It sends IOTA tokens to addresses by listening to faucet request messages. A faucet message is a Message containing an address encoded in Base58, and it is retrievable via <a href="tutorials/../apis/communication.html"><code>FindMessageByID()</code></a>.
-After sending a faucet request message, you can check your balances via <a href="tutorials/../apis/value.html"><code>GetUnspentOutputs()</code></a>.</p>
+<p>The faucet is a dApp built on top of the <a href="tutorials/../concepts/layers.html">value and communication layer</a>. It sends IOTA tokens to addresses by listening to faucet request messages. A faucet message is a Message containing an address encoded in Base58, you can retieve the faucet message and check your balances via API methods.</p>
 <h2 id="obtain-tokens-from-the-faucet"><a class="header" href="#obtain-tokens-from-the-faucet">Obtain tokens from the faucet</a></h2>
 <p>There are 3 ways to send a faucet request message to obtain IOTA tokens:</p>
 <ol>
 <li>Via the Go client library</li>
 <li>Via the HTTP API directly</li>
-<li>Requesting tokens via the GoShimmer web dashboard</li>
 <li>Via the wallet</li>
 </ol>
 <h3 id="via-the-go-client-library"><a class="header" href="#via-the-go-client-library">Via the Go client library</a></h3>
 <p>Follow the instructions in <a href="tutorials/../apis/api.html">Use the API</a> to set up the API instance. </p>
 <p>Example:</p>
-<pre><code>// provide your Base58 encoded destination address
+<pre><code class="language-go">// provide your Base58 encoded destination address
 messageID, err := goshimAPI.SendFaucetRequest(&quot;JaMauTaTSVBNc13edCCvBK9fZxZ1KKW5fXegT1B7N9jY&quot;)
 
 ---- or
@@ -618,25 +626,22 @@ addr := wallet.Seed().Address(0)
 messageID, err := goshimAPI.SendFaucetRequest(addr.String())
 </code></pre>
 <h3 id="via-the-http-api-directly"><a class="header" href="#via-the-http-api-directly">Via the HTTP API directly</a></h3>
-<p>The URI for POSTing faucet request messages is <code>http://&lt;host&gt;:&lt;web-api-port&gt;/faucet</code></p>
+<p>The URI for POSTing faucet request messages is <code>http://&lt;host&gt;:&lt;web-api-port&gt;/faucet</code>. Refer to <a href="tutorials/../apis/faucet">faucet API methods</a> for more details.</p>
 <table><thead><tr><th>Parameter</th><th>Required</th><th>Description</th><th>Type</th></tr></thead><tbody>
 <tr><td><code>address</code></td><td>Yes</td><td>Destination address to which to send tokens to encoded in Base58</td><td>string</td></tr>
 </tbody></table>
 <p>cURL example:</p>
-<pre><code>curl http://localhost:8080 \
+<pre><code>curl http://localhost:8080/faucet \
 -X POST \
 -H 'Content-Type: application/json' \
 -d '{
   &quot;address&quot;: &quot;JaMauTaTSVBNc13edCCvBK9fZxZ1KKW5fXegT1B7N9jY&quot;
 }'
 </code></pre>
-<h3 id="requesting-tokens-via-the-goshimmer-web-dashboard"><a class="header" href="#requesting-tokens-via-the-goshimmer-web-dashboard">Requesting tokens via the GoShimmer web dashboard</a></h3>
-<p>You can send the faucet request message via the faucet tab on the dashboard by filling in a Base58 encoded address to receive tokens.</p>
-<p>You can then use the link provided below to check the funds on your supplied address.</p>
-<img src="https://user-images.githubusercontent.com/11289354/85510396-d9127000-b629-11ea-8d5c-d5bb10d7c34a.png" width="650">
 <h3 id="via-the-wallet"><a class="header" href="#via-the-wallet">Via the wallet</a></h3>
-<p>Currently, there are two GUI wallets to use, one from the community member <a href="https://github.com/Dr-Electron/ElectricShimmer">Dr-Electron ElectricShimmer</a> and another from the foundation <a href="https://github.com/iotaledger/pollen-wallet/tree/master">pollen-wallet</a>. You can request funds from the faucet with these two implementations.</p>
-<p>As for pollen-wallet, follow the instructions in <a href="https://github.com/iotaledger/pollen-wallet/tree/master">pollen-wallet</a> to build and execute the wallet.</p>
+<p>Currently, there is one cli-wallet that you can refer to the tutorial <a href="tutorials/./wallet.html">Command Line Wallet
+</a> and two GUI wallets to use. One from the community member <a href="https://github.com/Dr-Electron/ElectricShimmer">Dr-Electron ElectricShimmer</a> and another from the foundation <a href="https://github.com/iotaledger/pollen-wallet/tree/master">pollen-wallet</a>. You can request funds from the faucet with these two implementations.</p>
+<p>As for pollen-wallet, follow the instructions in <a href="https://github.com/iotaledger/pollen-wallet/tree/master">pollen-wallet</a> to build and execute the wallet, or download executable file directly in <a href="https://github.com/iotaledger/pollen-wallet/releases">pollen wallet release</a>.</p>
 <p>You can request funds by pressing the <code>Request Funds</code> in the wallet.</p>
 <p><strong>Note</strong>: You need to create a wallet first before requesting funds.</p>
 <img src="https://user-images.githubusercontent.com/11289354/88524828-70edea00-d02c-11ea-9a01-d7e1a8b7bdfd.png" height="450">

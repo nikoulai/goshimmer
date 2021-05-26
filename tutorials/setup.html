@@ -371,37 +371,47 @@ Pulling goshimmer (iotaledger/goshimmer:0.2.0)...
 <p>When the node starts for the first time, it must synchronize its state with the rest of the network. GoShimmer currently uses the Tangle Time to help nodes determine their synced status.</p>
 <h4 id="dashboard"><a class="header" href="#dashboard">Dashboard</a></h4>
 <p>The dashboard of your GoShimmer node should be accessible via <code>http://&lt;your-ip&gt;:8081</code>. If your node is still synchronizing, you might see a higher inflow of MPS.</p>
-<p><img src="https://i.imgur.com/8xAvi7X.png" alt="" /></p>
+<p><img src="https://user-images.githubusercontent.com/11289354/119599542-c3985e00-be17-11eb-8769-7e639f365ae5.png" alt="" /></p>
 <p>After a while, your node's dashboard should also display up to 8 neighbors:
 <img src="https://i.imgur.com/gAyAXK9.png" alt="" /></p>
 <h4 id="http-api"><a class="header" href="#http-api">HTTP API</a></h4>
 <p>GoShimmer also exposes an HTTP API. To check whether that works correctly, you can access it via <code>http://&lt;your-ip&gt;:8080/info</code> which should return a JSON response in the form of:</p>
 <pre><code>{
-  &quot;version&quot;: &quot;v0.2.0&quot;,
-  &quot;synced&quot;: true,
-  &quot;identityID&quot;: &quot;69RxiehGQ2c&quot;,
-  &quot;publicKey&quot;: &quot;52Gzw9bo7k2dARFi4yxtt3B8xMht5UeFQX7pWdLFnxV5&quot;,
+  &quot;version&quot;: &quot;v0.6.2&quot;,
+  &quot;networkVersion&quot;: 30,
+  &quot;tangleTime&quot;: {
+    &quot;messageID&quot;: &quot;6ndfmfogpH9H8C9X9Fbb7Jmuf8RJHQgSjsHNPdKUUhoJ&quot;,
+    &quot;time&quot;: 1621879864032595415,
+    &quot;synced&quot;: true
+  },
+  &quot;identityID&quot;: &quot;D9SPFofAGhA5V9QRDngc1E8qG9bTrnATmpZMdoyRiBoW&quot;,
+  &quot;identityIDShort&quot;: &quot;XBgY5DsUPng&quot;,
+  &quot;publicKey&quot;: &quot;9DB3j9cWYSuEEtkvanrzqkzCQMdH1FGv3TawJdVbDxkd&quot;,
+  &quot;solidMessageCount&quot;: 74088,
+  &quot;totalMessageCount&quot;: 74088,
   &quot;enabledPlugins&quot;: [
-    &quot;Analysis-Client&quot;,
-    &quot;Autopeering&quot;,
-    &quot;CLI&quot;,
-    &quot;Config&quot;,
-    &quot;DRNG&quot;,
-    &quot;Dashboard&quot;,
-    &quot;Database&quot;,
-    &quot;Gossip&quot;,
     ...
-    &quot;WebAPI info Endpoint&quot;,
-    &quot;WebAPI message Endpoint&quot;
   ],
   &quot;disabledPlugins&quot;: [
-    &quot;Analysis-Dashboard&quot;,
-    &quot;Analysis-Server&quot;,
-    &quot;Banner&quot;,
-    &quot;Bootstrap&quot;,
-    &quot;Faucet&quot;,
-    &quot;WebAPI Auth&quot;
-  ]
+    ...
+  ],
+  &quot;mana&quot;: {
+    &quot;access&quot;: 1,
+    &quot;accessTimestamp&quot;: &quot;2021-05-24T20:11:05.451224937+02:00&quot;,
+    &quot;consensus&quot;: 10439991680906,
+    &quot;consensusTimestamp&quot;: &quot;2021-05-24T20:11:05.451228137+02:00&quot;
+  },
+  &quot;manaDelegationAddress&quot;: &quot;1HMQic52dz3xLY2aeDXcDhX53LgbsHghdfD8eGXR1qVHy&quot;,
+  &quot;mana_decay&quot;: 0.00003209,
+  &quot;scheduler&quot;: {
+    &quot;running&quot;: true,
+    &quot;rate&quot;: &quot;5ms&quot;,
+    &quot;nodeQueueSizes&quot;: {}
+  },
+  &quot;rateSetter&quot;: {
+    &quot;rate&quot;: 20000,
+    &quot;size&quot;: 0
+  }
 }
 </code></pre>
 <h2 id="managing-the-goshimmer-node-lifecycle"><a class="header" href="#managing-the-goshimmer-node-lifecycle">Managing the GoShimmer node lifecycle</a></h2>
