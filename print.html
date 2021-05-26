@@ -232,11 +232,11 @@
 <p>In the following sections we are going to use a CX21 Hetzner instance with Ubuntu 20.04 while being logged in as root</p>
 </blockquote>
 <p>Lets first upgrade the packages on our system:</p>
-<pre><code>$ apt update &amp;&amp; apt dist-upgrade -y
+<pre><code>apt update &amp;&amp; apt dist-upgrade -y
 </code></pre>
 <h4 id="install-docker"><a class="header" href="#install-docker">Install Docker</a></h4>
 <p>Install needed dependencies:</p>
-<pre><code>$ apt-get install \
+<pre><code>apt-get install \
      apt-transport-https \
      ca-certificates \
      curl \
@@ -244,10 +244,10 @@
      software-properties-common
 </code></pre>
 <p>Add Docker’s official GPG key:</p>
-<pre><code>$ curl -fsSL https://download.docker.com/linux/ubuntu/gpg | apt-key add -
+<pre><code>curl -fsSL https://download.docker.com/linux/ubuntu/gpg | apt-key add -
 </code></pre>
 <p>Verify that the GPG key matches:</p>
-<pre><code>$ apt-key fingerprint 0EBFCD88
+<pre><code>apt-key fingerprint 0EBFCD88
 pub   rsa4096 2017-02-22 [SCEA]
       9DC8 5822 9FC7 DD38 854A  E2D8 8D81 803C 0EBF CD88
 uid           [ unknown] Docker Release (CE deb) &lt;docker@docker.com&gt;
@@ -255,52 +255,52 @@ sub   rsa4096 2017-02-22 [S]
 
 </code></pre>
 <p>Add the actual repository:</p>
-<pre><code>$ add-apt-repository \
+<pre><code>add-apt-repository \
    &quot;deb [arch=amd64] https://download.docker.com/linux/ubuntu \
    $(lsb_release -cs) \
    stable&quot;
 </code></pre>
 <p>Update the package index:</p>
-<pre><code>$ apt-get update
+<pre><code>apt-get update
 </code></pre>
 <p>And finally, install docker:</p>
-<pre><code>$ apt-get install docker-ce docker-ce-cli containerd.io
+<pre><code>apt-get install docker-ce docker-ce-cli containerd.io
 </code></pre>
 <p>On windows-subsystem for Linux (WSL2) it may be necessary to start docker seperately:</p>
-<pre><code>$ /etc/init.d/docker start
+<pre><code>/etc/init.d/docker start
 </code></pre>
 <p>Note, this may not work on WSL1.</p>
 <p>Check whether docker is running by executing <code>docker ps</code>:</p>
-<pre><code>$ docker ps
+<pre><code>docker ps
 CONTAINER ID        IMAGE               COMMAND             CREATED             STATUS              PORTS               NAMES
 </code></pre>
 <h3 id="install-docker-compose"><a class="header" href="#install-docker-compose">Install Docker Compose</a></h3>
 <p>Docker compose gives us the ability to define our services with <code>docker-compose.yml</code> files instead of having to define all container parameters directly on the CLI.</p>
 <p>Download docker compose:</p>
-<pre><code>$ curl -L &quot;https://github.com/docker/compose/releases/download/1.26.0/docker-compose-$(uname -s)-$(uname -m)&quot; -o /usr/local/bin/docker-compose
+<pre><code>curl -L &quot;https://github.com/docker/compose/releases/download/1.26.0/docker-compose-$(uname -s)-$(uname -m)&quot; -o /usr/local/bin/docker-compose
 </code></pre>
 <p>Make it executable:</p>
-<pre><code>$ chmod +x /usr/local/bin/docker-compose
+<pre><code>chmod +x /usr/local/bin/docker-compose
 </code></pre>
 <p>Check that docker compose works:</p>
-<pre><code>$ docker-compose --version
+<pre><code>docker-compose --version
 docker-compose version 1.26.0, build d4451659
 </code></pre>
 <h3 id="define-the-docker-composeyml"><a class="header" href="#define-the-docker-composeyml">Define the docker-compose.yml</a></h3>
 <p>First, lets create a user defined bridged network. Unlike the already existing <code>bridge</code> network, the user defined one will have container name DNS resolution for containers within that network. This is useful if later we want to setup additional containers which need to speak with the GoShimmer container.</p>
-<pre><code>$ docker network create --driver=bridge shimmer
+<pre><code>docker network create --driver=bridge shimmer
 c726034d295c3df66803b92c71ca517a0cf0e3c65c1c6d84ee5fa34ae76cbcd4
 </code></pre>
 <p>Lets create a folder holding our <code>docker-compose.yml</code>:</p>
-<pre><code>$ mkdir /opt/goshimmer
+<pre><code>mkdir /opt/goshimmer
 </code></pre>
 <p>Lets create a folder holding our database:</p>
-<pre><code>$ cd /opt/goshimmer
-$ mkdir db
-$ chmod 0777 db
+<pre><code>cd /opt/goshimmer
+mkdir db
+chmod 0777 db
 </code></pre>
 <p>Finally, lets create our <code>docker-compose.yml</code>:</p>
-<pre><code>$ nano docker-compose.yml
+<pre><code>nano docker-compose.yml
 </code></pre>
 <p>and add following content:</p>
 <pre><code class="language-yaml">version: '3.3'
@@ -377,7 +377,7 @@ services:
 </blockquote>
 <h2 id="running-the-goshimmer-node"><a class="header" href="#running-the-goshimmer-node">Running the GoShimmer node</a></h2>
 <p>Within the <code>/opt/goshimmer</code> folder where the <code>docker-compose.yml</code> resides, simply execute:</p>
-<pre><code>$ docker-compose up -d
+<pre><code>docker-compose up -d
 Pulling goshimmer (iotaledger/goshimmer:0.2.0)...
 ...
 </code></pre>
@@ -387,7 +387,7 @@ Pulling goshimmer (iotaledger/goshimmer:0.2.0)...
 687f52b78cb5        iotaledger/goshimmer:0.2.0       &quot;/run/goshimmer --sk…&quot;   19 seconds ago      Up 17 seconds       0.0.0.0:6061-&gt;6061/tcp, 0.0.0.0:8080-8081-&gt;8080-8081/tcp, 0.0.0.0:10895-&gt;10895/tcp, 0.0.0.0:14666-&gt;14666/tcp, 0.0.0.0:14626-&gt;14626/udp   goshimmer
 </code></pre>
 <p>You can follow the log output of the node via:</p>
-<pre><code>$ docker logs -f --since=1m goshimmer
+<pre><code>docker logs -f --since=1m goshimmer
 </code></pre>
 <h3 id="syncing"><a class="header" href="#syncing">Syncing</a></h3>
 <p>When the node starts for the first time, it must synchronize its state with the rest of the network. GoShimmer currently uses the Tangle Time to help nodes determine their synced status.</p>
@@ -438,33 +438,33 @@ Pulling goshimmer (iotaledger/goshimmer:0.2.0)...
 </code></pre>
 <h2 id="managing-the-goshimmer-node-lifecycle"><a class="header" href="#managing-the-goshimmer-node-lifecycle">Managing the GoShimmer node lifecycle</a></h2>
 <h5 id="stopping-the-node"><a class="header" href="#stopping-the-node">Stopping the node</a></h5>
-<pre><code>$ docker-compose stop
+<pre><code>docker-compose stop
 </code></pre>
 <h5 id="resetting-the-node"><a class="header" href="#resetting-the-node">Resetting the node</a></h5>
-<pre><code>$ docker-compose down
+<pre><code>docker-compose down
 </code></pre>
 <h5 id="upgrading-the-node"><a class="header" href="#upgrading-the-node">Upgrading the node</a></h5>
 <p><strong>Ensure that the image version in the <code>docker-compose.yml</code> is <code>latest</code></strong> then execute following commands:</p>
-<pre><code>$ docker-compose down
-$ rm db/*
-$ docker-compose pull
-$ docker-compose up -d
+<pre><code>docker-compose down
+rm db/*
+docker-compose pull
+docker-compose up -d
 </code></pre>
 <h5 id="following-log-output"><a class="header" href="#following-log-output">Following log output</a></h5>
-<pre><code>$ docker logs -f --since=1m goshimmer
+<pre><code>docker logs -f --since=1m goshimmer
 </code></pre>
 <h5 id="create-a-logtxt"><a class="header" href="#create-a-logtxt">Create a log.txt</a></h5>
-<pre><code>$ docker logs goshimmer &gt; log.txt
+<pre><code>docker logs goshimmer &gt; log.txt
 </code></pre>
 <h5 id="update-grafana-dashboard"><a class="header" href="#update-grafana-dashboard">Update Grafana Dashboard</a></h5>
 <p>If you set up the Grafana dashboard for your node according to the next section &quot;Setting up the Grafana dashboard&quot;, the following method will help you to update when a new version is released.</p>
 <p>You have to manually copy the new <a href="https://github.com/iotaledger/goshimmer/blob/master/tools/monitoring/grafana/dashboards/local_dashboard.json">dashboard file</a> into <code>/opt/goshimmer/grafana/dashboards</code> directory.
 Supposing you are at <code>/opt/goshimmer/</code>:</p>
-<pre><code>$ wget https://raw.githubusercontent.com/iotaledger/goshimmer/master/tools/monitoring/grafana/dashboards/local_dashboard.json
-$ cp local_dashboard.json grafana/dashboards
+<pre><code>wget https://raw.githubusercontent.com/iotaledger/goshimmer/master/tools/monitoring/grafana/dashboards/local_dashboard.json
+cp local_dashboard.json grafana/dashboards
 </code></pre>
 <p>Restart the grafana container:</p>
-<pre><code>$ docker restart grafana
+<pre><code>docker restart grafana
 </code></pre>
 <h2 id="setting-up-the-grafana-dashboard"><a class="header" href="#setting-up-the-grafana-dashboard">Setting up the Grafana dashboard</a></h2>
 <h4 id="add-prometheus-and-grafana-containers-to-docker-composeyml"><a class="header" href="#add-prometheus-and-grafana-containers-to-docker-composeyml">Add Prometheus and Grafana Containers to <code>docker-compose.yml</code></a></h4>
@@ -505,13 +505,13 @@ $ cp local_dashboard.json grafana/dashboards
 <ol>
 <li>Create a <code>prometheus/data</code> directory in <code>/opt/goshimmer</code>:</li>
 </ol>
-<pre><code>$ cd /opt/goshimmer
-$ mkdir -p prometheus/data
+<pre><code>cd /opt/goshimmer
+mkdir -p prometheus/data
 </code></pre>
 <ol start="2">
 <li>Create a <code>prometheus.yml</code> in <code>prometheus</code> directory:</li>
 </ol>
-<pre><code>$ nano prometheus/prometheus.yml
+<pre><code>nano prometheus/prometheus.yml
 </code></pre>
 <p>The content of the file should be:</p>
 <pre><code class="language-yaml">scrape_configs:
@@ -524,19 +524,19 @@ $ mkdir -p prometheus/data
 <ol start="3">
 <li>Add permissions to <code>prometheus</code> config directory:</li>
 </ol>
-<pre><code>$ chmod -R 777 prometheus
+<pre><code>chmod -R 777 prometheus
 </code></pre>
 <h4 id="create-grafana-configs"><a class="header" href="#create-grafana-configs">Create Grafana configs</a></h4>
 <ol>
 <li>Create necessary config dirs in <code>/opt/goshimmer/</code>.</li>
 </ol>
-<pre><code>$ mkdir -p grafana/provisioning/datasources grafana/provisioning/dashboards grafana/provisioning/notifiers
-$ mkdir -p grafana/dashboards
+<pre><code>mkdir -p grafana/provisioning/datasources grafana/provisioning/dashboards grafana/provisioning/notifiers
+mkdir -p grafana/dashboards
 </code></pre>
 <ol start="2">
 <li>Create a datasource configuration file in <code>grafana/provisioning/datasources</code>:</li>
 </ol>
-<pre><code>$ nano grafana/provisioning/datasources/datasources.yaml
+<pre><code>nano grafana/provisioning/datasources/datasources.yaml
 </code></pre>
 <p>With the following content:</p>
 <pre><code class="language-yaml">apiVersion: 1
@@ -564,7 +564,7 @@ datasources:
 <ol start="3">
 <li>Create a dashboard configuration file in <code>grafana/provisioning/dashboards</code>:</li>
 </ol>
-<pre><code>$ nano grafana/provisioning/dashboards/dashboards.yaml
+<pre><code>nano grafana/provisioning/dashboards/dashboards.yaml
 </code></pre>
 <p>With the following content:</p>
 <pre><code class="language-yaml">apiVersion: 1
@@ -585,16 +585,16 @@ providers:
 <li>Add predefined Goshimmer Local Metrics Dashboard.</li>
 </ol>
 <p>Head over to the GoShimmer repository and download <a href="https://github.com/iotaledger/goshimmer/blob/master/tools/monitoring/grafana/dashboards/local_dashboard.json">local_dashboard.json</a>.</p>
-<pre><code>$ wget https://raw.githubusercontent.com/iotaledger/goshimmer/master/tools/monitoring/grafana/dashboards/local_dashboard.json
-$ cp local_dashboard.json grafana/dashboards
+<pre><code>wget https://raw.githubusercontent.com/iotaledger/goshimmer/master/tools/monitoring/grafana/dashboards/local_dashboard.json
+cp local_dashboard.json grafana/dashboards
 </code></pre>
 <ol start="5">
 <li>Add permissions to Grafana config folder</li>
 </ol>
-<pre><code>$ chmod -R 777 grafana
+<pre><code>chmod -R 777 grafana
 </code></pre>
 <h4 id="run-goshimmer-with-prometheus-and-grafana"><a class="header" href="#run-goshimmer-with-prometheus-and-grafana">Run GoShimmer with Prometheus and Grafana:</a></h4>
-<pre><code>$ docker-compose up -d
+<pre><code>docker-compose up -d
 </code></pre>
 <p>The Grafana dashboard should be accessible at <code>http://&lt;your-ip&gt;:3000</code>.</p>
 <p>Default login credentials are:</p>
