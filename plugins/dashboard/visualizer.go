@@ -35,6 +35,7 @@ type vertex struct {
 	WeakParentIDs   []string `json:"weakParentIDs"`
 	IsFinalized     bool     `json:"is_finalized"`
 	IsTx            bool     `json:"is_tx"`
+	Timestamp       int64    `json:"timestamp"`
 }
 
 // tipinfo holds information about whether a given message is a tip or not.
@@ -72,6 +73,7 @@ func sendVertex(msg *tangle.Message, finalized bool) {
 		WeakParentIDs:   msg.WeakParents().ToStrings(),
 		IsFinalized:     finalized,
 		IsTx:            msg.Payload().Type() == ledgerstate.TransactionType,
+		Timestamp:       msg.IssuingTime().Unix(),
 	}}, true)
 }
 
@@ -142,6 +144,7 @@ func setupVisualizerRoutes(routeGroup *echo.Group) {
 				WeakParentIDs:   msg.WeakParents().ToStrings(),
 				IsFinalized:     msgFinalized[msg.ID().Base58()],
 				IsTx:            msg.Payload().Type() == ledgerstate.TransactionType,
+				Timestamp:       msg.IssuingTime().Unix(),
 			})
 		}
 

@@ -5,7 +5,7 @@ declare module "vivagraphjs" {
         }
         export interface IGraph {
             getLink: (nodeA: string, nodeB: string) => ILink | undefined;
-            addLink: (nodeA: string, nodeB: string) => void;
+            addLink: (nodeA: string, nodeB: string, data: any) => void;
             removeLink: (link: ILink) => void;
             getNode: (node: string) => string | undefined;
             addNode: (node: string) => void;
@@ -91,6 +91,7 @@ declare module "vivagraphjs" {
                     gravity: number;
                     timeStep: number;
                     theta: number;
+                    springTransform: (spring, link) => void;
                 }): ILayout;
         }
     }

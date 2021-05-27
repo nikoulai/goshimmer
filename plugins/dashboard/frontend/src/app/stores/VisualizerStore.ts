@@ -10,6 +10,7 @@ export class Vertex {
     is_tip: boolean;
     is_finalized: boolean;
     is_tx: boolean;
+    timestamp: number;
 }
 
 export class TipInfo {
@@ -222,8 +223,16 @@ export class VisualizerStore {
                 if ( value && ((!node.links || !node.links.some(link => link.fromId === value)))){
                     // draw the link only when the parent exists
                     let existing = this.graph.getNode(value);
+
                     if (existing) {
-                        this.graph.addLink(value, vert.id);
+                        let d = vert.timestamp-existing.data.timestamp;
+                        if (d < 0){
+                            d = 1;
+                        }
+                        console.log("Delta for strong link is ", d)
+                        if (d < 60) {
+                            this.graph.addLink(value, vert.id, {delta: d, type: "strong"} );
+                        }
                     }
                 }
             })
@@ -235,7 +244,12 @@ export class VisualizerStore {
                     // draw the link only when the parent exists
                     let existing = this.graph.getNode(value);
                     if (existing) {
-                        this.graph.addLink(value, vert.id);
+                        let d = vert.timestamp-existing.data.timestamp;
+                        if (d < 0){
+                            d = 1;
+                        }
+                        console.log("Delta for weak link is ", d)
+                        this.graph.addLink(value, vert.id, {delta: d, type:"weak"});
                     }
                 }
             })
@@ -276,6 +290,14 @@ export class VisualizerStore {
             dragCoeff: 0.02,
             timeStep: 20,
             theta: 0.8,
+            springTransform: function (link, spring) {
+                spring.length = 10 + 5 *  link.data.delta;
+                if (link.delta > 50) {
+                    spring.coeff = 0.00001;
+                } else {
+                    spring.coeff = 0.0001 - 0.000002*link.data.delta;
+                }
+            }
         });
 
         graphics.node((node) => {
@@ -284,7 +306,12 @@ export class VisualizerStore {
             }
             return Viva.Graph.View.webglSquare(vertexSize, this.colorForVertexState(node.data));
         })
-        graphics.link(() => Viva.Graph.View.webglLine("#586e75"));
+        graphics.link((link) => {
+            // if (link.type === "weak") {
+            //     return Viva.Graph.View.webglLine("#cb4b16");
+            // }
+            return Viva.Graph.View.webglLine("#586e75");
+        })
         let ele = document.getElementById('visualizer');
         this.renderer = Viva.Graph.View.renderer(this.graph, {
             container: ele, graphics, layout,
