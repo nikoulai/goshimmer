@@ -233,7 +233,7 @@ Copied files are located at ./csv
 <p>The Spammer tool lets you add messages to the tangle when running GoShimmer in a Docker network.
 In order to start the spammer, you need to send GET requests to a <code>/spammer</code> API endpoint with the following parameters:</p>
 <ul>
-<li><code>cmd</code> - one of two possible values: <code>start</code> and <code>shutdown</code>.</li>
+<li><code>cmd</code> - one of two possible values: <code>start</code> and <code>stop</code>.</li>
 <li><code>mpm</code> - messages per minute. Only applicable when <code>cmd=start</code>. </li>
 <li><code>imif</code> - (<em>optional</em>) parameter indicating time interval between issued messages. Possible values:
 <ul>
@@ -246,7 +246,7 @@ In order to start the spammer, you need to send GET requests to a <code>/spammer
 <pre><code class="language-bash">http://localhost:8080/spammer?cmd=start&amp;mpm=1000
 
 http://localhost:8080/spammer?cmd=start&amp;mpm=1000&amp;imif=uniform
-http://localhost:8080/spammer?cmd=shutdown
+http://localhost:8080/spammer?cmd=stop
 </code></pre>
 <h2 id="tangle-width"><a class="header" href="#tangle-width">Tangle width</a></h2>
 <p>When running GoShimmer locally in a Docker network, the network delay is so small that only 1 tip will be available most of the time. 
