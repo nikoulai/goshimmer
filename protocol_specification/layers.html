@@ -170,6 +170,158 @@
                 <div id="content" class="content">
                     <main>
                         <h1 id="layers"><a class="header" href="#layers">Layers</a></h1>
+<blockquote>
+<p>DISCLAIMER: The described layers describe how things are implemented in GoShimmer. They might not reflect final Coordicide specification or implementations.</p>
+</blockquote>
+<p>GoShimmer abstracts node functionalities into different layers. Similar to other architectures, upper layers build on the provided functionality of the layers below them. A layer is merely the concept of creating a clear separation of concerns.</p>
+<p>Layers operate on payloads, and it is up to the layer to react to the wanted payload types.</p>
+<h2 id="communication-layer"><a class="header" href="#communication-layer">Communication Layer</a></h2>
+<p>The communication layer is the most primitive layer, as its job is to simply form a graph made out of messages which contain payloads. As the name implies, messages are communicated/gossiped throughout the entire network. Think of it as the &quot;physical layer&quot; in the OSI-model. This layer forms a DAG made up of messages as each message references two previous messages.</p>
+<h3 id="message"><a class="header" href="#message">Message</a></h3>
+<p>A message is a core data type which reflects a vertex in the communication layer <a href="https://en.wikipedia.org/wiki/Directed_acyclic_graph">DAG</a>.</p>
+<p>It contains following properties:</p>
+<ul>
+<li>References to other messages</li>
+<li>Issuer's public key</li>
+<li>The issuance time of the message</li>
+<li>The message sequence number from the node which issued the message</li>
+<li>Payload which might be interpreted by upper layers</li>
+<li>The nonce which lets the message fulfill the PoW requirement</li>
+<li>A Signature signing all the above fields.</li>
+</ul>
+<p>A message is gossiped only when it becomes solid, meaning that its past history is known to the node. Messages currently must become solid within a 30 seconds time period, otherwise they are discarded.</p>
+<p>Messages must also fulfill a PoW requirement currently which involves finding a nonce so that the hash of the fields of the message (minus the signature) has a certain amount of leading zeros. The PoW currently operates on <code>BLAKE2b_512</code>. Later the PoW requirement will be substituted by the actual Coordicide rate control mechanisms.</p>
+<p>A message's byte layout is defined as:</p>
+<pre><code>parent_0&lt;64bytes&gt;
+parent_1&lt;64bytes&gt;
+issuer_public_key&lt;32bytes&gt;
+issuance_time&lt;int64,8bytes&gt;
+sequence_number&lt;uint64,8bytes&gt;
+payload&lt;variable-size, max 64KBs&gt;
+nonce&lt;uint64,8bytes&gt;
+signature&lt;64bytes&gt;
+</code></pre>
+<h3 id="payloads"><a class="header" href="#payloads">Payloads</a></h3>
+<p>As described above, a message contains a payload. In GoShimmer, there are 3 defined payload types, however, <a href="../tutorials/dApp.html">more such types can be defined by developers seeking to implement their own application on top of the communication layer</a>.</p>
+<table><thead><tr><th>Type ID</th><th>Name</th><th>Purpose</th></tr></thead><tbody>
+<tr><td>0</td><td>Data</td><td>Holds raw bytes without any further meaning</td></tr>
+<tr><td>1</td><td>Value Object</td><td>Represents a value object on the value layer</td></tr>
+<tr><td>111</td><td>DRNG Object</td><td>Represents a DRNG object for the DRNG layer</td></tr>
+</tbody></table>
+<p>A payload's byte layout is defined as:</p>
+<pre><code>type&lt;uint32-4bytes&gt;
+length&lt;uint32-4bytes&gt;
+data&lt;length bytes&gt;
+</code></pre>
+<p>It is a upper layer's concern to listen for messages which hold specific payload types up on which the layer operates on.</p>
+<h3 id="tip-selection"><a class="header" href="#tip-selection">Tip-Selection</a></h3>
+<p>Since on the communication layer the payloads do not impose any restriction on the validity of a message, the tip-selection can simply operate on a pool of recent solid tips. However, in the future the tip-selector might impose certain restrictions such as below-max-depth checks and so on.</p>
+<h2 id="value-layer"><a class="header" href="#value-layer">Value Layer</a></h2>
+<p>The value layer operates solely on payloads of type value object. This layer has multiple responsibilities:</p>
+<ul>
+<li>Forming the ledger state</li>
+<li>Processing, validating and issuing transactions</li>
+<li>Conflict detection</li>
+<li>Conflict resolution via FPC</li>
+<li>Forming a DAG made up from value objects</li>
+<li>Tip-selection (on value object tips)</li>
+</ul>
+<h3 id="value-object"><a class="header" href="#value-object">Value Object</a></h3>
+<p>A value object is an object derived from a message containing a value object payload. It references two other value objects and contains one transaction.</p>
+<p>The two references express vouching for the referenced value objects, meaning that they are seen as valid from the PoV of the value object which references them.</p>
+<p>A value object is solid when its past cone is known, and the contained transaction's inputs are known.</p>
+<p>A transaction can occur in multiple value objects. In that case we speak of reattachments.</p>
+<p>A value object's byte layout is defined as:</p>
+<pre><code>type&lt;uint32-4bytes&gt;
+length&lt;uint32-4bytes&gt;
+parent_0_reference&lt;32bytes&gt;
+parent_1_reference&lt;32bytes&gt;
+transaction&lt;variable size&gt;
+</code></pre>
+<h3 id="utxo"><a class="header" href="#utxo">UTXO</a></h3>
+<p>GoShimmer uses unspent transaction outputs (UTXOs) as inputs for transactions. Meaning that inputs reference a specific UTXO ID which was generated by a previous transaction. The UTXO ID is made up from the destination address plus the hash of the transaction creating the output.</p>
+<h4 id="inputs"><a class="header" href="#inputs">Inputs</a></h4>
+<p>As just described, an input is merely a reference to another transaction's output to a given address. GoShimmer currently works on addresses and unlike other cryptocurrencies does not yet have any concept of other unlocking mechanisms.</p>
+<p>Addresses are BLAKE2b hashes of the corresponding Ed25519 and BLS public keys.</p>
+<h4 id="outputs"><a class="header" href="#outputs">Outputs</a></h4>
+<p>An output encapsulates a destination address, and a list of balances. A balance is an amount of tokens and a color.</p>
+<h5 id="color--coloring"><a class="header" href="#color--coloring">Color &amp; Coloring</a></h5>
+<p>The color of a balance is simply an array of 32 bytes and per default, tokens have a color of type &quot;IOTA&quot;, where all 32 bytes are zero.</p>
+<p>Creating a new color involves specifying the special color type &quot;New&quot; in a transaction output, where each byte in the color array is set to 255. Doing this will instruct GoShimmer to then color the specific balance on the specific address of the given output to the hash of the transaction creating the output. New colors therefore simply equal the transaction hash of the transaction creating the output (and are therefore unique).</p>
+<p>Coloring tokens does neither increase or decrease the token supply. It is up to merchants and other systems to provide meaning to the colors of tokens.</p>
+<p>Because of the way the coloring works, any holder of colored tokens can &quot;shrink&quot; the circulating amount of the specific colored token by simply creating outputs again with the special color type &quot;New&quot;. Of course doing so will only effect the actual holder of the colored tokens but it is something to keep in mind when developing a system around colored tokens.</p>
+<h3 id="transaction"><a class="header" href="#transaction">Transaction</a></h3>
+<p>A transaction defines a transfer from UTXOs to new outputs.</p>
+<p>It contains following properties:</p>
+<ul>
+<li>Inputs</li>
+<li>Outputs</li>
+<li>Payload</li>
+<li>Signatures</li>
+</ul>
+<p>These properties minus the signatures make up the &quot;essence&quot; bytes of the transaction. Each signature signs the essence data. Therefore, if a transaction contains multiple inputs consuming UTXOs from an address, only one signature for that address needs to be provided.</p>
+<p>A transaction is marked as solid when all of its referenced inputs are known.</p>
+<p>A transaction’s byte layout is defined as:</p>
+<pre><code>inputs_count&lt;uint32-4bytes&gt;
+ (per input)-&gt;
+     address&lt;33bytes&gt;
+     utxo_id&lt;32bytes&gt;
+     
+outputs_count&lt;uint32-4bytes&gt;
+ (per output)-&gt;
+     address&lt;33bytes&gt;
+     balances_count&lt;uint32-4bytes&gt;
+      (per balance)-&gt;
+          value&lt;int64-8bytes&gt;
+          color&lt;32bytes&gt;
+          
+payload_length&lt;int32-8bytes&gt;
+payload&lt;payload_length bytes&gt;
+
+(signatures (multiple occurrences in any order))-&gt;
+    (ED25519)-&gt;
+        signature_type(1 byte, value = 1)
+        public_key&lt;32bytes&gt;
+        signature&lt;64bytes&gt;
+    (BLS)-&gt;
+        signature_type(1byte, value = 2)
+        public_key&lt;128bytes&gt;
+        signature&lt;64bytes&gt;
+signature_block_end&lt;1byte, value 0&gt;
+</code></pre>
+<p>The payload length inside the transaction can be max 65KBs.</p>
+<h3 id="parallel-reality-based-ledger-state"><a class="header" href="#parallel-reality-based-ledger-state">Parallel reality based ledger state</a></h3>
+<p>GoShimmer uses the parallel reality based ledger state <a href="https://medium.com/@hans_94488/a-new-consensus-the-tangle-multiverse-part-1-da4cb2a69772">introduced by Hans in his blogpost series</a>. Unlike the blogpost however, conflict resolution is done via <a href="https://blog.iota.org/consensus-in-the-iota-tangle-fpc-b98e0f1e8fa">FPC</a>. There is also no notion of mana as of yet or 'partial liking' other opinion realities.</p>
+<p>Note that the reason the ledger state is implemented this way is to make it easier to extend it for the multiverse consensus in case it becomes a viable choice.</p>
+<h4 id="branches--realities"><a class="header" href="#branches--realities">Branches / Realities</a></h4>
+<p>Realities are called branches in GoShimmer. A branch's ID is defined as a 32 byte long array. The master branch's ID is a 32 byte array where the first byte has the value 1.</p>
+<p>Branches are created every time a conflict arises. The created branches have the IDs of the transactions which inflict/create the conflict.</p>
+<p>Branches are in some sense a performance optimization as they allow to group transactions reflecting the same &quot;reality&quot; of ledger mutations as a group.</p>
+<h5 id="conflict-detection"><a class="header" href="#conflict-detection">Conflict detection</a></h5>
+<p>As mentioned, transactions use UTXO as inputs. Every time a transaction consumes a given output, the consumer count on the output is incremented. If the consumer count goes above 1, a conflict arises, since multiple transactions are trying to consume/use the same UTXO (double spend).</p>
+<p>Note that in the case that there is yet no finalized/confirmed consumer of the UTXO, the transactions forming the conflict set each spawn their own branch. Likewise, if a transaction is the first consumer of an output, it doesn't create a new branch (may however generate an aggregated branch).</p>
+<h5 id="aggregated-branches"><a class="header" href="#aggregated-branches">Aggregated Branches</a></h5>
+<p>Since transactions are assigned to branches, transactions consuming outputs from transactions (which are non-conflicting) which reside in different branches, can create new so called aggregated branches. An aggregated branch is a virtual branch which reflects the change set of mutations of the ledger aggregated out of different branches.</p>
+<h4 id="balances"><a class="header" href="#balances">Balances</a></h4>
+<p>Making up the balances of a given address involves querying the node for UTXOs which have as a target the given address.</p>
+<h3 id="consensus"><a class="header" href="#consensus">Consensus</a></h3>
+<h4 id="fpc--fcob"><a class="header" href="#fpc--fcob">FPC &amp; FCoB</a></h4>
+<p>We define a conflict as consuming (i.e., spending) more than once an (unspent) output. </p>
+<p>Initially a node likes a transaction <code>v</code> that solidified at time <code>t</code> if in the interval <code>(−∞, t + avgNetworkDelay]</code> there are no spends from the same output (used as input).</p>
+<p>If a conflicting transaction solidifies after that, we initially dislike it and add both (initially liked and initially disliked) conflicting transactions to the unresolved conflict set.</p>
+<p>If no conflicting transactions solidify in the interval <code>(−∞, t + (2* avgNetworkDelay)]</code> we confirm (definitively like) <code>v</code>.</p>
+<p>If <code>v_1,...,v_k</code> are all re-attachments of the same transaction, we either like all or none following the rule above.</p>
+<p>Every <code>T</code> seconds a “Fast Probabilistic Consensus” (FPC) voting round is applied to every unresolved conflicting transaction in the Tangle:</p>
+<ul>
+<li>each node queries a set of randomly chosen nodes about its unresolved conflicting transactions; </li>
+<li>the queried nodes send back their opinions on the requested transactions;</li>
+</ul>
+<p>After the FPC is done the values <code>g(v)</code> of several transactions may change and then it stays the same forever. 
+That is, after the vote a transaction is either confirmed (definitely liked) or rejected (definitely disliked) by a node, and this value will never change. Further discussion about monotonicity appears below.</p>
+<h4 id="monotonicity"><a class="header" href="#monotonicity">Monotonicity</a></h4>
+<p>If <code>u</code> approves <code>v</code>, then <code>g(v) ≥ g(u)</code>, that is, if a node likes u then it likes any transaction <code>u</code> approves, and if the node dislikes <code>v</code> then it dislikes any transaction that approve <code>v</code>. </p>
+<p>Another way of saying it is that if we like <code>v</code> then we like all of its past cone, and if we dislike <code>v</code> we dislike all of its future cone.
+The votes of any node will follow the monotonicity rule.</p>
 
                     </main>
 
