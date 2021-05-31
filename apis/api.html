@@ -182,7 +182,7 @@
 <pre><code>goshimAPI := client.NewGoShimmerAPI(&quot;http://mynode:8080&quot;)
 </code></pre>
 <p>Optionally, define your own <code>http.Client</code> to use, in order for example to define custom timeouts:</p>
-<pre><code>goshimAPI := client.NewGoShimmerAPI(&quot;http://mynode:8080&quot;, http.Client{Timeout: 30 * time.Second})
+<pre><code>goshimAPI := client.NewGoShimmerAPI(&quot;http://mynode:8080&quot;, client.WithHTTPClient{Timeout: 30 * time.Second})
 </code></pre>
 <h4 id="a-note-about-errors"><a class="header" href="#a-note-about-errors">A note about errors</a></h4>
 <p>The API issues HTTP calls to the defined GoShimmer node. Non 200 HTTP OK status codes will reflect themselves as <code>error</code> in the returned arguments. Meaning that for example calling for attachments with a non existing/available transaction on a node, will return an <code>error</code> from the respective function. (There might be exceptions to this rule)</p>

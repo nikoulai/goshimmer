@@ -191,32 +191,15 @@ messageID, err := goshimAPI.SendFaucetRequest(&quot;JaMauTaTSVBNc13edCCvBK9fZxZ1
 
 ---- or
 
-// get the given address from your wallet instance and 
-// use String() to get its Base58 representation
+// invoke go get github.com/iotaledger/goshimmer/client/wallet for wallet usage
+// get the given address from a wallet instance and
+connector := wallet.GenericConnector(wallet.NewWebConnector(&quot;http://localhost:8080&quot;))
+addr := wallet.New(connector).Seed().Address(0)
+// use String() to get base58 representation
 // the proof of work difficulty,
 // the optional aManaPledgeID (Base58 encoded),
 // the optional cManaPledgeID (Base58 encoded)
-addr := wallet.Seed().Address(0)
 messageID, err := goshimAPI.SendFaucetRequest(addr.String(), 22, &quot;2GtxMQD94KvDH1SJPJV7icxofkyV1njuUZKtsqKmtux5&quot;, &quot;2GtxMQD94KvDH1SJPJV7icxofkyV1njuUZKtsqKmtux5&quot;)
-</code></pre>
-<h3 id="via-the-http-api-directly"><a class="header" href="#via-the-http-api-directly">Via the HTTP API directly</a></h3>
-<p>The URI for POSTing faucet request messages is <code>http://&lt;host&gt;:&lt;web-api-port&gt;/faucet</code>. Refer to <a href="../apis/faucet">faucet API methods</a> for more details.</p>
-<table><thead><tr><th>Parameter</th><th>Required</th><th>Description</th><th>Type</th></tr></thead><tbody>
-<tr><td><code>address</code></td><td>Yes</td><td>Destination address to which to send tokens to encoded in Base58</td><td>string</td></tr>
-<tr><td><code>accessManaPledgeID</code></td><td>No</td><td>Node ID to pledge access mana to encoded in Base58</td><td>string</td></tr>
-<tr><td><code>consensusManaPledgeID</code></td><td>No</td><td>Node ID to pledge consensus mana to encoded in Base58</td><td>string</td></tr>
-<tr><td><code>nonce</code></td><td>Yes</td><td>Proof of the PoW being done</td><td>uint64</td></tr>
-</tbody></table>
-<p>cURL example:</p>
-<pre><code>curl http://localhost:8080/faucet \
--X POST \
--H 'Content-Type: application/json' \
--d '{
-  &quot;address&quot;: &quot;JaMauTaTSVBNc13edCCvBK9fZxZ1KKW5fXegT1B7N9jY&quot;,
-  &quot;accessManaPledgeID&quot;: &quot;2GtxMQD94KvDH1SJPJV7icxofkyV1njuUZKtsqKmtux5&quot;,
-  &quot;consensusManaPledgeID&quot;: &quot;2GtxMQD94KvDH1SJPJV7icxofkyV1njuUZKtsqKmtux5&quot;,
-  &quot;nonce&quot;: 24578
-}'
 </code></pre>
 <h3 id="via-the-wallet"><a class="header" href="#via-the-wallet">Via the wallet</a></h3>
 <p>Currently, there is one cli-wallet that you can refer to the tutorial <a href="./wallet.html">Command Line Wallet
