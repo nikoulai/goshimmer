@@ -202,7 +202,8 @@ to generate addresses and sign transactions. The generated seed is persisted in 
 	  &quot;password&quot;: &quot;goshimmer&quot;
 	},
 	&quot;reuse_addresses&quot;: false,
-	&quot;faucetPowDifficulty&quot;: 25
+	&quot;faucetPowDifficulty&quot;: 25,
+	&quot;assetRegistryNetwork&quot;: &quot;nectar&quot;
 }
 </code></pre>
 <ul>
@@ -211,12 +212,14 @@ to generate addresses and sign transactions. The generated seed is persisted in 
 <li>The <code>resuse_addresses</code> option specifies if the wallet should treat addresses as reusable, or whether it should try to
 spend from any wallet address only once.</li>
 <li><code>faucetPowDifficulty</code> defines the difficulty of the faucet request POW the wallet should do.</li>
+<li><code>assetRegistryNetwork</code> defines which asset registry network to use for pushing/fetching asset metadata to/from the registry.
+By default, the wallet chooses the <code>nectar</code> network.</li>
 </ul>
 <p>To perform the wallet initialization, run the <code>init</code> command of the wallet:</p>
 <pre><code class="language-bash">./cli-wallet init
 </code></pre>
 <p>If successful, you'll see the generated seed (encoded in base58) on your screen:</p>
-<pre><code>IOTA Pollen CLI-Wallet 0.2
+<pre><code>IOTA 2.0 DevNet CLI-Wallet 0.2
 GENERATING NEW WALLET ...                                 [DONE]
 
 ================================================================
@@ -234,7 +237,7 @@ CREATING WALLET STATE FILE (wallet.dat) ...               [DONE]
 <pre><code class="language-bash">./cli-wallet request-funds
 </code></pre>
 <p>Output:</p>
-<pre><code>IOTA Pollen CLI-Wallet 0.2
+<pre><code>IOTA 2.0 DevNet CLI-Wallet 0.2
 
 Requesting funds from faucet ... [PERFORMING POW]          (this can take a while)
 Requesting funds from faucet ... [DONE]
@@ -243,7 +246,7 @@ Requesting funds from faucet ... [DONE]
 <pre><code class="language-bash">./cli-wallet balance
 </code></pre>
 <p>Output:</p>
-<pre><code>IOTA Pollen CLI-Wallet 0.2
+<pre><code>IOTA 2.0 DevNet CLI-Wallet 0.2
 
 Available Token Balances
 
@@ -267,12 +270,12 @@ assets with the cli-wallet, execute the <code>create-asset</code> command.</p>
 <li>The <code>amount</code> flag specifies the amount of asset tokens to create.</li>
 </ul>
 <p>Output:</p>
-<pre><code>IOTA Pollen CLI-Wallet 0.2
+<pre><code>IOTA 2.0 DevNet CLI-Wallet 0.2
 
 Creating 1000 tokens with the color 'HJdkZkn6MKda9fNuXFQZ8Dzdzu1wvuSUQp8QX1AMH4wn' ...   [DONE]
 </code></pre>
 <p>By executing the <code>balance</code> command shortly after, you will notice that the wallet balances changed:</p>
-<pre><code>IOTA Pollen CLI-Wallet 0.2
+<pre><code>IOTA 2.0 DevNet CLI-Wallet 0.2
 
 Available Token Balances
 
@@ -294,7 +297,7 @@ When you receive an asset unknown locally to your wallet, it queries this regist
 also query this metadata yourself by running the <code>asset-info</code> command in the wallet:</p>
 <pre><code class="language-bash">./cli-wallet asset-info -id HJdkZkn6MKda9fNuXFQZ8Dzdzu1wvuSUQp8QX1AMH4wn
 </code></pre>
-<pre><code class="language-bash">IOTA Pollen CLI-Wallet 0.2
+<pre><code class="language-bash">IOTA 2.0 DevNet CLI-Wallet 0.2
 
 Asset Info
 
@@ -315,7 +318,7 @@ to hold the assets. You may examine the addresses used by the wallet by executin
 <pre><code class="language-bash">./cli-wallet addresses -list
 </code></pre>
 <p>Output:</p>
-<pre><code>IOTA Pollen CLI-Wallet 0.2
+<pre><code>IOTA 2.0 DevNet CLI-Wallet 0.2
 
 INDEX   ADDRESS                                         SPENT
 -----   --------------------------------------------    -----
@@ -330,7 +333,7 @@ what options we have:</p>
 <pre><code class="language-bash">./cli-wallet send-funds -help
 </code></pre>
 <p>Output:</p>
-<pre><code>IOTA Pollen CLI-Wallet 0.2
+<pre><code>IOTA 2.0 DevNet CLI-Wallet 0.2
 
 USAGE:
   cli-wallet send-funds [OPTIONS]
@@ -390,7 +393,7 @@ have them back. First things first, let's get the receive address of your wallet
 <pre><code class="language-bash">./cli-wallet address -receive
 </code></pre>
 <p>which will give you your wallets current receive address:</p>
-<pre><code>IOTA Pollen CLI-Wallet 0.2
+<pre><code>IOTA 2.0 DevNet CLI-Wallet 0.2
 
 Latest Receive Address: 17KoEZbWoBLRjBsb6oSyrSKVVqd7DVdHUWpxfBFbHaMSm
 </code></pre>
@@ -400,7 +403,7 @@ Latest Receive Address: 17KoEZbWoBLRjBsb6oSyrSKVVqd7DVdHUWpxfBFbHaMSm
 </code></pre>
 <p>When you receive such conditional funds, they will be displayed on the balance page in the wallet:</p>
 <pre><code class="language-bash">./cli-wallet balance
-IOTA Pollen CLI-Wallet 0.2
+IOTA 2.0 DevNet CLI-Wallet 0.2
 
 Available Token Balances
 
@@ -417,13 +420,13 @@ STATUS  OWNED UNTIL                     BALANCE                 COLOR           
 <p>As the output suggests, you need to execute the <code>claim-conditional</code> command to claim these funds:</p>
 <pre><code class="language-bash">./cli-wallet claim-conditional
 </code></pre>
-<pre><code>IOTA Pollen CLI-Wallet 0.2
+<pre><code>IOTA 2.0 DevNet CLI-Wallet 0.2
 
 Claiming conditionally owned funds... [DONE]
 </code></pre>
 <pre><code>./cli-wallet balance
 </code></pre>
-<pre><code>IOTA Pollen CLI-Wallet 0.2
+<pre><code>IOTA 2.0 DevNet CLI-Wallet 0.2
 
 Available Token Balances
 
@@ -438,7 +441,7 @@ constraints defined in the outputs. One such constraint is, that immutable data 
 Therefore, we can create an NFT and record immutable metadata in its output.</p>
 <p>Let's create our first NFT with the help of the cli-wallet.</p>
 <pre><code class="language-bash">./cli-wallet create-nft -help
-IOTA Pollen CLI-Wallet 0.2
+IOTA 2.0 DevNet CLI-Wallet 0.2
 
 USAGE:
   cli-wallet create-nft [OPTIONS]
@@ -491,7 +494,7 @@ following content:</p>
 <p>To create the NFT, simply execute:</p>
 <pre><code class="language-bash">./cli-wallet create-nft -immutable-data nft_metadata.json
 </code></pre>
-<pre><code>IOTA Pollen CLI-Wallet 0.2
+<pre><code>IOTA 2.0 DevNet CLI-Wallet 0.2
 
 Created NFT with ID:  gSfeBrWp1HwDLwSL7rt1qEMM59YBFZ4iBgAqHuqaQHo5
 Creating NFT ... [DONE]
@@ -503,7 +506,7 @@ Navigate to a node dashboard/explorer and search for the address. On a node dash
 <p>The NFT is also displayed on the balance page of the cli-wallet:</p>
 <pre><code>./cli-wallet balance
 </code></pre>
-<pre><code>IOTA Pollen CLI-Wallet 0.2
+<pre><code>IOTA 2.0 DevNet CLI-Wallet 0.2
 
 Available Token Balances
 
@@ -522,7 +525,7 @@ STATUS  NFT ID (ALIAS ID)                               BALANCE                 
 <p>Any valid IOTA address can own NFTs, so how can we send it?
 The <code>transfer-nft</code> command of the cli-wallet comes to the rescue:</p>
 <pre><code>./cli-wallet transfer-nft -help
-IOTA Pollen CLI-Wallet 0.2
+IOTA 2.0 DevNet CLI-Wallet 0.2
 
 USAGE:
   cli-wallet transfer-nft [OPTIONS]
@@ -548,7 +551,7 @@ unique identifier of the NFT that you wish to transfer, the latter is the destin
 <p>Let's transfer the NFT to our friend's address:</p>
 <pre><code class="language-bash">./cli-wallet transfer-nft -id gSfeBrWp1HwDLwSL7rt1qEMM59YBFZ4iBgAqHuqaQHo5 -dest-addr 1E5Q82XTF5QGyC598br9oCj71cREyjD1CGUk2gmaJaFQt
 </code></pre>
-<pre><code>IOTA Pollen CLI-Wallet 0.2
+<pre><code>IOTA 2.0 DevNet CLI-Wallet 0.2
 
 Transferring NFT... [DONE]
 </code></pre>
@@ -557,7 +560,7 @@ Transferring NFT... [DONE]
 the current owner, and the alias output representing the NFT is spent without creating a corresponding next alias output.</p>
 <p>The command to destroy an NFT is called <code>destroy-nft</code> in the cli-wallet:</p>
 <pre><code>./cli-wallet destroy-nft -help
-IOTA Pollen CLI-Wallet 0.2
+IOTA 2.0 DevNet CLI-Wallet 0.2
 
 USAGE:
   cli-wallet destroy-nft [OPTIONS]
@@ -576,7 +579,7 @@ OPTIONS:
 <p>Let's create an NFT and destroy it right after:</p>
 <pre><code class="language-bash">./cli-wallet create-nft
 </code></pre>
-<pre><code>IOTA Pollen CLI-Wallet 0.2
+<pre><code>IOTA 2.0 DevNet CLI-Wallet 0.2
 
 Created NFT with ID:  bdrvyKvaE6CZUEbdRDK57oBCRb2SLUyE8padFGxrV3zg
 Creating NFT ... [DONE]
@@ -584,7 +587,7 @@ Creating NFT ... [DONE]
 <p>Then let's wait until the balance page shows that the NFT status is <code>OK</code>:</p>
 <pre><code class="language-bash">./cli-wallet balance
 </code></pre>
-<pre><code>IOTA Pollen CLI-Wallet 0.2
+<pre><code>IOTA 2.0 DevNet CLI-Wallet 0.2
 
 Available Token Balances
 
@@ -602,7 +605,7 @@ STATUS  NFT ID (ALIAS ID)                               BALANCE                 
 <p>Finally, let's destroy it:</p>
 <pre><code class="language-bash">./cli-wallet destroy-nft -id bdrvyKvaE6CZUEbdRDK57oBCRb2SLUyE8padFGxrV3zg
 </code></pre>
-<pre><code>IOTA Pollen CLI-Wallet 0.2
+<pre><code>IOTA 2.0 DevNet CLI-Wallet 0.2
 
 Destroying NFT... [DONE]
 </code></pre>
@@ -619,7 +622,7 @@ to deposit such funds into the NFT or sweep them into their own wallet.</li>
 <p>Suppose I have created an NFT with the minimum required 100 IOTA balance. Later I figure, that I would like to keep some
 assets in the NFT. I can deposit the assets via the <code>deposit-to-nft</code> command:</p>
 <pre><code class="language-bash">./cli-wallet deposit-to-nft -help
-IOTA Pollen CLI-Wallet 0.2
+IOTA 2.0 DevNet CLI-Wallet 0.2
 
 USAGE:
   cli-wallet deposit-to-nft [OPTIONS]
@@ -647,7 +650,7 @@ OPTIONS:
 <p>Balance before the deposit looks like this:</p>
 <pre><code class="language-bash">./cli-wallet balance
 </code></pre>
-<pre><code>IOTA Pollen CLI-Wallet 0.2
+<pre><code>IOTA 2.0 DevNet CLI-Wallet 0.2
 
 Available Token Balances
 
@@ -665,12 +668,12 @@ STATUS  NFT ID (ALIAS ID)                               BALANCE                 
 <p>The actual deposit operation:</p>
 <pre><code class="language-bash">./cli-wallet deposit-to-nft -id f1BW8jcdDn3staviCVbVz54NqVwsshb5gpNLqY6Rrgrg -amount 500 -color HJdkZkn6MKda9fNuXFQZ8Dzdzu1wvuSUQp8QX1AMH4wn
 </code></pre>
-<pre><code>IOTA Pollen CLI-Wallet 0.2
+<pre><code>IOTA 2.0 DevNet CLI-Wallet 0.2
 Depositing funds into NFT ... [DONE]
 </code></pre>
 <pre><code>./cli-wallet balance
 </code></pre>
-<pre><code>IOTA Pollen CLI-Wallet 0.2
+<pre><code>IOTA 2.0 DevNet CLI-Wallet 0.2
 
 Available Token Balances
 
@@ -688,7 +691,7 @@ STATUS  NFT ID (ALIAS ID)                               BALANCE                 
 <h3 id="withdrawing-assets-from-nft"><a class="header" href="#withdrawing-assets-from-nft">Withdrawing Assets From NFT</a></h3>
 <p>The reverse of the deposit command looks quite similar:</p>
 <pre><code class="language-bash">./cli-wallet withdraw-from-nft -help
-IOTA Pollen CLI-Wallet 0.2
+IOTA 2.0 DevNet CLI-Wallet 0.2
 
 USAGE:
   cli-wallet withdraw-from-nft [OPTIONS]
@@ -712,14 +715,14 @@ OPTIONS:
 <p>Therefore, to withdraw the previously deposited <code>MyUniqueTokens</code>, execute the following command:</p>
 <pre><code class="language-bash">./cli-wallet withdraw-from-nft -id f1BW8jcdDn3staviCVbVz54NqVwsshb5gpNLqY6Rrgrg -amount 500 -color HJdkZkn6MKda9fNuXFQZ8Dzdzu1wvuSUQp8QX1AMH4wn
 </code></pre>
-<pre><code>IOTA Pollen CLI-Wallet 0.2
+<pre><code>IOTA 2.0 DevNet CLI-Wallet 0.2
 
 Withdrawing funds from NFT... [DONE]
 </code></pre>
 <p>Once the transaction confirms, you'll see the updated balance:</p>
 <pre><code class="language-bash">./cli-wallet balance
 </code></pre>
-<pre><code>IOTA Pollen CLI-Wallet 0.2
+<pre><code>IOTA 2.0 DevNet CLI-Wallet 0.2
 
 Available Token Balances
 
@@ -739,7 +742,7 @@ STATUS  NFT ID (ALIAS ID)                               BALANCE                 
 <p>We have previously explained, that an NFT can receive funds to its NFT ID because it is  a valid IOTA address. Such
 funds can be collected by the owner of the NFT with the <code>sweep-nft-owned-funds</code> command:</p>
 <pre><code class="language-bash">./cli-wallet sweep-nft-owned-funds -help
-IOTA Pollen CLI-Wallet 0.2
+IOTA 2.0 DevNet CLI-Wallet 0.2
 
 USAGE:
   cli-wallet sweep-nft-owned-funds [OPTIONS]
@@ -764,14 +767,14 @@ with a normal <code>send-funds</code> command:</p>
 <p>We can execute the <code>sweep-nft-owned-funds</code> command to transfer these funds into our wallet:</p>
 <pre><code class="language-bash">./cli-wallet sweep-nft-owned-funds -id f1BW8jcdDn3staviCVbVz54NqVwsshb5gpNLqY6Rrgrg
 </code></pre>
-<pre><code>IOTA Pollen CLI-Wallet 0.2
+<pre><code>IOTA 2.0 DevNet CLI-Wallet 0.2
 
 Sweeping NFT owned funds... [DONE]
 </code></pre>
 <p>The wallet balance should be updated, the wallet contains 1 MI more:</p>
 <pre><code class="language-bash">./cli-wallet balance
 </code></pre>
-<pre><code>IOTA Pollen CLI-Wallet 0.2
+<pre><code>IOTA 2.0 DevNet CLI-Wallet 0.2
 
 Available Token Balances
 
@@ -791,21 +794,21 @@ STATUS  NFT ID (ALIAS ID)                               BALANCE                 
 Let's say your friend created an NFT, and transferred it to your NFT's ID <code>f1BW8jcdDn3staviCVbVz54NqVwsshb5gpNLqY6Rrgrg</code>.</p>
 <pre><code class="language-bash">./your-friends-wallet create-nft
 </code></pre>
-<pre><code>IOTA Pollen CLI-Wallet 0.2
+<pre><code>IOTA 2.0 DevNet CLI-Wallet 0.2
 
 Created NFT with ID:  faf9tkdBfcTv2AgPm3Zt8duX4iUGKjqbEyrdBYsUb2hi
 Creating NFT ... [DONE]
 </code></pre>
 <pre><code>./your-friends-wallet transfer-nft -id faf9tkdBfcTv2AgPm3Zt8duX4iUGKjqbEyrdBYsUb2hi -dest-addr f1BW8jcdDn3staviCVbVz54NqVwsshb5gpNLqY6Rrgrg
 </code></pre>
-<pre><code>IOTA Pollen CLI-Wallet 0.2
+<pre><code>IOTA 2.0 DevNet CLI-Wallet 0.2
 
 Transferring NFT... [DONE]
 </code></pre>
 <p>Your NFT <code>f1BW8jcdDn3staviCVbVz54NqVwsshb5gpNLqY6Rrgrg</code> now owns NFT <code>faf9tkdBfcTv2AgPm3Zt8duX4iUGKjqbEyrdBYsUb2hi</code>.
 To sweep the owned NFT into your wallet, execute the <code>sweep-nft-owned-nft</code> command:</p>
 <pre><code class="language-bash">./cli-wallet sweep-nft-owned-nfts -help
-IOTA Pollen CLI-Wallet 0.2
+IOTA 2.0 DevNet CLI-Wallet 0.2
 
 USAGE:
   cli-wallet sweep-nft-owned-nfts [OPTIONS]
@@ -825,7 +828,7 @@ OPTIONS:
 <p>All you need to specify is the <code>-id</code> of your NFT that you would like to check for owned NFTs:</p>
 <pre><code class="language-bash">./cli-wallet sweep-nft-owned-nfts -id f1BW8jcdDn3staviCVbVz54NqVwsshb5gpNLqY6Rrgrg
 </code></pre>
-<pre><code>IOTA Pollen CLI-Wallet 0.2
+<pre><code>IOTA 2.0 DevNet CLI-Wallet 0.2
 
 Swept NFT faf9tkdBfcTv2AgPm3Zt8duX4iUGKjqbEyrdBYsUb2hi into the wallet
 Sweeping NFT owned NFTs... [DONE]
@@ -834,7 +837,7 @@ Sweeping NFT owned NFTs... [DONE]
 you would be able to sweep them into your wallet just like you did for <code>f1BW8jcdDn3staviCVbVz54NqVwsshb5gpNLqY6Rrgrg</code>.</p>
 <pre><code class="language-bash">./cli-wallet balance
 </code></pre>
-<pre><code>IOTA Pollen CLI-Wallet 0.2
+<pre><code>IOTA 2.0 DevNet CLI-Wallet 0.2
 
 Available Token Balances
 
@@ -862,7 +865,7 @@ the cli-wallet will delegate funds to the node that the wallet is connected to, 
 address via the <code>-del-addr</code> flag.
 specify a valid IOTA address where to delegate to.</p>
 <pre><code class="language-bash">./cli-wallet delegate-funds -help
-IOTA Pollen CLI-Wallet 0.2
+IOTA 2.0 DevNet CLI-Wallet 0.2
 
 USAGE:
   cli-wallet delegate-funds [OPTIONS]
@@ -895,7 +898,7 @@ any time.</li>
 <p>Let's delegate some funds to an address provided by a node in the network, <code>1EqJf5K1LJ6bVMCrxxxdZ6VNYoBTvEoXgxnbLJe7aqajc</code>:</p>
 <pre><code class="language-bash">./cli-wallet delegate-funds -amount 1000000 -del-addr 1EqJf5K1LJ6bVMCrxxxdZ6VNYoBTvEoXgxnbLJe7aqajc
 </code></pre>
-<pre><code>IOTA Pollen CLI-Wallet 0.2
+<pre><code>IOTA 2.0 DevNet CLI-Wallet 0.2
 
 Delegating to address 1EqJf5K1LJ6bVMCrxxxdZ6VNYoBTvEoXgxnbLJe7aqajc
 Delegation ID is:  tGoTKjt2y277ssKax9stsZXfLGdf8bPj3TZFaUDcAEwK
@@ -906,7 +909,7 @@ a delegation address. You can get this delegation address yourself as well by ru
 the wallet, or querying the <code>/info</code> endpoint of a node through the webapi.</p>
 <pre><code class="language-bash">./cli-wallet server-status
 </code></pre>
-<pre><code>IOTA Pollen CLI-Wallet 0.2
+<pre><code>IOTA 2.0 DevNet CLI-Wallet 0.2
 
 Server ID:  2GtxMQD94KvDH1SJPJV7icxofkyV1njuUZKtsqKmtux5
 Server Synced:  true
@@ -916,7 +919,7 @@ Delegation Address:  1HG9Z5NSiWTmT1HG65JLmn1jxQj7xUcVppKKi2vHAZLmr
 <p>By running the <code>balance</code> command, we can see the delegated funds:</p>
 <pre><code class="language-bash">./cli-wallet balance
 </code></pre>
-<pre><code>IOTA Pollen CLI-Wallet 0.2
+<pre><code>IOTA 2.0 DevNet CLI-Wallet 0.2
 
 Available Token Balances
 
@@ -936,7 +939,7 @@ STATUS  DELEGATION ID (ALIAS ID)                        BALANCE                 
 <p>To reclaim delegated funds, you have to tell the cli-wallet the delegation ID that is displayed on the balance page.
 Use the <code>reclaim-delegated</code> command once you got the delegation ID:</p>
 <pre><code class="language-bash"> ./cli-wallet reclaim-delegated -help
-IOTA Pollen CLI-Wallet 0.2
+IOTA 2.0 DevNet CLI-Wallet 0.2
 
 USAGE:
   cli-wallet reclaim-delegated [OPTIONS]
@@ -956,7 +959,7 @@ OPTIONS:
 <p>To reclaim the funds delegated in the previous section, simply run:</p>
 <pre><code class="language-bash">./cli-wallet reclaim-delegated -id tGoTKjt2y277ssKax9stsZXfLGdf8bPj3TZFaUDcAEwK
 </code></pre>
-<pre><code>IOTA Pollen CLI-Wallet 0.2
+<pre><code>IOTA 2.0 DevNet CLI-Wallet 0.2
 
 Reclaimed delegation ID is:  tGoTKjt2y277ssKax9stsZXfLGdf8bPj3TZFaUDcAEwK
 Reclaiming delegated fund... [DONE]
@@ -964,7 +967,7 @@ Reclaiming delegated fund... [DONE]
 <p>The balance should appear in the <code>Available Balances</code> section of the balance page:</p>
 <pre><code class="language-bash">./cli-wallet balance
 </code></pre>
-<pre><code>IOTA Pollen CLI-Wallet 0.2
+<pre><code>IOTA 2.0 DevNet CLI-Wallet 0.2
 
 Available Token Balances
 
