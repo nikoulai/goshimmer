@@ -180,7 +180,7 @@
 <p>GoShimmer is a research and engineering project from the IOTA Foundation seeking to evaluate Coordicide concepts by implementing them in a node software.</p>
 <h3 id="what-kind-of-confirmation-time-can-i-expect"><a class="header" href="#what-kind-of-confirmation-time-can-i-expect">What kind of confirmation time can I expect?</a></h3>
 <p>Since non conflicting transactions aren't even voted up on, they materialize after 2x the average network delay parameter we set. This means that a transaction usually confirms within a time boundary of ~10 seconds.</p>
-<h3 id="where-can-i-see-the-state-of-the-goshimmer-testnet"><a class="header" href="#where-can-i-see-the-state-of-the-goshimmer-testnet">Where can I see the state of the Goshimmer testnet?</a></h3>
+<h3 id="where-can-i-see-the-state-of-the-goshimmer-testnet"><a class="header" href="#where-can-i-see-the-state-of-the-goshimmer-testnet">Where can I see the state of the GoShimmer testnet?</a></h3>
 <p>You can access the global analysis dashboard <a href="http://ressims.iota.cafe:28080/autopeering">here</a> showcasing the network graph and active ongoing votes on conflicts.</p>
 <h3 id="how-much-tps-can-goshimmer-sustain"><a class="header" href="#how-much-tps-can-goshimmer-sustain">How much TPS can GoShimmer sustain?</a></h3>
 <p>The transactions per second metric is irrelevant for the current development state of GoShimmer. We are evaluating components from Coordicide and aren't currently interested in squeezing out every little ounce of performance. Meaning, we value simplicity over optimization since the primary goal is to evaluate Coordicide components. Even if we would put out a TPS number, it would simply not reflect an actual metric in a finished production ready node software. </p>
@@ -192,7 +192,7 @@
 <p>We are mainly interested in individuals helping us out who have a strong IT background, since we simply lack time to help people with things like setting up their nodes, fixing their NAT configs, teaching them how to use Linux and so on. People interested in trying out the bleeding edge of IOTA development and providing meaningful feedback or problem reporting (in form of issues) are welcome. Again, our primary focus is on testing out Coordicide components rather than giving people of any knowledge-level the easiest way to operate a node.</p>
 <div id="chapter_begin" style="break-before: page; page-break-before: always;"></div><h1 id="tutorials"><a class="header" href="#tutorials">Tutorials</a></h1>
 <div id="chapter_begin" style="break-before: page; page-break-before: always;"></div><h1 id="setting-up-a-goshimmer-node"><a class="header" href="#setting-up-a-goshimmer-node">Setting up a GoShimmer node</a></h1>
-<p>This page describes how to setup your own GoShimmer node in the Goshimmer testnet with Docker.</p>
+<p>This page describes how to setup your own GoShimmer node in the GoShimmer testnet with Docker.</p>
 <blockquote>
 <p>DISCLAIMER: <strong>Note that there will be breaking changes frequently (approx. bi-weekly) where the entire network needs to upgrade. If you don't have time to continuously monitor and upgrade your node, then running a GoShimmer node might not be for you.</strong>  We want to emphasize that running a GoShimmer node requires proper knowledge in Linux and IT related topics such as networking and so on. It is not meant as a node to be run by people with little experience in the mentioned fields. <strong>Do not plan to run any production level services on your node/network.</strong></p>
 </blockquote>
@@ -204,7 +204,7 @@
 <tr><td align="left"><a href="tutorials/setup.html#setting-up-the-grafana-dashboard">Setting up the Grafana dashboard</a></td></tr>
 </tbody></table>
 <h2 id="why-you-should-run-a-node"><a class="header" href="#why-you-should-run-a-node">Why you should run a node</a></h2>
-<p>Running a node in the Goshimmer testnet helps us in the following ways:</p>
+<p>Running a node in the GoShimmer testnet helps us in the following ways:</p>
 <ul>
 <li>It increases the amount of nodes in the network and thus lets it form a more realistic network.</li>
 <li>Your node will be configured to send debug log messages to a centralized logger from which we can assess and debug research questions and occurring problems.</li>
@@ -582,7 +582,7 @@ providers:
       path: /var/lib/grafana/dashboards
 </code></pre>
 <ol start="4">
-<li>Add predefined Goshimmer Local Metrics Dashboard.</li>
+<li>Add predefined GoShimmer Local Metrics Dashboard.</li>
 </ol>
 <p>Head over to the GoShimmer repository and download <a href="https://github.com/iotaledger/goshimmer/blob/master/tools/monitoring/grafana/dashboards/local_dashboard.json">local_dashboard.json</a>.</p>
 <pre><code>wget https://raw.githubusercontent.com/iotaledger/goshimmer/master/tools/monitoring/grafana/dashboards/local_dashboard.json
@@ -637,7 +637,7 @@ messageID, err := goshimAPI.SendFaucetRequest(addr.String(), 22, &quot;2GtxMQD94
 <h3 id="via-the-wallet"><a class="header" href="#via-the-wallet">Via the wallet</a></h3>
 <p>Currently, there is one cli-wallet that you can refer to the tutorial <a href="tutorials/./wallet.html">Command Line Wallet
 </a> and two GUI wallets to use. One from the community member <a href="https://github.com/Dr-Electron/ElectricShimmer">Dr-Electron ElectricShimmer</a> and another from the foundation <a href="https://github.com/iotaledger/pollen-wallet/tree/master">pollen-wallet</a>. You can request funds from the faucet with these two implementations.</p>
-<p>As for pollen-wallet, follow the instructions in <a href="https://github.com/iotaledger/pollen-wallet/tree/master">pollen-wallet</a> to build and execute the wallet, or download executable file directly in <a href="https://github.com/iotaledger/pollen-wallet/releases">Goshimmer wallet release</a>.</p>
+<p>As for pollen-wallet, follow the instructions in <a href="https://github.com/iotaledger/pollen-wallet/tree/master">pollen-wallet</a> to build and execute the wallet, or download executable file directly in <a href="https://github.com/iotaledger/pollen-wallet/releases">GoShimmer wallet release</a>.</p>
 <p>You can request funds by pressing the <code>Request Funds</code> in the wallet.</p>
 <p><strong>Note</strong>: You need to create a wallet first before requesting funds.</p>
 <img src="https://user-images.githubusercontent.com/11289354/88524828-70edea00-d02c-11ea-9a01-d7e1a8b7bdfd.png" height="450">
@@ -663,7 +663,7 @@ The cli-wallet is built by using this wallet library to demonstrate the capabili
 <p>Disclaimer: The command line wallet and this tutorial is intended for developer audience, you at least have to be familiar with using a terminal.</p>
 <h2 id="initializing-the-wallet"><a class="header" href="#initializing-the-wallet">Initializing the wallet</a></h2>
 <ul>
-<li>Download the latest cli-wallet for the system of your choice from the <a href="https://github.com/iotaledger/goshimmer/releases">Goshimmer GitHub Releases</a> page.</li>
+<li>Download the latest cli-wallet for the system of your choice from the <a href="https://github.com/iotaledger/goshimmer/releases">GoShimmer GitHub Releases</a> page.</li>
 <li>If needed, make the downloaded binary executable (<code>chmod +x &lt;downloaded-binary&gt;</code> on linux).</li>
 <li>For simplicity, we renamed the binary to <code>cli-wallet</code> in this tutorial.</li>
 </ul>
@@ -1806,7 +1806,7 @@ base58:BZx5tDLymckUV5wiswXJtajgQrBEzTBBRR4uGfr1YNGS
 <h2 id="motivation"><a class="header" href="#motivation">Motivation</a></h2>
 <p>GoShimmer is shipped with its internal node dashboard that you can reach at <code>127.0.0.1:8081</code> by default. While this dashboard provides some basic metrics information, its main functionality is to provide a graphical interface to interact with your node.</p>
 <p>Node operators who wish to have more insights into what is happening within their node have the option to enable a <a href="https://prometheus.io/">Prometheus</a> exporter plugin that gathers important metrics about their node. To visualize these metrics, a <a href="https://grafana.com/oss/grafana/">Grafana Dashboard</a> is utilized.</p>
-<h1 id="setting-up-run-goshimmer-from-a-vps"><a class="header" href="#setting-up-run-goshimmer-from-a-vps">Setting up (run Goshimmer from a VPS)</a></h1>
+<h1 id="setting-up-run-goshimmer-from-a-vps"><a class="header" href="#setting-up-run-goshimmer-from-a-vps">Setting up (run GoShimmer from a VPS)</a></h1>
 <p>To enable the <strong>Monitoring Dashboard</strong> for a GoShimmer node running from a VPS as described <a href="tutorials/./setup.html">here</a>, you need to carry out some additional steps.</p>
 <ol>
 <li>Edit <code>docker-compose.yml</code>
@@ -1818,7 +1818,7 @@ TODO</li>
 <li>Run <code>docker-compose up</code>.
 TODO</li>
 </ol>
-<h1 id="setting-up-run-goshimmer-from-your-home-machine"><a class="header" href="#setting-up-run-goshimmer-from-your-home-machine">Setting up (run Goshimmer from your home machine)</a></h1>
+<h1 id="setting-up-run-goshimmer-from-your-home-machine"><a class="header" href="#setting-up-run-goshimmer-from-your-home-machine">Setting up (run GoShimmer from your home machine)</a></h1>
 <p>Depending on how you run your GoShimmer node, there are different ways to set up the <strong>Monitoring Dashboard</strong>.</p>
 <h2 id="docker"><a class="header" href="#docker">Docker</a></h2>
 <p>One of the easiest ways to run a node is to use <a href="https://www.docker.com/">Docker</a>. To automatically launch GoShimmer and the Monitoring Dashboard with docker, follow these steps:</p>
@@ -1852,7 +1852,7 @@ Make sure, that following entry is present in <code>config.json</code>:
 You can experiment with the dashboard, change layout, add panels and discover metrics. Your changes will be saved into a Grafana database located in the repo at <code>tools/monitoring/grafana/grafana.db</code>.</p>
 <h2 id="binary"><a class="header" href="#binary">Binary</a></h2>
 <p>If you run the <a href="https://github.com/iotaledger/goshimmer/releases">released binaries</a>, or build GoShimmer from source, you need to setup Prometheus and Grafana separately, furthermore, you have to configure GoShimmer to export data.</p>
-<h3 id="goshimmer-configuration"><a class="header" href="#goshimmer-configuration">Goshimmer Configuration</a></h3>
+<h3 id="goshimmer-configuration"><a class="header" href="#goshimmer-configuration">GoShimmer Configuration</a></h3>
 <ol>
 <li>Make sure that the <code>prometheus.bindAddress</code> config parameter is set in your <code>config.json</code>:
 <pre><code class="language-json">  &quot;prometheus&quot;: {
@@ -2053,7 +2053,7 @@ $ ./grafana-server
 <pre><code>$ sudo cp tools/monitoring/grafana/provisioning/dashboards/dashboards.yaml /etc/grafana/provisioning/dashboards
 </code></pre>
 </li>
-<li>Copy <a href="https://github.com/iotaledger/goshimmer/blob/develop/tools/monitoring/grafana/dashboards/local_dashboard.json">Goshimmer Local Metrics</a> dashboard to <code>/var/lib/grafana/</code>:
+<li>Copy <a href="https://github.com/iotaledger/goshimmer/blob/develop/tools/monitoring/grafana/dashboards/local_dashboard.json">GoShimmer Local Metrics</a> dashboard to <code>/var/lib/grafana/</code>:
 <pre><code>$ sudo cp -R tools/monitoring/grafana/dashboards /var/lib/grafana/
 </code></pre>
 </li>
@@ -2277,7 +2277,7 @@ func buildTransaction() (tx *ledgerstate.Transaction, err error) {
 <h3 id="post-the-transaction"><a class="header" href="#post-the-transaction">Post the transaction</a></h3>
 <p>There are 2 available options to post the created transaction.</p>
 <ul>
-<li>Goshimmer client lib</li>
+<li>GoShimmer client lib</li>
 <li>Web API</li>
 </ul>
 <h4 id="post-via-client-lib"><a class="header" href="#post-via-client-lib">Post via client lib</a></h4>
@@ -2801,45 +2801,67 @@ cachedMessage := messageStorage.ComputeIfAbsent(newMessage, remappingFunction)
 <p>We start with a <a href="./application_logic/protocol.html">high level overview</a> of the protocol, followed by sections explaining the various implemented components.</p>
 <p>Note, this chapter is still work in progress.</p>
 <div id="chapter_begin" style="break-before: page; page-break-before: always;"></div><h1 id="protocol-high-level-overview"><a class="header" href="#protocol-high-level-overview">Protocol high-level overview</a></h1>
-<p>To orientate the reader, we provide a high-level overview of the protocol, following the natural life cycle of a message. The first module used—while the message is still being created—, is the <strong>Tip Selection</strong>(ADD LINK) module. Here, the node must choose a certain number (from two to eight) of other messages to reference, meaning that the newly created message will be cryptographically attached to these referenced messages. An honest node must always choose tips uniformly at random from a tip pool, i.e., from a set of still unreferenced messages that satisfy a certain set of conditions, as discussed on INSERT LINK. In the diagram below, the issuance process being described now is represented in the context of the complete protocol. </p>
+<p>To orientate the reader, we provide a high-level overview of the protocol, following the natural life cycle of a message. The first module used—while the message is still being created—, is the <strong>Tip Selection</strong> module. 
+Here, the node must choose a certain number (from two to eight) of other messages to reference, meaning that the newly created message will be cryptographically attached to these referenced messages. 
+An honest node must always choose tips uniformly at random from a tip pool, i.e., from a set of still unreferenced messages that satisfy a certain set of conditions, as discussed on the <a href="protocol_specification/./tangle.html">Tangle</a> component. 
+In the diagram below, the issuance process being described now is represented in the context of the complete protocol. </p>
 <p><img src="protocol_specification/Protocol_overview_own_message.png" alt="title" /></p>
-<p>Each node in the network has limited bandwidth, CPU, and memory. In order to avoid any node from being overloaded, the right to write in everybody else's Tangle is regulated by the <strong>Rate and Congestion Control Module</strong>. The first one dictates the maximum rate of issuance of messages by the introduction of a small amount of proof of work. However, if an attacker accelerates the message issuance—effectively flooding the network—, the difficulty of the proof of work for that node will increase exponentially. Eventually, the attacker will be incapable of issuing new messages. </p>
-<p>Later, the Congestion control module fairly allocates the network resources accordingly to a quantity called <strong>Access Mana</strong>, which acts as a <a href="https://en.wikipedia.org/wiki/Sybil_attack">Sybil protection</a> mechanism. The exact manner in which Access Mana is acquired is discussed in INSERT LINK. But—for the purposes of this overview—we can summarize Access Mana as a scarce resource, that makes an effective Sybil protection mechanism. Thus, each node has the right to issue messages at a rate proportional to their Access Mana. This fair rate is not constant (since the utilization of the network may fluctuate), and to correctly set its own individual rate of issuance of messages, each node uses a mechanism called the <strong>Rate Setter</strong>, that makes the average issuance rate of the node converge to the fair rate guaranteed by Access Mana. Nodes that do not use the rate Setter will be punished by either the Rate Control or the Congestion Control Module.</p>
-<p>Between the Rate Setter and the actual gossip of the message, several steps will take place, but—for the sake of clearness—we ignore these steps for now and return to this subject later. Then, assuming that the message was properly created, it will be propagated to the rest of the network. Since we deal with a large number of nodes, the communication graph cannot be <a href="https://en.wikipedia.org/wiki/Complete_graph">complete</a>. Thus, the <a href="https://en.wikipedia.org/wiki/Network_topology">network topology</a> will be dictated by the <strong>Neighbor Selection</strong> (aka Auto-Peering) module, described in INSERT LINK. </p>
+<p>Each node in the network has limited bandwidth, CPU, and memory. In order to avoid any node from being overloaded, the right to write in everybody else's Tangle is regulated by the <strong>Rate and Congestion Control Modules</strong>. 
+The first one dictates the maximum rate of issuance of messages by the introduction of a small amount of proof of work. 
+However, if an attacker accelerates the message issuance—effectively flooding the network—, the difficulty of the proof of work for that node will increase exponentially. Eventually, the attacker will be incapable of issuing new messages. </p>
+<p>Later, the Congestion control module fairly allocates the network resources accordingly to a quantity called <strong>Access Mana</strong>, which acts as a <a href="https://en.wikipedia.org/wiki/Sybil_attack">Sybil protection</a> mechanism. 
+We can summarize Access Mana as a scarce resource, that makes an effective Sybil protection mechanism. Thus, each node has the right to issue messages at a rate proportional to their Access Mana. 
+This fair rate is not constant (since the utilization of the network may fluctuate), and to correctly set its own individual rate of issuance of messages, each node uses a mechanism called the <strong>Rate Setter</strong>, that makes the average issuance rate of the node converge to the fair rate guaranteed by Access Mana. 
+Nodes that do not use the rate Setter will be punished by either the Rate Control or the Congestion Control Module.</p>
+<p>Between the Rate Setter and the actual gossip of the message, several steps will take place, but—for the sake of clearness—we ignore these steps for now and return to this subject later. 
+Then, assuming that the message was properly created, it will be propagated to the rest of the network. 
+Since we deal with a large number of nodes, the communication graph cannot be <a href="https://en.wikipedia.org/wiki/Complete_graph">complete</a>. 
+Thus, the <a href="https://en.wikipedia.org/wiki/Network_topology">network topology</a> will be dictated by the <a href="protocol_specification/./autopeering.html"><strong>Neighbor Selection</strong></a> (aka Autopeering) module. </p>
 <p><img src="protocol_specification/Protocol_overview_received_message.png" alt="title" /></p>
-<p>We turn our attention now to another point of view: the one of the nodes receiving new messages, represented in the diagram above. After receiving a message, the node will perform several <strong>syntactical verifications</strong>, that will act as a filter to the messages. Additionally, the message has to be <strong>solidified</strong>, meaning that the node must know all the past cone of the message (i.e., the set of all messages directly or indirectly referenced by the message in question). After this step, the node places all the messages left into an inbox (OUTBOX OR INBOX??). At a fixed global rate (meaning that all nodes use the same rate), the node uses a <strong>scheduler</strong> to choose a message from the inbox. This scheduler—that, technically, is part of the aforementioned congestion control mechanism—works as a gatekeeper, effectively regulating the use of the most scarce resources of the nodes. Since the scheduler works at a fixed rate, the network cannot be overwhelmed. As discussed in INSERT LINK, the scheduler is designed to ensure—even in the presence of attackers—the following properties:</p>
+<p>We turn our attention now to another point of view: the one of the nodes receiving new messages, represented in the diagram above. 
+After receiving a message, the node will perform several <strong>syntactical verifications</strong>, that will act as a filter to the messages. Additionally, the message has to be <strong>solidified</strong>, meaning that the node must know all the past cone of the message (i.e., the set of all messages directly or indirectly referenced by the message in question). 
+After this step, the node places all the messages left into an inbox. At a fixed global rate (meaning that all nodes use the same rate), the node uses a <strong>scheduler</strong> to choose a message from the inbox. 
+This scheduler—that, technically, is part of the aforementioned congestion control mechanism—works as a gatekeeper, effectively regulating the use of the most scarce resources of the nodes. 
+Since the scheduler works at a fixed rate, the network cannot be overwhelmed. The scheduler is designed to ensure—even in the presence of attackers—the following properties:</p>
 <ol>
 <li><strong>Consistency</strong>: all honest nodes will schedule the same messages</li>
 <li><strong>Fair access</strong>: the nodes' messages will be scheduled at a fair rate according to their Access Mana</li>
 <li><strong>Bounded latency</strong>: the processing time of all messages will be bounded</li>
 </ol>
-<p>Only after passing the scheduler the messages can be written into the local Tangle. To do that, the nodes perform most of the <strong>semantic validation</strong>, such as the search for irreconcilable conflicts in the message's past cone or (in the case of value transfers) unlock condition checks. At this point (if the message passes these tests), the message will be <strong>booked</strong> into the <strong>local Tangle</strong> of the node. Additionally, in the case of a value transfer, the <strong>ledger state</strong> and two vectors called Access Mana Vector (already mentioned in this text) and <strong>Consensus Mana</strong> Vector are updated accordingly. The Consensus Mana is another Sybil protection mechanism which—since it is applied to different modules than Access Mana—has the need of a different calculation (for more details on that subject, see INSERT LINK). </p>
+<p>Only after passing the scheduler the messages can be written into the local Tangle. To do that, the nodes perform most of the <strong>semantic validation</strong>, such as the search for irreconcilable conflicts in the message's past cone or (in the case of value transfers) unlock condition checks. 
+At this point (if the message passes these checks), the message will be <strong>booked</strong> into the <strong>local Tangle</strong> of the node and be gossiped to the rest of the network. 
+Additionally, in the case of a value transfer, the <strong>ledger state</strong> and two vectors called Access Mana Vector and <strong>Consensus Mana</strong> Vector are updated accordingly. 
+The Consensus Mana is another Sybil protection mechanism which—since it is applied to different modules than Access Mana—has the need of a different calculation. </p>
 <p><img src="protocol_specification/Protocol_overview_booking.png" alt="title" /></p>
-<p>After having the message booked, the node is free to <strong>gossip</strong> it, but a crucial step of the protocol is still missing: the <strong>Opinion Setter</strong> and the voting protocol, that deal with the most subjective parts of the consensus mechanism (notice that, until now, the protocol has mostly dealt with objective checks). The voting protocol used here is the FPC (or <strong>Fast Probabilistic Consensus</strong>), which is a binary voting protocol that allows a large group of nodes to come to a consensus on the value of a single bit. The FPC begins with each node having an initial opinion, set using the node's local time perception and ordering of the messages. The nodes must set opinions about two subjects: </p>
+<p>After having the message booked, the node is free to <strong>gossip</strong> it, but a crucial step of the protocol is still missing: the <strong>Opinion Setter</strong> and the voting protocol, that deal with the most subjective parts of the consensus mechanism (notice that, until now, the protocol has mostly dealt with objective checks). 
+The voting protocol used here is the FPC (or <strong>Fast Probabilistic Consensus</strong>), which is a binary voting protocol that allows a large group of nodes to come to a consensus on the value of a single bit. 
+The FPC begins with each node having an initial opinion, set using the node's local time perception and ordering of the messages. The nodes must set opinions about two subjects: </p>
 <ol>
-<li><strong>The legitimacy of the timestamp of the message</strong>: Whenever a node issues a message, it adds a timestamp to it, which should represent the local time of issuance (as seen by the issuer node). The other nodes will judge if this timestamp is reasonable, by checking if it is too far away from their own local clock. The specific rule to do this check is described in LINK.</li>
-<li>In the case of a value transfer, <strong>whether it is a conflict</strong>: We use the <strong>FCoB Rule</strong> (ADD LINK). Roughly, the node will have a positive opinion about a transaction A if and only if all its conflicts arrived later than a certain time interval after A's arrival. </li>
+<li><strong>The legitimacy of the timestamp of the message</strong>: Whenever a node issues a message, it adds a timestamp to it, which should represent the local time of issuance (as seen by the issuer node). The other nodes will judge if this timestamp is reasonable, by checking if it is too far away from their own local clock.</li>
+<li>In the case of a value transfer, <strong>whether it is a conflict</strong>: We use the <a href="protocol_specification/./consensus_mechanism.html"><strong>FCoB Rule</strong></a>. Roughly, the node will have a positive opinion about a transaction A if and only if all its conflicts arrived later than a certain time interval after A's arrival. </li>
 </ol>
-<p>In each round, nodes randomly choose other nodes to query about their opinions about one of the subjects above. The querying node changes its own opinion if the number of responses with a different opinion than it is greater than a certain threshold. In order to prevent liveness attacks, this threshold is determined by a random number issued by a committee of high Consensus Mana nodes via the <strong>dRNG</strong> application. Without the random threshold, an attacker could lie about its responses in a way that could prevent the protocol from terminating. Finally, a node will finalize on a certain opinion after holding it for a certain number of rounds. </p>
-<p>When selecting which other nodes to query, a node must weight the list of all nodes by Consensus Mana. Thus, high Consensus Mana nodes are queried more often than low Consensus Mana nodes. This makes it difficult for an attacker to manipulate the outcome of the voting. Unless the attacker controls more than 1/3 of the Consensus Mana in the system, with high probability, we know that FPC has the following properties:</p>
+<p>In each round, nodes randomly choose other nodes to query about their opinions about one of the subjects above. 
+The querying node changes its own opinion if the number of responses with a different opinion than it is greater than a certain threshold. 
+In order to prevent liveness attacks, this threshold is determined by a random number issued by a committee of high Consensus Mana nodes via the <strong>dRNG</strong> application. 
+Without the random threshold, an attacker could lie about its responses in a way that could prevent the protocol from terminating. Finally, a node will finalize on a certain opinion after holding it for a certain number of rounds. </p>
+<p>When selecting which other nodes to query, a node must weight the list of all nodes by Consensus Mana. 
+Thus, high Consensus Mana nodes are queried more often than low Consensus Mana nodes. This makes it difficult for an attacker to manipulate the outcome of the voting. 
+Unless the attacker controls more than 1/3 of the Consensus Mana in the system, with high probability, we know that FPC has the following properties:</p>
 <ol>
 <li><strong>Termination</strong>: every honest node will finalize on some opinion before a maximum round number.</li>
 <li><strong>Agreement</strong>: all honest nodes will finalize on the same opinion.</li>
 <li><strong>Integrity</strong>: if a super majority of nodes—e.g. more than 90% weighted by Consensus Mana—, have the same initial opinion, then FPC will terminate with that value.</li>
 </ol>
 <p><img src="protocol_specification/Protocol_overview_consensus.png" alt="title" /></p>
-<p>Some concepts or modules implemented—even not strictly being part of the protocol—have an extreme importance in the understanding of the protocol as a whole, such as the <strong>Grades of Finality</strong> (add link). Analogously to Bitcoin's <a href="https://en.bitcoin.it/wiki/Confirmation">six blocks rule</a>, our protocol also has certain measures of the probability of a certain message being considered valid permanently by all nodes. The four possible grades are:</p>
-<ol>
-<li><strong>Grade 1</strong>: If 10 seconds have passed since the time the message arrived and no conflict was seen.</li>
-<li><strong>Grade 2</strong>: If 20 seconds have passed since the time the message arrived and no conflict was seen.</li>
-<li><strong>Grade 3</strong>: If the message achieved grade 2 and it accumulated enough approval weight (see LINK for more details)</li>
-<li><strong>Grade 4</strong>: If the message achieved grade 3 and 30 minutes (??????????) have passed since the timestamp of the message</li>
-</ol>
-<p>For more details on the grades above, see LINK.</p>
+<p>Analogously to Bitcoin's <a href="https://en.bitcoin.it/wiki/Confirmation">six blocks rule</a>, our protocol has certain measures of the probability of a certain message being considered valid permanently by all nodes. 
+This is achieved by the use of the <a href="protocol_specification/./consensus_mechanism.html"><strong>Approval Weight</strong></a>. 
+The Approval weight represents the <em>weight</em> of branches (and messages). 
+Different to the classical Nakamoto consensus, instead of selecting a leader based on a puzzle (PoW) or stake (PoS), it allows every node to express its opinion by simply issuing any message and attaching it in a part of the Tangle it <em>likes</em> (based on FCoB/FPC). 
+This process is also known as virtual voting, and has been previously described in <a href="https://medium.com/@hans_94488/a-new-consensus-the-tangle-multiverse-part-1-da4cb2a69772">On Tangle Voting</a>. </p>
 <div id="chapter_begin" style="break-before: page; page-break-before: always;"></div><h1 id="list-of-components"><a class="header" href="#list-of-components">List of components</a></h1>
 <h3 id="node-identities-and-mana"><a class="header" href="#node-identities-and-mana">Node identities and Mana</a></h3>
 <p>Nodes receive rewards for being good actors in a system that secures the network and provides Sybil protection. </p>
-<p>For more details see the <a href="protocol_specification/./mana.html">Goshimmer mana specs</a>.</p>
+<p>For more details see the <a href="protocol_specification/./mana.html">GoShimmer mana specs</a>.</p>
 <h3 id="message-layout"><a class="header" href="#message-layout">Message layout</a></h3>
 <p>The concept of payloads creates infinite possibilities while also improving data processing efficiency. </p>
 <h3 id="autopeering"><a class="header" href="#autopeering">Autopeering</a></h3>
@@ -2857,7 +2879,7 @@ cachedMessage := messageStorage.ComputeIfAbsent(newMessage, remappingFunction)
 <h2 id="additional-modules"><a class="header" href="#additional-modules">Additional modules:</a></h2>
 <h3 id="markers"><a class="header" href="#markers">Markers</a></h3>
 <p>The <strong>marker</strong> tool is a tool to efficiently estimate the approval weight of a message and that reduces the portion of the Tangle that needs to be traversed.</p>
-<p>For more details see the <a href="protocol_specification/./markers.html">Goshimmer marker specs</a>.</p>
+<p>For more details see the <a href="protocol_specification/./markers.html">GoShimmer marker specs</a>.</p>
 <div id="chapter_begin" style="break-before: page; page-break-before: always;"></div><h1 id="tangle"><a class="header" href="#tangle">Tangle</a></h1>
 <h2 id="data-types"><a class="header" href="#data-types">Data types</a></h2>
 <table><thead><tr><th>Name</th><th>Description</th></tr></thead><tbody>
@@ -3515,7 +3537,7 @@ and liked transaction, <code>TransactionConfirmed</code> event is triggered, upd
 <p>In case of a large database, initial synching and solidification is a computationally heavy task due to the sheer amount
 of messages in the tangle. Mana calculation only adds to this burden. It will be determined through testing if additional
 &quot;weight lifting&quot; mechanism is needed (for example delaying mana calculation).</p>
-<p>In Goshimmer test network, all funds are initially held by the faucet node, therefore all mana present at bootstrap belong
+<p>In the GoShimmer test network, all funds are initially held by the faucet node, therefore all mana present at bootstrap belong
 to this node. Whenever a transaction is requested from the faucet, it pledges mana to the requesting node, helping other
 nodes to increase their mana.</p>
 <h3 id="mana-package"><a class="header" href="#mana-package">Mana Package</a></h3>
@@ -3872,7 +3894,7 @@ data but can only visualize time series. Therefore, both of these ways will be u
 <li>Average mana of neighbors.</li>
 </ul>
 <h5 id="global-perception"><a class="header" href="#global-perception">Global Perception</a></h5>
-<p>Additionally, the Goshimmer Analyzer (analysis server) could be updated:</p>
+<p>Additionally, the GoShimmer Analyzer (analysis server) could be updated:</p>
 <ul>
 <li>Autopeering node graph, where size of a node corresponds to its mana value.</li>
 <li>Some previously described metrics could be visualized here as well, to give the chance to people without
@@ -4972,160 +4994,22 @@ func (m *Manager) IsInPastCone(earlierMarkers *MarkersPair, laterMarkers *Marker
 <p>For details of managing approval weight of each marker and approval weight calculation thereof please refer to <a href="protocol_specification/./consensus_mechanism.html#approval-weight-aw">Approval Weight</a>.</p>
 <div id="chapter_begin" style="break-before: page; page-break-before: always;"></div><h1 id="layers"><a class="header" href="#layers">Layers</a></h1>
 <blockquote>
-<p>DISCLAIMER: The described layers describe how things are implemented in GoShimmer. They might not reflect final Coordicide specification or implementations.</p>
+<p>DISCLAIMER: The described layers describe how things are implemented in GoShimmer. They might not reflect final IOTA 2.0 specification or implementations.</p>
 </blockquote>
 <p>GoShimmer abstracts node functionalities into different layers. Similar to other architectures, upper layers build on the provided functionality of the layers below them. A layer is merely the concept of creating a clear separation of concerns.</p>
-<p>Layers operate on payloads, and it is up to the layer to react to the wanted payload types.</p>
+<p>Within a layer we can have several modules that can be swapped with different implementations while keeping compatibility with the overall protocol.</p>
+<p><img src="protocol_specification/./layers.png" alt="layers" /></p>
+<h2 id="network-layer"><a class="header" href="#network-layer">Network Layer</a></h2>
+<p>The network layer provides all the primitives required to build a network topology and to exchange data across the network.</p>
 <h2 id="communication-layer"><a class="header" href="#communication-layer">Communication Layer</a></h2>
-<p>The communication layer is the most primitive layer, as its job is to simply form a graph made out of messages which contain payloads. As the name implies, messages are communicated/gossiped throughout the entire network. Think of it as the &quot;physical layer&quot; in the OSI-model. This layer forms a DAG made up of messages as each message references two previous messages.</p>
-<h3 id="message"><a class="header" href="#message">Message</a></h3>
-<p>A message is a core data type which reflects a vertex in the communication layer <a href="https://en.wikipedia.org/wiki/Directed_acyclic_graph">DAG</a>.</p>
-<p>It contains following properties:</p>
-<ul>
-<li>References to other messages</li>
-<li>Issuer's public key</li>
-<li>The issuance time of the message</li>
-<li>The message sequence number from the node which issued the message</li>
-<li>Payload which might be interpreted by upper layers</li>
-<li>The nonce which lets the message fulfill the PoW requirement</li>
-<li>A Signature signing all the above fields.</li>
-</ul>
-<p>A message is gossiped only when it becomes solid, meaning that its past history is known to the node. Messages currently must become solid within a 30 seconds time period, otherwise they are discarded.</p>
-<p>Messages must also fulfill a PoW requirement currently which involves finding a nonce so that the hash of the fields of the message (minus the signature) has a certain amount of leading zeros. The PoW currently operates on <code>BLAKE2b_512</code>. Later the PoW requirement will be substituted by the actual Coordicide rate control mechanisms.</p>
-<p>A message's byte layout is defined as:</p>
-<pre><code>parent_0&lt;64bytes&gt;
-parent_1&lt;64bytes&gt;
-issuer_public_key&lt;32bytes&gt;
-issuance_time&lt;int64,8bytes&gt;
-sequence_number&lt;uint64,8bytes&gt;
-payload&lt;variable-size, max 64KBs&gt;
-nonce&lt;uint64,8bytes&gt;
-signature&lt;64bytes&gt;
-</code></pre>
-<h3 id="payloads-1"><a class="header" href="#payloads-1">Payloads</a></h3>
-<p>As described above, a message contains a payload. In GoShimmer, there are 3 defined payload types, however, <a href="protocol_specification/../tutorials/dApp.html">more such types can be defined by developers seeking to implement their own application on top of the communication layer</a>.</p>
-<table><thead><tr><th>Type ID</th><th>Name</th><th>Purpose</th></tr></thead><tbody>
-<tr><td>0</td><td>Data</td><td>Holds raw bytes without any further meaning</td></tr>
-<tr><td>1</td><td>Value Object</td><td>Represents a value object on the value layer</td></tr>
-<tr><td>111</td><td>DRNG Object</td><td>Represents a DRNG object for the DRNG layer</td></tr>
-</tbody></table>
-<p>A payload's byte layout is defined as:</p>
-<pre><code>type&lt;uint32-4bytes&gt;
-length&lt;uint32-4bytes&gt;
-data&lt;length bytes&gt;
-</code></pre>
-<p>It is a upper layer's concern to listen for messages which hold specific payload types up on which the layer operates on.</p>
-<h3 id="tip-selection-1"><a class="header" href="#tip-selection-1">Tip-Selection</a></h3>
-<p>Since on the communication layer the payloads do not impose any restriction on the validity of a message, the tip-selection can simply operate on a pool of recent solid tips. However, in the future the tip-selector might impose certain restrictions such as below-max-depth checks and so on.</p>
-<h2 id="value-layer"><a class="header" href="#value-layer">Value Layer</a></h2>
-<p>The value layer operates solely on payloads of type value object. This layer has multiple responsibilities:</p>
-<ul>
-<li>Forming the ledger state</li>
-<li>Processing, validating and issuing transactions</li>
-<li>Conflict detection</li>
-<li>Conflict resolution via FPC</li>
-<li>Forming a DAG made up from value objects</li>
-<li>Tip-selection (on value object tips)</li>
-</ul>
-<h3 id="value-object"><a class="header" href="#value-object">Value Object</a></h3>
-<p>A value object is an object derived from a message containing a value object payload. It references two other value objects and contains one transaction.</p>
-<p>The two references express vouching for the referenced value objects, meaning that they are seen as valid from the PoV of the value object which references them.</p>
-<p>A value object is solid when its past cone is known, and the contained transaction's inputs are known.</p>
-<p>A transaction can occur in multiple value objects. In that case we speak of reattachments.</p>
-<p>A value object's byte layout is defined as:</p>
-<pre><code>type&lt;uint32-4bytes&gt;
-length&lt;uint32-4bytes&gt;
-parent_0_reference&lt;32bytes&gt;
-parent_1_reference&lt;32bytes&gt;
-transaction&lt;variable size&gt;
-</code></pre>
-<h3 id="utxo"><a class="header" href="#utxo">UTXO</a></h3>
-<p>GoShimmer uses unspent transaction outputs (UTXOs) as inputs for transactions. Meaning that inputs reference a specific UTXO ID which was generated by a previous transaction. The UTXO ID is made up from the destination address plus the hash of the transaction creating the output.</p>
-<h4 id="inputs-2"><a class="header" href="#inputs-2">Inputs</a></h4>
-<p>As just described, an input is merely a reference to another transaction's output to a given address. GoShimmer currently works on addresses and unlike other cryptocurrencies does not yet have any concept of other unlocking mechanisms.</p>
-<p>Addresses are BLAKE2b hashes of the corresponding Ed25519 and BLS public keys.</p>
-<h4 id="outputs-2"><a class="header" href="#outputs-2">Outputs</a></h4>
-<p>An output encapsulates a destination address, and a list of balances. A balance is an amount of tokens and a color.</p>
-<h5 id="color--coloring"><a class="header" href="#color--coloring">Color &amp; Coloring</a></h5>
-<p>The color of a balance is simply an array of 32 bytes and per default, tokens have a color of type &quot;IOTA&quot;, where all 32 bytes are zero.</p>
-<p>Creating a new color involves specifying the special color type &quot;New&quot; in a transaction output, where each byte in the color array is set to 255. Doing this will instruct GoShimmer to then color the specific balance on the specific address of the given output to the hash of the transaction creating the output. New colors therefore simply equal the transaction hash of the transaction creating the output (and are therefore unique).</p>
-<p>Coloring tokens does neither increase or decrease the token supply. It is up to merchants and other systems to provide meaning to the colors of tokens.</p>
-<p>Because of the way the coloring works, any holder of colored tokens can &quot;shrink&quot; the circulating amount of the specific colored token by simply creating outputs again with the special color type &quot;New&quot;. Of course doing so will only effect the actual holder of the colored tokens but it is something to keep in mind when developing a system around colored tokens.</p>
-<h3 id="transaction-1"><a class="header" href="#transaction-1">Transaction</a></h3>
-<p>A transaction defines a transfer from UTXOs to new outputs.</p>
-<p>It contains following properties:</p>
-<ul>
-<li>Inputs</li>
-<li>Outputs</li>
-<li>Payload</li>
-<li>Signatures</li>
-</ul>
-<p>These properties minus the signatures make up the &quot;essence&quot; bytes of the transaction. Each signature signs the essence data. Therefore, if a transaction contains multiple inputs consuming UTXOs from an address, only one signature for that address needs to be provided.</p>
-<p>A transaction is marked as solid when all of its referenced inputs are known.</p>
-<p>A transaction’s byte layout is defined as:</p>
-<pre><code>inputs_count&lt;uint32-4bytes&gt;
- (per input)-&gt;
-     address&lt;33bytes&gt;
-     utxo_id&lt;32bytes&gt;
-     
-outputs_count&lt;uint32-4bytes&gt;
- (per output)-&gt;
-     address&lt;33bytes&gt;
-     balances_count&lt;uint32-4bytes&gt;
-      (per balance)-&gt;
-          value&lt;int64-8bytes&gt;
-          color&lt;32bytes&gt;
-          
-payload_length&lt;int32-8bytes&gt;
-payload&lt;payload_length bytes&gt;
-
-(signatures (multiple occurrences in any order))-&gt;
-    (ED25519)-&gt;
-        signature_type(1 byte, value = 1)
-        public_key&lt;32bytes&gt;
-        signature&lt;64bytes&gt;
-    (BLS)-&gt;
-        signature_type(1byte, value = 2)
-        public_key&lt;128bytes&gt;
-        signature&lt;64bytes&gt;
-signature_block_end&lt;1byte, value 0&gt;
-</code></pre>
-<p>The payload length inside the transaction can be max 65KBs.</p>
-<h3 id="parallel-reality-based-ledger-state"><a class="header" href="#parallel-reality-based-ledger-state">Parallel reality based ledger state</a></h3>
-<p>GoShimmer uses the parallel reality based ledger state <a href="https://medium.com/@hans_94488/a-new-consensus-the-tangle-multiverse-part-1-da4cb2a69772">introduced by Hans in his blogpost series</a>. Unlike the blogpost however, conflict resolution is done via <a href="https://blog.iota.org/consensus-in-the-iota-tangle-fpc-b98e0f1e8fa">FPC</a>. There is also no notion of mana as of yet or 'partial liking' other opinion realities.</p>
-<p>Note that the reason the ledger state is implemented this way is to make it easier to extend it for the multiverse consensus in case it becomes a viable choice.</p>
-<h4 id="branches--realities"><a class="header" href="#branches--realities">Branches / Realities</a></h4>
-<p>Realities are called branches in GoShimmer. A branch's ID is defined as a 32 byte long array. The master branch's ID is a 32 byte array where the first byte has the value 1.</p>
-<p>Branches are created every time a conflict arises. The created branches have the IDs of the transactions which inflict/create the conflict.</p>
-<p>Branches are in some sense a performance optimization as they allow to group transactions reflecting the same &quot;reality&quot; of ledger mutations as a group.</p>
-<h5 id="conflict-detection"><a class="header" href="#conflict-detection">Conflict detection</a></h5>
-<p>As mentioned, transactions use UTXO as inputs. Every time a transaction consumes a given output, the consumer count on the output is incremented. If the consumer count goes above 1, a conflict arises, since multiple transactions are trying to consume/use the same UTXO (double spend).</p>
-<p>Note that in the case that there is yet no finalized/confirmed consumer of the UTXO, the transactions forming the conflict set each spawn their own branch. Likewise, if a transaction is the first consumer of an output, it doesn't create a new branch (may however generate an aggregated branch).</p>
-<h5 id="aggregated-branches-1"><a class="header" href="#aggregated-branches-1">Aggregated Branches</a></h5>
-<p>Since transactions are assigned to branches, transactions consuming outputs from transactions (which are non-conflicting) which reside in different branches, can create new so called aggregated branches. An aggregated branch is a virtual branch which reflects the change set of mutations of the ledger aggregated out of different branches.</p>
-<h4 id="balances"><a class="header" href="#balances">Balances</a></h4>
-<p>Making up the balances of a given address involves querying the node for UTXOs which have as a target the given address.</p>
-<h3 id="consensus-1"><a class="header" href="#consensus-1">Consensus</a></h3>
-<h4 id="fpc--fcob"><a class="header" href="#fpc--fcob">FPC &amp; FCoB</a></h4>
-<p>We define a conflict as consuming (i.e., spending) more than once an (unspent) output. </p>
-<p>Initially a node likes a transaction <code>v</code> that solidified at time <code>t</code> if in the interval <code>(−∞, t + avgNetworkDelay]</code> there are no spends from the same output (used as input).</p>
-<p>If a conflicting transaction solidifies after that, we initially dislike it and add both (initially liked and initially disliked) conflicting transactions to the unresolved conflict set.</p>
-<p>If no conflicting transactions solidify in the interval <code>(−∞, t + (2* avgNetworkDelay)]</code> we confirm (definitively like) <code>v</code>.</p>
-<p>If <code>v_1,...,v_k</code> are all re-attachments of the same transaction, we either like all or none following the rule above.</p>
-<p>Every <code>T</code> seconds a “Fast Probabilistic Consensus” (FPC) voting round is applied to every unresolved conflicting transaction in the Tangle:</p>
-<ul>
-<li>each node queries a set of randomly chosen nodes about its unresolved conflicting transactions; </li>
-<li>the queried nodes send back their opinions on the requested transactions;</li>
-</ul>
-<p>After the FPC is done the values <code>g(v)</code> of several transactions may change and then it stays the same forever. 
-That is, after the vote a transaction is either confirmed (definitely liked) or rejected (definitely disliked) by a node, and this value will never change. Further discussion about monotonicity appears below.</p>
-<h4 id="monotonicity"><a class="header" href="#monotonicity">Monotonicity</a></h4>
-<p>If <code>u</code> approves <code>v</code>, then <code>g(v) ≥ g(u)</code>, that is, if a node likes u then it likes any transaction <code>u</code> approves, and if the node dislikes <code>v</code> then it dislikes any transaction that approve <code>v</code>. </p>
-<p>Another way of saying it is that if we like <code>v</code> then we like all of its past cone, and if we dislike <code>v</code> we dislike all of its future cone.
-The votes of any node will follow the monotonicity rule.</p>
+<p>The <em>communication layer</em> gives semantic to the data received from the <em>network layer</em> in the form of <em>messages</em>. It also takes care of regulating the access to the communication medium, specifically, the Tangle.</p>
+<h2 id="decentralized-application-layer"><a class="header" href="#decentralized-application-layer">(Decentralized) Application Layer</a></h2>
+<p>Each <em>message</em> contains a <em>payload</em> that is used to define multiple (decentralized) applications. The most obvious example is the value transfer application, that uses as a payload a transaction. Thus, this layer allows to build decentralized applications that may or not require consensus on their state.</p>
+<h2 id="cross-layer"><a class="header" href="#cross-layer">Cross-layer</a></h2>
+<p>The above description is only a semplification of how GoShimmer is designed. Clearly, some optimizations or even modules of the protocol may require the need to interact with modules outside of their logical layer. For example, we use access and consensus Mana as a Sybil protection mechanism in most of the core components. This makes part of the implementation of the protocol cross-layer.</p>
 <div id="chapter_begin" style="break-before: page; page-break-before: always;"></div><h1 id="glossary-1"><a class="header" href="#glossary-1">Glossary</a></h1>
 <hr />
-<h2 id="consensus-2"><a class="header" href="#consensus-2">CONSENSUS</a></h2>
+<h2 id="consensus-1"><a class="header" href="#consensus-1">CONSENSUS</a></h2>
 <p>Agreement on a specific datum or value in distributed multi-agent systems, in the presence of faulty processes.</p>
 <h3 id="blockchain-bottleneck"><a class="header" href="#blockchain-bottleneck">BLOCKCHAIN BOTTLENECK</a></h3>
 <p>As more transactions are issued, the block rate and size become a bottleneck in the system. It can no longer include all incoming transactions promptly. Attempts to speed up block rates will introduce more orphan blocks (blocks being left behind) and reduce the security of the blockchain.</p>
@@ -5146,7 +5030,7 @@ The votes of any node will follow the monotonicity rule.</p>
 <h3 id="subtangle"><a class="header" href="#subtangle">SUBTANGLE</a></h3>
 <p>A consistent section of the Tangle (i.e. a subset of messages), such that each included message also includes its referenced messages.</p>
 <hr />
-<h2 id="network-layer"><a class="header" href="#network-layer">NETWORK LAYER</a></h2>
+<h2 id="network-layer-1"><a class="header" href="#network-layer-1">NETWORK LAYER</a></h2>
 <p>This layer manages the lower layers of internet communication like TCP. It is the most technical, and in some ways the least interesting. In this layer, the connections between nodes are managed by the autopeering and peer discovery modules and the gossip protocol.</p>
 <h3 id="peering"><a class="header" href="#peering">PEERING</a></h3>
 <p>The procedure of discovering and connecting to other network nodes.</p>
@@ -5165,7 +5049,7 @@ The votes of any node will follow the monotonicity rule.</p>
 <hr />
 <h2 id="communication-layer-1"><a class="header" href="#communication-layer-1">COMMUNICATION LAYER</a></h2>
 <p>This layer stores and communicates information. This layer contains the “distributed ledger” or the tangle. The rate control and timestamps are in this layer too.</p>
-<h3 id="message-1"><a class="header" href="#message-1">MESSAGE</a></h3>
+<h3 id="message"><a class="header" href="#message">MESSAGE</a></h3>
 <p>The object that is gossiped between neighbors. All gossiped information is included in a message. The most basic unit of information of the IOTA Protocol. Each message has a type and size and contains data.</p>
 <h3 id="message-overhead"><a class="header" href="#message-overhead">MESSAGE OVERHEAD</a></h3>
 <p>The additional information (metadata) that needs to be sent along with the actual information (data). This can contain signatures, voting, heartbeat signals, and anything that is transmitted over the network but is not the transaction itself.</p>
@@ -5186,9 +5070,9 @@ The votes of any node will follow the monotonicity rule.</p>
 <h4 id="epoch"><a class="header" href="#epoch">EPOCH</a></h4>
 <p>A time interval that is used for a certain type of consensus mana. At the end of each epoch a snapshot of the state of mana distribution in the network is taken. Since this tool employs the timestamp of messages every node can reach consensus on a epoch's mana distibution eventually.</p>
 <hr />
-<h3 id="transaction-2"><a class="header" href="#transaction-2">TRANSACTION</a></h3>
+<h3 id="transaction-1"><a class="header" href="#transaction-1">TRANSACTION</a></h3>
 <p>A message with payload of type TransactionType. It contains the information of a transfer of funds.</p>
-<h4 id="utxo-1"><a class="header" href="#utxo-1">UTXO</a></h4>
+<h4 id="utxo"><a class="header" href="#utxo">UTXO</a></h4>
 <p>Unspent transaction output.</p>
 <h4 id="orphan"><a class="header" href="#orphan">ORPHAN</a></h4>
 <p>A transaction (or block) that is not referenced by any succeeding transaction (or block). An orphan is not considered confirmed and will not be part of the consensus.</p>
@@ -5201,7 +5085,7 @@ The votes of any node will follow the monotonicity rule.</p>
 <h4 id="finality-1"><a class="header" href="#finality-1">FINALITY</a></h4>
 <p>The property that once a transaction is completed there is no way to revert or alter it. This is the moment when the parties involved in a transfer can consider the deal done. Finality can be deterministic or probabilistic.</p>
 <hr />
-<h3 id="tip-selection-2"><a class="header" href="#tip-selection-2">TIP SELECTION</a></h3>
+<h3 id="tip-selection-1"><a class="header" href="#tip-selection-1">TIP SELECTION</a></h3>
 <p>The process of selecting previous messages to be referenced by a new message. These references are where a message attaches to the existing data structure. IOTA only enforces that a message approves (at least) two other messages, but the tip selection strategy is left up to the user (with a good default provided by IOTA).</p>
 <h4 id="tip"><a class="header" href="#tip">TIP</a></h4>
 <p>A message that has not yet been approved.</p>
@@ -5963,7 +5847,7 @@ if err != nil {
 </code></pre>
 <h4 id="client-lib---sendpayload"><a class="header" href="#client-lib---sendpayload">Client lib - <code>SendPayload</code></a></h4>
 <h5 id="sendpayloadpayload-byte-string-error"><a class="header" href="#sendpayloadpayload-byte-string-error"><code>SendPayload(payload []byte) (string, error)</code></a></h5>
-<pre><code class="language-go">helloPayload := payload.NewData([]byte{&quot;Hello Goshimmer World!&quot;})
+<pre><code class="language-go">helloPayload := payload.NewData([]byte{&quot;Hello GoShimmer World!&quot;})
 messageID, err := goshimAPI.SendPayload(helloPayload.Bytes())
 </code></pre>
 <h3 id="response-examples-5"><a class="header" href="#response-examples-5">Response examples</a></h3>

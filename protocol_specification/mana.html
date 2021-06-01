@@ -307,7 +307,7 @@ and liked transaction, <code>TransactionConfirmed</code> event is triggered, upd
 <p>In case of a large database, initial synching and solidification is a computationally heavy task due to the sheer amount
 of messages in the tangle. Mana calculation only adds to this burden. It will be determined through testing if additional
 &quot;weight lifting&quot; mechanism is needed (for example delaying mana calculation).</p>
-<p>In Goshimmer test network, all funds are initially held by the faucet node, therefore all mana present at bootstrap belong
+<p>In the GoShimmer test network, all funds are initially held by the faucet node, therefore all mana present at bootstrap belong
 to this node. Whenever a transaction is requested from the faucet, it pledges mana to the requesting node, helping other
 nodes to increase their mana.</p>
 <h3 id="mana-package"><a class="header" href="#mana-package">Mana Package</a></h3>
@@ -664,7 +664,7 @@ data but can only visualize time series. Therefore, both of these ways will be u
 <li>Average mana of neighbors.</li>
 </ul>
 <h5 id="global-perception"><a class="header" href="#global-perception">Global Perception</a></h5>
-<p>Additionally, the Goshimmer Analyzer (analysis server) could be updated:</p>
+<p>Additionally, the GoShimmer Analyzer (analysis server) could be updated:</p>
 <ul>
 <li>Autopeering node graph, where size of a node corresponds to its mana value.</li>
 <li>Some previously described metrics could be visualized here as well, to give the chance to people without

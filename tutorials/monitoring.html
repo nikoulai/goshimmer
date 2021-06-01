@@ -173,7 +173,7 @@
 <h2 id="motivation"><a class="header" href="#motivation">Motivation</a></h2>
 <p>GoShimmer is shipped with its internal node dashboard that you can reach at <code>127.0.0.1:8081</code> by default. While this dashboard provides some basic metrics information, its main functionality is to provide a graphical interface to interact with your node.</p>
 <p>Node operators who wish to have more insights into what is happening within their node have the option to enable a <a href="https://prometheus.io/">Prometheus</a> exporter plugin that gathers important metrics about their node. To visualize these metrics, a <a href="https://grafana.com/oss/grafana/">Grafana Dashboard</a> is utilized.</p>
-<h1 id="setting-up-run-goshimmer-from-a-vps"><a class="header" href="#setting-up-run-goshimmer-from-a-vps">Setting up (run Goshimmer from a VPS)</a></h1>
+<h1 id="setting-up-run-goshimmer-from-a-vps"><a class="header" href="#setting-up-run-goshimmer-from-a-vps">Setting up (run GoShimmer from a VPS)</a></h1>
 <p>To enable the <strong>Monitoring Dashboard</strong> for a GoShimmer node running from a VPS as described <a href="./setup.html">here</a>, you need to carry out some additional steps.</p>
 <ol>
 <li>Edit <code>docker-compose.yml</code>
@@ -185,7 +185,7 @@ TODO</li>
 <li>Run <code>docker-compose up</code>.
 TODO</li>
 </ol>
-<h1 id="setting-up-run-goshimmer-from-your-home-machine"><a class="header" href="#setting-up-run-goshimmer-from-your-home-machine">Setting up (run Goshimmer from your home machine)</a></h1>
+<h1 id="setting-up-run-goshimmer-from-your-home-machine"><a class="header" href="#setting-up-run-goshimmer-from-your-home-machine">Setting up (run GoShimmer from your home machine)</a></h1>
 <p>Depending on how you run your GoShimmer node, there are different ways to set up the <strong>Monitoring Dashboard</strong>.</p>
 <h2 id="docker"><a class="header" href="#docker">Docker</a></h2>
 <p>One of the easiest ways to run a node is to use <a href="https://www.docker.com/">Docker</a>. To automatically launch GoShimmer and the Monitoring Dashboard with docker, follow these steps:</p>
@@ -219,7 +219,7 @@ Make sure, that following entry is present in <code>config.json</code>:
 You can experiment with the dashboard, change layout, add panels and discover metrics. Your changes will be saved into a Grafana database located in the repo at <code>tools/monitoring/grafana/grafana.db</code>.</p>
 <h2 id="binary"><a class="header" href="#binary">Binary</a></h2>
 <p>If you run the <a href="https://github.com/iotaledger/goshimmer/releases">released binaries</a>, or build GoShimmer from source, you need to setup Prometheus and Grafana separately, furthermore, you have to configure GoShimmer to export data.</p>
-<h3 id="goshimmer-configuration"><a class="header" href="#goshimmer-configuration">Goshimmer Configuration</a></h3>
+<h3 id="goshimmer-configuration"><a class="header" href="#goshimmer-configuration">GoShimmer Configuration</a></h3>
 <ol>
 <li>Make sure that the <code>prometheus.bindAddress</code> config parameter is set in your <code>config.json</code>:
 <pre><code class="language-json">  &quot;prometheus&quot;: {
@@ -420,7 +420,7 @@ $ ./grafana-server
 <pre><code>$ sudo cp tools/monitoring/grafana/provisioning/dashboards/dashboards.yaml /etc/grafana/provisioning/dashboards
 </code></pre>
 </li>
-<li>Copy <a href="https://github.com/iotaledger/goshimmer/blob/develop/tools/monitoring/grafana/dashboards/local_dashboard.json">Goshimmer Local Metrics</a> dashboard to <code>/var/lib/grafana/</code>:
+<li>Copy <a href="https://github.com/iotaledger/goshimmer/blob/develop/tools/monitoring/grafana/dashboards/local_dashboard.json">GoShimmer Local Metrics</a> dashboard to <code>/var/lib/grafana/</code>:
 <pre><code>$ sudo cp -R tools/monitoring/grafana/dashboards /var/lib/grafana/
 </code></pre>
 </li>
