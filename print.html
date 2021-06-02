@@ -4679,7 +4679,7 @@ done by providing a reference to the state controller unlocked other alias withi
 corresponding alias output. Only the state metadata and the token balances of the alias output are allowed to change,
 and token balances must be at least a protocol defined constant.</p>
 <h4 id="unlocking-via-governance-controller"><a class="header" href="#unlocking-via-governance-controller">Unlocking via Governance Controller</a></h4>
-<p>The state controller is either and address, or another alias. In the former case, unlocking is done via the regular
+<p>The governance controller is either an address, or another alias. In the former case, unlocking is done via the regular
 signature. In the latter case, unlocking is done by providing a reference to the unlocked governance alias within the
 transaction.</p>
 <p>When an alias output is unlocked as input by the governance controller, the transaction doesn't need to have a
@@ -4696,8 +4696,8 @@ is present, only the state and governance controller fields are allowed to be ch
 which essentially gives the control of the funds of the output to the owner of the address account, the holder of the
 corresponding private key.</p>
 <p>In order to make alias accounts (smart contract chains) able to receive funds, we need to define a new fund locking
-mechanism, called alias locking. An alias locked output can be unlocked by unlocking (state or governance?) the given
-alias output in the very same transaction.</p>
+mechanism, called alias locking. An alias locked output can be unlocked by unlocking the given alias output for
+state transition in the very same transaction.</p>
 <p>An alias account (smart contract chain) can receive funds now, but there are additional requirements to be satisfied 
 for smart contracts:</p>
 <ul>
@@ -4711,7 +4711,7 @@ spent before the time locking period expires.</li>
 <p>As we can see, there are couple new concepts regarding outputs that we need to support for the smart contract use case:</p>
 <ul>
 <li><strong>alias locking</strong></li>
-<li><strong>metadata tied to the output</strong></li>
+<li><strong>metadata tied to output</strong></li>
 <li><strong>fallback unlocking mechanism</strong></li>
 <li><strong>time locking</strong></li>
 </ul>
@@ -4767,9 +4767,9 @@ the balance of its alias output.</p>
 <p>What happens when the smart contract chain goes offline or dies completely? How do we prevent the extended output to
 be lost forever?</p>
 <h3 id="unlocking-via-fallback"><a class="header" href="#unlocking-via-fallback">Unlocking via Fallback</a></h3>
-<p>Extended outputs must also define a fallback account and a fallback deadline. After the fallback deadline, the fallback
-account is also authorized to unlock the extended output. The fallback deadline can not be smaller than a protocol wide
-constant to give enough time to the smart contract chain to pick up the request.</p>
+<p>Extended outputs can also define a fallback account and a fallback deadline. After the fallback deadline, only the
+fallback account is authorized to unlock the extended output. Fallback deadline cannot be smaller than a protocol
+wide constant to give enough time to the smart contract chain to pick up the request.</p>
 <p>Fallback unlocking can either be done via signature unlocking or alias unlocking, depending on the type  of account
 specified.</p>
 <h3 id="timelock"><a class="header" href="#timelock">Timelock</a></h3>
@@ -4798,9 +4798,9 @@ be carried out without changing the smart contract chain account, aliasID.
 alias account.</li>
 </ul>
 </li>
-<li>Each Extended Output is a request which is “sent” to the alias account. The ISCP can retrieve the backlog of requests
-by retrieving all outputs for the aliasID. Consuming the Extended Output means it is atomically removed from
-the backlog. It can only be done by the state controller, i.e. the committee of the smart contract chain.</li>
+<li>Each Extended Output is a request which is “sent” to the alias account. The ISCP can retrieve the backlog of
+requests by retrieving all outputs for the aliasID. Consuming the Extended Output means it is atomically removed
+from the backlog. It can only be done by the state controller, i.e. the committee of the smart contract chain.</li>
 <li>Fallback parameters prevent from losing funds if the committee is inactive for some timeout. After timeout the 
 Extended Output can be unlocked by FallbackAccount, an address or another alias.</li>
 </ul>
@@ -4855,7 +4855,8 @@ you can take back when you destroy the NFT. This is required so that NFTs are no
 some IOTAs backing the output. Otherwise, the ledger database could be easily spammed.
 Transferring NFTs is also feeless, just like any other transaction in IOTA.</p>
 <h2 id="goshimmer-implementation"><a class="header" href="#goshimmer-implementation">Goshimmer Implementation</a></h2>
-<p>If you are interested, here you can find the GoShimmer implementation in <a href="https://github.com/iotaledger/goshimmer/blob/master/packages/ledgerstate/output.go">output.go</a>:</p>
+<p>If you are interested, you can find the GoShimmer implementation of the new ouput types in
+<a href="https://github.com/iotaledger/goshimmer/blob/master/packages/ledgerstate/output.go">output.go</a>:</p>
 <ul>
 <li><a href="https://github.com/iotaledger/goshimmer/blob/master/packages/ledgerstate/output.go#L947">AliasOutput</a> and</li>
 <li><a href="https://github.com/iotaledger/goshimmer/blob/master/packages/ledgerstate/output.go#L1840">ExtendedLockedOutput</a></li>
