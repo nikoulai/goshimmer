@@ -193,7 +193,7 @@
 </code></pre>
 <h4 id="client-lib---getautopeeringneighbors"><a class="header" href="#client-lib---getautopeeringneighbors">Client lib - <code>GetAutopeeringNeighbors</code></a></h4>
 <p>Messages can be retrieved via <code>GetAutopeeringNeighbors(knownPeers bool) (*jsonmodels.GetNeighborsResponse, error)</code></p>
-<pre><code>neighbors, err := goshimAPI.GetAutopeeringNeighbors(false)
+<pre><code class="language-go">neighbors, err := goshimAPI.GetAutopeeringNeighbors(false)
 if err != nil {
     // return error
 }

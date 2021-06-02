@@ -181,29 +181,13 @@
 <tr><td>string</td><td>A dynamically sized array of an UTF-8 encoded string. A uint16 denotes its length.</td></tr>
 <tr><td>time</td><td>Unix time in nanoseconds stored as <code>int64</code>, i.e., the number of nanoseconds elapsed since January 1, 1970 UTC.</td></tr>
 </tbody></table>
-<summary>Subschema Notation</summary>
-<table>
-    <tr>
-        <th>Name</th>
-        <th>Description</th>
-    </tr>
-    <tr>
-        <td><code>oneOf</code></td>
-        <td>One of the listed subschemas.</td>
-    </tr>
-    <tr>
-        <td><code>optOneOf</code></td>
-        <td>Optionally one of the listed subschemas.</td>
-    </tr>
-    <tr>
-        <td><code>anyOf</code></td>
-        <td>Any (one or more) of the listed subschemas.</td>
-    </tr>
-    <tr>
-        <td><code>between(x,y)</code></td>
-        <td>Between (but including) x and y of the listed subschemas.</td>
-    </tr>
-</table>
+<h2 id="subschema-notation"><a class="header" href="#subschema-notation">Subschema Notation</a></h2>
+<table><thead><tr><th align="left">Name</th><th align="left">Description</th></tr></thead><tbody>
+<tr><td align="left">oneOf</td><td align="left">One of the listed subschemas.</td></tr>
+<tr><td align="left">optOneOf</td><td align="left">Optionally one of the listed subschemas.</td></tr>
+<tr><td align="left">anyOf</td><td align="left">Any (one or more) of the listed subschemas.</td></tr>
+<tr><td align="left"><code>between(x,y)</code></td><td align="left">Between (but including) x and y of the listed subschemas.</td></tr>
+</tbody></table>
 <h2 id="parameters"><a class="header" href="#parameters">Parameters</a></h2>
 <ul>
 <li><code>MAX_MESSAGE_SIZE=64 KB</code> The maximum allowed message size.</li>

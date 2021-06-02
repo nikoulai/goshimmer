@@ -2838,7 +2838,7 @@ The voting protocol used here is the FPC (or <strong>Fast Probabilistic Consensu
 The FPC begins with each node having an initial opinion, set using the node's local time perception and ordering of the messages. The nodes must set opinions about two subjects: </p>
 <ol>
 <li><strong>The legitimacy of the timestamp of the message</strong>: Whenever a node issues a message, it adds a timestamp to it, which should represent the local time of issuance (as seen by the issuer node). The other nodes will judge if this timestamp is reasonable, by checking if it is too far away from their own local clock.</li>
-<li>In the case of a value transfer, <strong>whether it is a conflict</strong>: We use the <a href="protocol_specification/./consensus_mechanism.html"><strong>FCoB Rule</strong></a>. Roughly, the node will have a positive opinion about a transaction A if and only if all its conflicts arrived later than a certain time interval after A's arrival. </li>
+<li>In the case of a value transfer, <strong>whether it is a conflict</strong>: We use the <a href="protocol_specification/./consensus_mechanism.html#fcob"><strong>FCoB Rule</strong></a>. Roughly, the node will have a positive opinion about a transaction A if and only if all its conflicts arrived later than a certain time interval after A's arrival. </li>
 </ol>
 <p>In each round, nodes randomly choose other nodes to query about their opinions about one of the subjects above. 
 The querying node changes its own opinion if the number of responses with a different opinion than it is greater than a certain threshold. 
@@ -2854,7 +2854,7 @@ Unless the attacker controls more than 1/3 of the Consensus Mana in the system, 
 </ol>
 <p><img src="protocol_specification/Protocol_overview_consensus.png" alt="title" /></p>
 <p>Analogously to Bitcoin's <a href="https://en.bitcoin.it/wiki/Confirmation">six blocks rule</a>, our protocol has certain measures of the probability of a certain message being considered valid permanently by all nodes. 
-This is achieved by the use of the <a href="protocol_specification/./consensus_mechanism.html"><strong>Approval Weight</strong></a>. 
+This is achieved by the use of the <a href="protocol_specification/./consensus_mechanism.html#approval-weight-aw"><strong>Approval Weight</strong></a>. 
 The Approval weight represents the <em>weight</em> of branches (and messages). 
 Different to the classical Nakamoto consensus, instead of selecting a leader based on a puzzle (PoW) or stake (PoS), it allows every node to express its opinion by simply issuing any message and attaching it in a part of the Tangle it <em>likes</em> (based on FCoB/FPC). 
 This process is also known as virtual voting, and has been previously described in <a href="https://medium.com/@hans_94488/a-new-consensus-the-tangle-multiverse-part-1-da4cb2a69772">On Tangle Voting</a>. </p>
@@ -2892,29 +2892,13 @@ This process is also known as virtual voting, and has been previously described 
 <tr><td>string</td><td>A dynamically sized array of an UTF-8 encoded string. A uint16 denotes its length.</td></tr>
 <tr><td>time</td><td>Unix time in nanoseconds stored as <code>int64</code>, i.e., the number of nanoseconds elapsed since January 1, 1970 UTC.</td></tr>
 </tbody></table>
-<summary>Subschema Notation</summary>
-<table>
-    <tr>
-        <th>Name</th>
-        <th>Description</th>
-    </tr>
-    <tr>
-        <td><code>oneOf</code></td>
-        <td>One of the listed subschemas.</td>
-    </tr>
-    <tr>
-        <td><code>optOneOf</code></td>
-        <td>Optionally one of the listed subschemas.</td>
-    </tr>
-    <tr>
-        <td><code>anyOf</code></td>
-        <td>Any (one or more) of the listed subschemas.</td>
-    </tr>
-    <tr>
-        <td><code>between(x,y)</code></td>
-        <td>Between (but including) x and y of the listed subschemas.</td>
-    </tr>
-</table>
+<h2 id="subschema-notation"><a class="header" href="#subschema-notation">Subschema Notation</a></h2>
+<table><thead><tr><th align="left">Name</th><th align="left">Description</th></tr></thead><tbody>
+<tr><td align="left">oneOf</td><td align="left">One of the listed subschemas.</td></tr>
+<tr><td align="left">optOneOf</td><td align="left">Optionally one of the listed subschemas.</td></tr>
+<tr><td align="left">anyOf</td><td align="left">Any (one or more) of the listed subschemas.</td></tr>
+<tr><td align="left"><code>between(x,y)</code></td><td align="left">Between (but including) x and y of the listed subschemas.</td></tr>
+</tbody></table>
 <h2 id="parameters"><a class="header" href="#parameters">Parameters</a></h2>
 <ul>
 <li><code>MAX_MESSAGE_SIZE=64 KB</code> The maximum allowed message size.</li>
@@ -3435,12 +3419,12 @@ of funds an output transfers to the address, and <code>t</code> is the time sinc
 </li>
 </ol>
 <p>An example <code>Base Mana Vector</code> for <code>Access Mana</code> could look like this:</p>
-<p>| 		    | Node 1 | Node 2 | ... | Node k
-|  ------- | --------- | ---------- | ------ | ---
-| Base Mana 1 			|0	| 1 	|...|  100.54
-| Effective Base Mana 1	|0	| 0.5 	|...|  120.7
-| Base Mana 2 			|0	| 1.2	|...|  0.01
-| Effective Base Mana 2	|0	| 0.6 	|...|  0.015</p>
+<p>| 		    | Node 1 | Node 2 | ... | Node k |
+|  ------- | --------- | ---------- | ------ | --- |
+| Base Mana 1 			|0	| 1 	|...|  100.54 |
+| Effective Base Mana 1	|0	| 0.5 	|...|  120.7 |
+| Base Mana 2 			|0	| 1.2	|...|  0.01 |
+| Effective Base Mana 2	|0	| 0.6 	|...|  0.015 |</p>
 <p><code>Base Mana</code> is pledged or revoked at discrete times, which results in <code>Base Mana</code> being discontinuous function over time.
 In order to make mana &quot;smoother&quot; and continuous, an exponential moving average is applied to the <code>Base Mana</code> values,
 resulting in <code>Effective Base Mana 1</code> and <code>Effective Base Mana 2</code>.</p>
@@ -3978,7 +3962,7 @@ a node to take a look. As an input, a high mana node's perception should be used
 <li>If only a sub set of nodes participate in FPC, they are more vulnerable to attack since the consensus mana held by this collection of nodes is potentially much smaller.
 Thus, since it cannot vote on everything, it must use subjective criterion to trigger voting which does not leave any group vulnerable to attack.</li>
 </ol>
-<p>For these reasons, we use <a href="protocol_specification/consensus_mechanism.html#FCoB">FCoB</a> to manage FPC.</p>
+<p>For these reasons, we use <a href="protocol_specification/consensus_mechanism.html#fcob">FCoB</a> to manage FPC.</p>
 <h3 id="fcob"><a class="header" href="#fcob">FCoB</a></h3>
 <p>The following flow diagram shows the current implemention of the FCoB protocol.</p>
 <p><img src="protocol_specification/FCOB.png" alt="FCoB" /></p>
@@ -4104,7 +4088,7 @@ If you are interested in knowing more about drand, we recommend you to check out
 <p>It is then evaluated whether it fulfills the <a href="protocol_specification/consensus_mechanism.html#finalization">finalization</a> criterion. If so, the branch is set to <em>confirmed</em>, while all its conflicts are set to <em>rejected</em>.</p>
 <p><strong>Reorg</strong>: In case the node confirmed another branch of the conflict set first, e.g., because of a difference in perception of the ledger state, it will have to do reorg. This means, the node needs to adjust its perception of the ledger state, so that, eventually, all nodes converge and follow the heaviest branch by active cMana.</p>
 <h4 id="markers-1"><a class="header" href="#markers-1">Markers</a></h4>
-<p>It would be computationally expensive to track the AW for each message individually. Instead, we approximate the AW with the help of <a href="protocol_specification/003-markers.html">markers</a>. Once a marker fulfills the <a href="protocol_specification/consensus_mechanism.html#finalization">finalization</a> criterion, the confirmation is propagated into its past cone until all the messages are confirmed.</p>
+<p>It would be computationally expensive to track the AW for each message individually. Instead, we approximate the AW with the help of <a href="protocol_specification/./markers.html">markers</a>. Once a marker fulfills the <a href="protocol_specification/consensus_mechanism.html#finalization">finalization</a> criterion, the confirmation is propagated into its past cone until all the messages are confirmed.</p>
 <p>Rather than keeping a list of supporters for each marker and collecting supporters for each marker (which would also be expensive), we keep a list of supporters along with its approved marker index for each marker sequence. This approach provides a simple and fast look-up for marker supporters making use of the Tangle structure as mapped by the markers.</p>
 <p>For each marker sequence, we keep a map of supporter to marker index, meaning a supporter supports a marker index <code>i</code>. This implies that the supporter supports all markers with index <code>&lt;= i</code>.</p>
 <p>Take the figure below as an example:
@@ -4624,7 +4608,7 @@ came up with special types of outputs for layer 1 UTXO support: <code>AliasOutpu
 These output types are experimental: the IOTA 2.0 DevNet serves as their testing ground. Bear in mind that there is no
 guarantee that they will not change as the protocol evolves.</p>
 <p>It will be demonstrated later that these outputs can also be used for enhanced cryptocurrency payment application, such
-as conditional payments ot time locked sending, but also open up the world of native non-fungible tokens (NFTs).</p>
+as conditional payments or time locked sending, but also open up the world of native non-fungible tokens (NFTs).</p>
 <h2 id="functional-requirements-of-iscp"><a class="header" href="#functional-requirements-of-iscp">Functional Requirements of ISCP</a></h2>
 <p>Designing the output types starts with a proper requirement analysis. Below you can read the summary of the functional
 requirements imposed by the layer 2 smart contract protocol. You can read more about ISCP
@@ -4655,7 +4639,7 @@ output by providing a digital signature.</p>
 <li>and there is no notion of separate control levels for an address account.</li>
 </ul>
 <p>We define a new account type in the ledger, called <strong>Alias</strong>, to represent smart contract chain accounts. An alias
-account can can hold token balances, but also has state metadata, which stores the state of the smart contract chain. 
+account can hold token balances, but also has state metadata, which stores the state of the smart contract chain. 
 The alias account defines two to controlling entities: a state controller and a governance controller. The state 
 controller can transition the account into a new state, and can manipulate account balances. The governance controller
 can change the state controller or the governance controller.</p>
@@ -5650,7 +5634,7 @@ Error message is returned if failed.</p>
 </code></pre>
 <h4 id="client-lib---getautopeeringneighbors"><a class="header" href="#client-lib---getautopeeringneighbors">Client lib - <code>GetAutopeeringNeighbors</code></a></h4>
 <p>Messages can be retrieved via <code>GetAutopeeringNeighbors(knownPeers bool) (*jsonmodels.GetNeighborsResponse, error)</code></p>
-<pre><code>neighbors, err := goshimAPI.GetAutopeeringNeighbors(false)
+<pre><code class="language-go">neighbors, err := goshimAPI.GetAutopeeringNeighbors(false)
 if err != nil {
     // return error
 }
@@ -7807,7 +7791,7 @@ for _, m := range committees.Committees {
 }
 </code></pre>
 <h3 id="response-example-2"><a class="header" href="#response-example-2">Response example</a></h3>
-<pre><code class="language-shell">{
+<pre><code class="language-json">{
     &quot;committees&quot;: [
         {
             &quot;instanceID&quot;: 1,
@@ -7859,7 +7843,7 @@ for _, m := range randomness.Randomness {
 }
 </code></pre>
 <h3 id="response-example-3"><a class="header" href="#response-example-3">Response example</a></h3>
-<pre><code class="language-shell">{
+<pre><code class="language-json">{
     &quot;randomness&quot;: [
         {
             &quot;instanceID&quot;: 1,
@@ -7921,21 +7905,25 @@ for _, m := range randomness.Randomness {
 <tr><td><strong>Description</strong></td><td>address to pledge funds to</td></tr>
 <tr><td><strong>Type</strong></td><td>string</td></tr>
 </tbody></table>
+</br>
 <table><thead><tr><th><strong>Parameter</strong></th><th><code>accessManaPledgeID</code></th></tr></thead><tbody>
 <tr><td><strong>Required or Optional</strong></td><td>optional</td></tr>
 <tr><td><strong>Description</strong></td><td>node ID to pledge access mana to</td></tr>
 <tr><td><strong>Type</strong></td><td>string</td></tr>
 </tbody></table>
+</br>
 <table><thead><tr><th><strong>Parameter</strong></th><th><code>consensusManaPledgeID</code></th></tr></thead><tbody>
 <tr><td><strong>Required or Optional</strong></td><td>optional</td></tr>
 <tr><td><strong>Description</strong></td><td>node ID to pledge consensus mana to</td></tr>
 <tr><td><strong>Type</strong></td><td>string</td></tr>
 </tbody></table>
+</br>
 <table><thead><tr><th><strong>Parameter</strong></th><th><code>powTarget</code></th></tr></thead><tbody>
 <tr><td><strong>Required or Optional</strong></td><td>required</td></tr>
 <tr><td><strong>Description</strong></td><td>proof of the PoW being done, <strong>only used in HTTP api</strong></td></tr>
 <tr><td><strong>Type</strong></td><td>uint64</td></tr>
 </tbody></table>
+</br>
 <table><thead><tr><th><strong>Parameter</strong></th><th><code>nonce</code></th></tr></thead><tbody>
 <tr><td><strong>Required or Optional</strong></td><td>required</td></tr>
 <tr><td><strong>Description</strong></td><td>target Proof of Work difficulty,<strong>only used in client lib</strong></td></tr>
@@ -7997,11 +7985,13 @@ if err != nil {
 <tr><td><strong>Description</strong></td><td>Action to perform. One of two possible values: <code>start</code> and <code>stop</code>.</td></tr>
 <tr><td><strong>Type</strong></td><td><code>string</code></td></tr>
 </tbody></table>
+</br>
 <table><thead><tr><th><strong>Parameter</strong></th><th><code>mpm</code></th></tr></thead><tbody>
 <tr><td><strong>Required or Optional</strong></td><td>optional</td></tr>
 <tr><td><strong>Description</strong></td><td>Messages per minute. Only applicable when <code>cmd=start</code>. (default: 1)</td></tr>
 <tr><td><strong>Type</strong></td><td><code>int</code></td></tr>
 </tbody></table>
+</br>
 <table><thead><tr><th><strong>Parameter</strong></th><th><code>imif</code> (Inter Message Issuing Function)</th></tr></thead><tbody>
 <tr><td><strong>Required or Optional</strong></td><td>optional</td></tr>
 <tr><td><strong>Description</strong></td><td>Parameter indicating time interval between issued messages. Possible values: <code>poisson</code>, <code>uniform</code>. Field only available in HTTP API.</td></tr>
@@ -8189,8 +8179,7 @@ fmt.Println(string(missingMsgs.Count))
 <h2 id="toolsdiagnosticmessagesrankrank"><a class="header" href="#toolsdiagnosticmessagesrankrank"><code>tools/diagnostic/messages/rank/:rank</code></a></h2>
 <p>Returns a list of messages with rank &gt;= of the given rank parameter.</p>
 <h3 id="parameters-45"><a class="header" href="#parameters-45">Parameters</a></h3>
-<table><thead><tr><th></th><th></th></tr></thead><tbody>
-<tr><td><strong>Parameter</strong></td><td><code>rank</code></td></tr>
+<table><thead><tr><th><strong>Parameter</strong></th><th><code>rank</code></th></tr></thead><tbody>
 <tr><td><strong>Required or Optional</strong></td><td>Required</td></tr>
 <tr><td><strong>Description</strong></td><td>message rank</td></tr>
 <tr><td><strong>Type</strong></td><td>uint64</td></tr>
@@ -8346,7 +8335,7 @@ BsSw31y4BufNoPp93TRfgDfXdrjnevsm7Up2mHtybzdK,CRPFWYijV1T,GUdTwLDb6t6vZ7X5XzEnjFN
 </ul>
 <div id="chapter_begin" style="break-before: page; page-break-before: always;"></div><h1 id="docker-private-network"><a class="header" href="#docker-private-network">Docker private network</a></h1>
 <p>We provide a tool at <code>tools/docker-network</code> with which a local test network can be set up locally with docker. </p>
-<p><img src="tooling/../../images/docker-network.png" alt="Docker network" /></p>
+<p><img src="tooling/./docker-network.png" alt="Docker network" /></p>
 <h2 id="how-to-use-the-tool"><a class="header" href="#how-to-use-the-tool">How to use the tool</a></h2>
 <p>In the docker network run for example</p>
 <pre><code>./run.sh 5 1 1
@@ -8433,7 +8422,7 @@ that specifies the number of tips that nodes should retain. This setting exists 
   },
 </code></pre>
 <div id="chapter_begin" style="break-before: page; page-break-before: always;"></div><h1 id="integration-tests-with-docker"><a class="header" href="#integration-tests-with-docker">Integration tests with Docker</a></h1>
-<p><img src="tooling/../../images/integration-testing.png" alt="Integration testing" /></p>
+<p><img src="tooling/./integration-testing.png" alt="Integration testing" /></p>
 <p>Running the integration tests spins up a <code>tester</code> container within which every test can specify its own GoShimmer network with Docker as schematically shown in the figure above.</p>
 <p>Peers can communicate freely within their Docker network and this is exactly how the tests are run using the <code>tester</code> container.
 Test can be written in regular Go style while the framework provides convenience functions to create a new network, access a specific peer's web API or logs.</p>

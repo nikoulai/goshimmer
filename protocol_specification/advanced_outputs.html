@@ -185,7 +185,7 @@ came up with special types of outputs for layer 1 UTXO support: <code>AliasOutpu
 These output types are experimental: the IOTA 2.0 DevNet serves as their testing ground. Bear in mind that there is no
 guarantee that they will not change as the protocol evolves.</p>
 <p>It will be demonstrated later that these outputs can also be used for enhanced cryptocurrency payment application, such
-as conditional payments ot time locked sending, but also open up the world of native non-fungible tokens (NFTs).</p>
+as conditional payments or time locked sending, but also open up the world of native non-fungible tokens (NFTs).</p>
 <h2 id="functional-requirements-of-iscp"><a class="header" href="#functional-requirements-of-iscp">Functional Requirements of ISCP</a></h2>
 <p>Designing the output types starts with a proper requirement analysis. Below you can read the summary of the functional
 requirements imposed by the layer 2 smart contract protocol. You can read more about ISCP
@@ -216,7 +216,7 @@ output by providing a digital signature.</p>
 <li>and there is no notion of separate control levels for an address account.</li>
 </ul>
 <p>We define a new account type in the ledger, called <strong>Alias</strong>, to represent smart contract chain accounts. An alias
-account can can hold token balances, but also has state metadata, which stores the state of the smart contract chain. 
+account can hold token balances, but also has state metadata, which stores the state of the smart contract chain. 
 The alias account defines two to controlling entities: a state controller and a governance controller. The state 
 controller can transition the account into a new state, and can manipulate account balances. The governance controller
 can change the state controller or the governance controller.</p>
