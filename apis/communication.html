@@ -363,21 +363,21 @@ fmt.Println(string(message.Finalized))
 <p>Method: <code>POST</code></p>
 <p>A data message is simply a <code>Message</code> containing some raw data (literally bytes). This type of message has therefore no real functionality other than that it is retrievable via <code>GetMessage</code>.</p>
 <h3 id="parameters-3"><a class="header" href="#parameters-3">Parameters</a></h3>
-<table><thead><tr><th><strong>Parameter</strong></th><th><code>payload</code></th></tr></thead><tbody>
+<table><thead><tr><th><strong>Parameter</strong></th><th><code>data</code></th></tr></thead><tbody>
 <tr><td><strong>Required or Optional</strong></td><td>required</td></tr>
 <tr><td><strong>Description</strong></td><td>data bytes</td></tr>
 <tr><td><strong>Type</strong></td><td>base64 serialized bytes</td></tr>
 </tbody></table>
 <h4 id="body"><a class="header" href="#body">Body</a></h4>
 <pre><code class="language-json">{
-  &quot;payload&quot;: &quot;dataBytes&quot;
+  &quot;data&quot;: &quot;dataBytes&quot;
 }
 </code></pre>
 <h3 id="examples-3"><a class="header" href="#examples-3">Examples</a></h3>
 <h4 id="curl-3"><a class="header" href="#curl-3">cURL</a></h4>
 <pre><code class="language-shell">curl --location --request POST 'http://localhost:8080/data' \
 --header 'Content-Type: application/json' \
---data-raw '{&quot;payload&quot;: &quot;dataBytes&quot;}'
+--data-raw '{&quot;data&quot;: &quot;dataBytes&quot;}'
 </code></pre>
 <h4 id="client-lib---data"><a class="header" href="#client-lib---data">Client lib - <code>Data</code></a></h4>
 <h5 id="datadata-byte-string-error"><a class="header" href="#datadata-byte-string-error"><code>Data(data []byte) (string, error)</code></a></h5>
