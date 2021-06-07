@@ -8047,7 +8047,7 @@ curl --location 'http://localhost:8080/spammer?cmd=start&amp;mpm=1000&amp;imif=u
 curl --location 'http://localhost:8080/spammer?cmd=shutdown'
 </code></pre>
 <h4 id="client-lib---togglespammer"><a class="header" href="#client-lib---togglespammer">Client lib - <code>ToggleSpammer()</code></a></h4>
-<p>Spaammer can be enabled and disabled via <code>ToggleSpammer(enable bool, mpm int) (*jsonmodels.SpammerResponse, error)</code></p>
+<p>Spammer can be enabled and disabled via <code>ToggleSpammer(enable bool, mpm int) (*jsonmodels.SpammerResponse, error)</code></p>
 <pre><code class="language-go">res, err := goshimAPI.ToggleSpammer(true, 100)
 if err != nil {
     // return error
