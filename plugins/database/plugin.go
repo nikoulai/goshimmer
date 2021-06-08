@@ -11,6 +11,7 @@ import (
 	"github.com/iotaledger/hive.go/kvstore"
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/hive.go/node"
+	"github.com/iotaledger/hive.go/objectstorage"
 
 	"github.com/iotaledger/goshimmer/packages/database"
 	"github.com/iotaledger/goshimmer/packages/shutdown"
@@ -63,6 +64,7 @@ func createStore() {
 	if err != nil {
 		log.Fatal("Unable to open the database, please delete the database folder. Error: %s", err)
 	}
+	objectstorage.SetCacheOverride(config.Node().Int(CfgDatabaseOverrideCache))
 
 	store = db.NewStore()
 }
