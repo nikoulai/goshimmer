@@ -2071,7 +2071,7 @@ Default login credentials are:
 <div style="break-before: page; page-break-before: always;"></div><h1 id="how-to-send-transaction"><a class="header" href="#how-to-send-transaction">How to send transaction</a></h1>
 <p>The simplest and easiest way for creating transaction is to use ready solution, such us GUI wallets: <a href="https://github.com/iotaledger/pollen-wallet/tree/master">pollen-wallet</a> and <a href="https://github.com/Dr-Electron/ElectricShimmer">Dr-Electron ElectricShimmer</a>
 or command line wallet <a href="tutorials/./wallet.html">Command Line Wallet</a>. However, there is also an option to create a transaction directly with Go client library, which will be main focus of this tutorial.</p>
-<p>For the ready code examples you can go directly to <a href="tutorials/send_transaction.html#ready-examples">Code examples</a>.</p>
+<p>For code examples you can go directly to <a href="tutorials/send_transaction.html#code-examples">Code examples</a>.</p>
 <h2 id="funds"><a class="header" href="#funds">Funds</a></h2>
 <p>To create a transaction, firstly we need to be in possession of tokens. We can receive them from other network users or request them from the faucet. For more details on how to request funds, see <a href="tutorials/./request_funds.html">this</a> tutorial.</p>
 <h2 id="preparing-transaction"><a class="header" href="#preparing-transaction">Preparing transaction</a></h2>
@@ -2158,7 +2158,7 @@ outputs := ledgerstate.NewOutputs(ledgerstate.NewSigLockedColoredOutput(balance,
 <h3 id="signing-transaction"><a class="header" href="#signing-transaction">Signing transaction</a></h3>
 <p>After preparing the transaction essence, we should sign it and put the signature to the unlock block part of the transaction.
 We can retrieve private and public key pairs from the seed by providing it with indexes corresponding to the addresses that holds the unspent output that we want to use in our transaction.</p>
-<pre><code class="language-Go">keyPair := *mySeed.KeyPair(0)
+<pre><code class="language-Go">kp := *mySeed.KeyPair(0)
 txEssence := NewTransactionEssence(version, timestamp, accessPledgeID, consensusPledgeID, inputs, outputs)
 </code></pre>
 <p>We can sign the transaction in two ways: with ED25519 or BLS signature. The wallet seed library uses <code>ed25519</code> package and keys, so we will use <code>Sign()</code> method along with <code>ledgerstate.ED25519Signature</code> constructor to sign the transaction essence bytes.
@@ -2216,14 +2216,14 @@ func buildTransaction() (tx *ledgerstate.Transaction, err error) {
         **/      
 
 	// destination address.
-	destAddressBase58 := &quot;18iBVua17jndUDyfg1Lzgz9gJgEdeo9Dh32nEzwC1R7iy&quot;
+	destAddressBase58 := &quot;your_base58_encoded_address&quot;
 	destAddress, err := ledgerstate.AddressFromBase58EncodedString(destAddressBase58)
 	if err != nil {
 		return
 	}
 
 	// output to consume.
-	outputIDBase58 := &quot;1B9kpcFhJzStQZzmoLjd6gLmiFJd7F72XBLHbWTQrfkFY&quot;
+	outputIDBase58 := &quot;your_base58_encoded_outputID&quot;
 	out, err := ledgerstate.OutputIDFromBase58(outputIDBase58)
 	if err != nil {
 		return
@@ -2622,7 +2622,7 @@ It can be described by the following characteristics, it:</p>
 <h2 id="database"><a class="header" href="#database">Database</a></h2>
 <p>GoShimmer stores data in the form of an object storage system. The data is stored in one large repository with flat structure. It is a scalable solution that allows for fast data retrieval because of its categorization structure.</p>
 <p>Additionally, GoShimmer leaves the possibility to store data only in memory that can be specified with the parameter <code>CfgDatabaseInMemory</code> value. In-memory storage is purely based on a Go map, package <code>mapdb</code> from hive.go.
-For the persistent storage in a database it uses package <code>badger</code> from hive.go. It is a simple and fast key-value database that performs well for both reads and writes simultaneously.</p>
+For the persistent storage in a database it uses <code>RocksDB</code>. It is a fast key-value database that performs well for both reads and writes simultaneously that was chosen due to its low memory consumption. </p>
 <p>Both solutions are implemented in the <code>database</code> package, along with prefix definitions that can be used during the creation of new object storage elements.</p>
 <p>The database plugin is responsible for creating a <code>store</code> instance of the chosen database under the directory specified with <code>CfgDatabaseDir</code> parameter. It will manage a proper closure of the database upon receiving a shutdown signal. During the start configuration, the database is marked as unhealthy, and it will be marked as healthy on shutdown. Then the garbage collector is run and the database can be closed.</p>
 <h2 id="objectstorage"><a class="header" href="#objectstorage">ObjectStorage</a></h2>

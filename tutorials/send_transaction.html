@@ -149,7 +149,7 @@
                         <h1 id="how-to-send-transaction"><a class="header" href="#how-to-send-transaction">How to send transaction</a></h1>
 <p>The simplest and easiest way for creating transaction is to use ready solution, such us GUI wallets: <a href="https://github.com/iotaledger/pollen-wallet/tree/master">pollen-wallet</a> and <a href="https://github.com/Dr-Electron/ElectricShimmer">Dr-Electron ElectricShimmer</a>
 or command line wallet <a href="./wallet.html">Command Line Wallet</a>. However, there is also an option to create a transaction directly with Go client library, which will be main focus of this tutorial.</p>
-<p>For the ready code examples you can go directly to <a href="send_transaction.html#ready-examples">Code examples</a>.</p>
+<p>For code examples you can go directly to <a href="send_transaction.html#code-examples">Code examples</a>.</p>
 <h2 id="funds"><a class="header" href="#funds">Funds</a></h2>
 <p>To create a transaction, firstly we need to be in possession of tokens. We can receive them from other network users or request them from the faucet. For more details on how to request funds, see <a href="./request_funds.html">this</a> tutorial.</p>
 <h2 id="preparing-transaction"><a class="header" href="#preparing-transaction">Preparing transaction</a></h2>
@@ -236,7 +236,7 @@ outputs := ledgerstate.NewOutputs(ledgerstate.NewSigLockedColoredOutput(balance,
 <h3 id="signing-transaction"><a class="header" href="#signing-transaction">Signing transaction</a></h3>
 <p>After preparing the transaction essence, we should sign it and put the signature to the unlock block part of the transaction.
 We can retrieve private and public key pairs from the seed by providing it with indexes corresponding to the addresses that holds the unspent output that we want to use in our transaction.</p>
-<pre><code class="language-Go">keyPair := *mySeed.KeyPair(0)
+<pre><code class="language-Go">kp := *mySeed.KeyPair(0)
 txEssence := NewTransactionEssence(version, timestamp, accessPledgeID, consensusPledgeID, inputs, outputs)
 </code></pre>
 <p>We can sign the transaction in two ways: with ED25519 or BLS signature. The wallet seed library uses <code>ed25519</code> package and keys, so we will use <code>Sign()</code> method along with <code>ledgerstate.ED25519Signature</code> constructor to sign the transaction essence bytes.
@@ -294,14 +294,14 @@ func buildTransaction() (tx *ledgerstate.Transaction, err error) {
         **/      
 
 	// destination address.
-	destAddressBase58 := &quot;18iBVua17jndUDyfg1Lzgz9gJgEdeo9Dh32nEzwC1R7iy&quot;
+	destAddressBase58 := &quot;your_base58_encoded_address&quot;
 	destAddress, err := ledgerstate.AddressFromBase58EncodedString(destAddressBase58)
 	if err != nil {
 		return
 	}
 
 	// output to consume.
-	outputIDBase58 := &quot;1B9kpcFhJzStQZzmoLjd6gLmiFJd7F72XBLHbWTQrfkFY&quot;
+	outputIDBase58 := &quot;your_base58_encoded_outputID&quot;
 	out, err := ledgerstate.OutputIDFromBase58(outputIDBase58)
 	if err != nil {
 		return
