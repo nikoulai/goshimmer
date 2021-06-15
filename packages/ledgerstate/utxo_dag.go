@@ -133,12 +133,12 @@ func (u *UTXODAG) BookTransaction(transaction *Transaction) (targetBranch Branch
 		return
 	}
 
-	// check if transaction is attaching to something rejected
-	if rejected, rejectedBranch := u.inputsInRejectedBranch(inputsMetadata); rejected {
-		u.bookRejectedTransaction(transaction, transactionMetadata, inputsMetadata, rejectedBranch)
-		targetBranch = rejectedBranch
-		return
-	}
+	// // check if transaction is attaching to something rejected
+	// if rejected, rejectedBranch := u.inputsInRejectedBranch(inputsMetadata); rejected {
+	// 	u.bookRejectedTransaction(transaction, transactionMetadata, inputsMetadata, rejectedBranch)
+	// 	targetBranch = rejectedBranch
+	// 	return
+	// }
 
 	// check if any Input was spent by a confirmed Transaction already
 	if inputsSpentByConfirmedTransaction, tmpErr := u.inputsSpentByConfirmedTransaction(inputsMetadata); tmpErr != nil {
