@@ -1,6 +1,7 @@
 package chat
 
 import (
+	"strconv"
 	"sync"
 
 	"github.com/iotaledger/hive.go/events"
@@ -31,6 +32,8 @@ func App() *node.Plugin {
 
 func configure(_ *node.Plugin) {
 	messagelayer.Tangle().Booker.Events.MessageBooked.Attach(events.NewClosure(onReceiveMessageFromMessageLayer))
+	// we can also attach this event at some other part for instance
+	// `messagelayer.Tangle().TipManager.Events.TipAdded.Attach(events.NewClosure(onReceiveMessageFromMessageLayer))`
 	configureWebAPI()
 }
 
@@ -59,6 +62,17 @@ func onReceiveMessageFromMessageLayer(messageID tangle.MessageID) {
 	if chatEvent == nil {
 		return
 	}
-
+	go func() {
+		if chatEvent.Message == "tips" {
+			strongTips := messagelayer.Tangle().TipManager.AllStrongTips()
+			numberTips := len(strongTips)
+			ReponseChat := NewPayload("", "", strconv.Itoa(numberTips))
+			messagelayer.Tangle().IssuePayload(ReponseChat)
+		}
+		if chatEvent.Message == "4" {
+			ReponseChat := NewPayload("", "", "increase number of parents to 4 (if possible)")
+			messagelayer.Tangle().IssuePayload(ReponseChat, 4)
+		}
+	}()
 	Events.MessageReceived.Trigger(chatEvent)
 }

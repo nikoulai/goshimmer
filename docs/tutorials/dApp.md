@@ -122,6 +122,35 @@ func onReceiveMessageFromMessageLayer(messageID tangle.MessageID) {
 	Events.MessageReceived.Trigger(chatEvent)
 }
 ```
+### React on chat payloads
+One possibility to react on a chat payload is to add a reaction in `onReceiveMessageFromMessageLayer`. For instance, we want that if the Message of the chat is `tips` that every node that receives this message answers the chat message with the number of (strong) tips in its tippool
+```Go
+func onReceiveMessageFromMessageLayer(messageID tangle.MessageID) {
+	...
+	go func() {
+		if chatEvent.Message == "tips" {
+			strongTips := messagelayer.Tangle().TipManager.AllStrongTips()
+			numberTips := len(strongTips)
+			ReponseChat := NewPayload("", "", strconv.Itoa(numberTips))
+			messagelayer.Tangle().IssuePayload(ReponseChat)
+		}
+	}()
+	Events.MessageReceived.Trigger(chatEvent)
+}
+```
+Another example is that upon arrival of a certain chat message nodes issues chat messages using a given number of parents:
+```Go
+func onReceiveMessageFromMessageLayer(messageID tangle.MessageID) {
+	...
+	if chatEvent.Message == "4" {
+			ReponseChat := NewPayload("", "", "4 parents (if possible)")
+			messagelayer.Tangle().IssuePayload(ReponseChat, 4)
+		}
+	Events.MessageReceived.Trigger(chatEvent)
+}
+```
+
+
 
 ## Network Delay dApp
 In this guide we are going to explain how to write a very simple dApp based on an actual dApp we are using in GoShimmer to help us measure the network delay, i.e., how long it takes for every active node in the network to receive a message. Gathering this data will enable us to set realistic parameters for FCoB.
