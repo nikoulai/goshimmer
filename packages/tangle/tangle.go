@@ -14,7 +14,6 @@ import (
 	"github.com/iotaledger/hive.go/identity"
 	"github.com/iotaledger/hive.go/kvstore"
 	"github.com/iotaledger/hive.go/kvstore/mapdb"
-	"github.com/iotaledger/hive.go/timeutil"
 	"github.com/iotaledger/hive.go/typeutils"
 	"github.com/mr-tron/base58"
 
@@ -144,26 +143,26 @@ func (t *Tangle) Setup() {
 	// pass solid messages to the scheduler
 	t.Solidifier.Events.MessageSolid.Attach(events.NewClosure(t.schedule))
 
-	var switchSchedulerOnce sync.Once
+	// var switchSchedulerOnce sync.Once
 	// switch the scheduler, the first time we get synced
-	t.TimeManager.Events.SyncChanged.Attach(events.NewClosure(func(e *SyncChangedEvent) {
-		// only switch, if we became synced and the FIFO scheduler is currently running
-		if !e.Synced || !t.fifoScheduling.IsSet() {
-			return
-		}
-		switchSchedulerOnce.Do(func() {
-			// switching the scheduler takes some time, so we must not do it directly in the event func
-			go func() {
-				// delay the actual switch by the sync time windows, the SyncChange event will be triggered
-				// at least this duration before the most recent messages have been solidified
-				if timeutil.Sleep(t.Options.SyncTimeWindow, t.shutdownSignal) {
-					t.fifoScheduling.SetTo(false) // stop adding new messages to the FIFO scheduler
-					t.FIFOScheduler.Shutdown()    // schedule remaining messages
-					t.Scheduler.Start()           // start the actual scheduler
-				}
-			}()
-		})
-	}))
+	// t.TimeManager.Events.SyncChanged.Attach(events.NewClosure(func(e *SyncChangedEvent) {
+	// 	// only switch, if we became synced and the FIFO scheduler is currently running
+	// 	if !e.Synced || !t.fifoScheduling.IsSet() {
+	// 		return
+	// 	}
+	// 	switchSchedulerOnce.Do(func() {
+	// 		// switching the scheduler takes some time, so we must not do it directly in the event func
+	// 		go func() {
+	// 			// delay the actual switch by the sync time windows, the SyncChange event will be triggered
+	// 			// at least this duration before the most recent messages have been solidified
+	// 			if timeutil.Sleep(t.Options.SyncTimeWindow, t.shutdownSignal) {
+	// 				t.fifoScheduling.SetTo(false) // stop adding new messages to the FIFO scheduler
+	// 				t.FIFOScheduler.Shutdown()    // schedule remaining messages
+	// 				t.Scheduler.Start()           // start the actual scheduler
+	// 			}
+	// 		}()
+	// 	})
+	// }))
 }
 
 // ProcessGossipMessage is used to feed new Messages from the gossip layer into the Tangle.
