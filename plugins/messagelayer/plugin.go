@@ -82,19 +82,19 @@ func configure(plugin *node.Plugin) {
 	}))
 
 	Tangle().TimeManager.Events.SyncChanged.Attach(events.NewClosure(func(ev *tangle.SyncChangedEvent) {
-		plugin.LogInfo("Sync changed: ", ev.Synced)
-		if ev.Synced {
-			// make sure that we are using the configured rate when synced
-			rate := Tangle().Options.SchedulerParams.Rate
-			Tangle().Scheduler.SetRate(rate)
-			plugin.LogInfof("Scheduler rate: %v", rate)
-		} else {
-			// increase scheduler rate
-			rate := Tangle().Options.SchedulerParams.Rate
-			rate -= rate / 2 // 50% increase
-			Tangle().Scheduler.SetRate(rate)
-			plugin.LogInfof("Scheduler rate: %v", rate)
-		}
+		// plugin.LogInfo("Sync changed: ", ev.Synced)
+		// if ev.Synced {
+		// 	// make sure that we are using the configured rate when synced
+		// 	rate := Tangle().Options.SchedulerParams.Rate
+		// 	Tangle().Scheduler.SetRate(rate)
+		// 	plugin.LogInfof("Scheduler rate: %v", rate)
+		// } else {
+		// 	// increase scheduler rate
+		// 	rate := Tangle().Options.SchedulerParams.Rate
+		// 	rate -= rate / 2 // 50% increase
+		// 	Tangle().Scheduler.SetRate(rate)
+		// 	plugin.LogInfof("Scheduler rate: %v", rate)
+		// }
 	}))
 
 	// read snapshot file
