@@ -16,6 +16,7 @@ var (
 	avgSolidificationTime    prometheus.Gauge
 	messageMissingCountDB    prometheus.Gauge
 	messageRequestCount      prometheus.Gauge
+	bytesPerNodeQueueCount   *prometheus.GaugeVec
 
 	transactionCounter prometheus.Gauge
 )
@@ -77,6 +78,14 @@ func registerTangleMetrics() {
 		Help: "current number requested messages by the message tangle",
 	})
 
+	bytesPerNodeQueueCount = prometheus.NewGaugeVec(
+		prometheus.GaugeOpts{
+			Name: "tangle_scheduler_node_queue_count",
+			Help: "number of buffered bytes per node queue seen since the start of the node",
+		}, []string{
+			"component",
+		})
+
 	registry.MustRegister(messageTips)
 	registry.MustRegister(messagePerTypeCount)
 	registry.MustRegister(messagePerComponentCount)
@@ -87,6 +96,7 @@ func registerTangleMetrics() {
 	registry.MustRegister(messageMissingCountDB)
 	registry.MustRegister(messageRequestCount)
 	registry.MustRegister(transactionCounter)
+	registry.MustRegister(bytesPerNodeQueueCount)
 
 	addCollect(collectTangleMetrics)
 }
@@ -107,5 +117,10 @@ func collectTangleMetrics() {
 	avgSolidificationTime.Set(metrics.AvgSolidificationTime())
 	messageMissingCountDB.Set(float64(metrics.MessageMissingCountDB()))
 	messageRequestCount.Set(float64(metrics.MessageRequestQueueSize()))
+
+	bytesCountPerNodeQ := metrics.BytesCountPerNodeQ()
+	for nodeID, count := range bytesCountPerNodeQ {
+		bytesPerNodeQueueCount.WithLabelValues(nodeID).Set(float64(count))
+	}
 	// transactionCounter.Set(float64(metrics.ValueTransactionCounter()))
 }

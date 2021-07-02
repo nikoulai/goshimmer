@@ -66,10 +66,11 @@ func NewScheduler(tangle *Tangle) *Scheduler {
 
 	return &Scheduler{
 		Events: &SchedulerEvents{
-			MessageScheduled: events.NewEvent(MessageIDCaller),
-			MessageDiscarded: events.NewEvent(MessageIDCaller),
-			NodeBlacklisted:  events.NewEvent(NodeIDCaller),
-			Error:            events.NewEvent(events.ErrorCaller),
+			MessageScheduled:      events.NewEvent(MessageIDCaller),
+			MessageDiscarded:      events.NewEvent(MessageIDCaller),
+			NodeBlacklisted:       events.NewEvent(NodeIDCaller),
+			Error:                 events.NewEvent(events.ErrorCaller),
+			NodeQueueSizeIncrease: events.NewEvent(StringIntCaller),
 		},
 		tangle:         tangle,
 		rate:           atomic.NewDuration(tangle.Options.SchedulerParams.Rate),
@@ -250,6 +251,10 @@ func (s *Scheduler) submit(message *Message) error {
 	if errors.Is(err, schedulerutils.ErrInboxExceeded) {
 		s.Events.NodeBlacklisted.Trigger(nodeID)
 	}
+
+	if err == nil {
+		s.Events.NodeQueueSizeIncrease.Trigger(nodeID.String(), len(message.Bytes()))
+	}
 	return err
 }
 
@@ -387,11 +392,19 @@ type SchedulerEvents struct {
 	MessageDiscarded *events.Event
 	NodeBlacklisted  *events.Event
 	Error            *events.Event
+
+	// for metrics
+	NodeQueueSizeIncrease *events.Event
 }
 
 // NodeIDCaller is the caller function for events that hand over a NodeID.
 func NodeIDCaller(handler interface{}, params ...interface{}) {
 	handler.(func(identity.ID))(params[0].(identity.ID))
+}
+
+// StringIntCaller is the caller function for events that hand over a NodeID.
+func StringIntCaller(handler interface{}, params ...interface{}) {
+	handler.(func(string, int))(params[0].(string), params[1].(int))
 }
 
 // endregion ///////////////////////////////////////////////////////////////////////////////////////////////////////////

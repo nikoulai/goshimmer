@@ -95,6 +95,9 @@ var (
 
 	// number of messages being requested by the message layer.
 	requestQueueSize atomic.Int64
+
+	bytesCountPerNodeQMutex syncutils.RWMutex
+	bytesCountPerNodeQ      = make(map[string]int)
 )
 
 ////// Exported functions to obtain metrics from outside //////
@@ -142,6 +145,26 @@ func MessageCountSinceStartPerComponentDashboard() map[ComponentType]uint64 {
 	for key, element := range messageCountPerComponentDashboard {
 		clone[key] = element
 	}
+
+	return clone
+}
+
+// BytesCountPerNodeQ returns a map of bytes count per node queue since last time the value was read.
+func BytesCountPerNodeQ() map[string]int {
+	bytesCountPerNodeQMutex.RLock()
+	// copy the original map
+	clone := make(map[string]int)
+	for key, element := range bytesCountPerNodeQ {
+		clone[key] = element
+	}
+	bytesCountPerNodeQMutex.RUnlock()
+
+	// reset counter
+	bytesCountPerNodeQMutex.Lock()
+	for key := range bytesCountPerNodeQ {
+		bytesCountPerNodeQ[key] = 0
+	}
+	bytesCountPerNodeQMutex.Unlock()
 
 	return clone
 }
@@ -221,6 +244,14 @@ func measurePerComponentCounter() {
 
 	// trigger events for outside listeners
 	Events.ComponentCounterUpdated.Trigger(componentCounters)
+}
+
+func increasePerNodeQueueCounter(nodeID string, bytes int) {
+	bytesCountPerNodeQMutex.Lock()
+	defer bytesCountPerNodeQMutex.Unlock()
+
+	// increase cumulative metrics
+	bytesCountPerNodeQ[nodeID] += bytes
 }
 
 func measureMessageTips() {

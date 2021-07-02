@@ -168,6 +168,10 @@ func registerLocalMetrics() {
 		increasePerComponentCounter(Booker)
 	}))
 
+	messagelayer.Tangle().Scheduler.Events.NodeQueueSizeIncrease.Attach((events.NewClosure(func(nodeID string, bytes int) {
+		increasePerNodeQueueCounter(nodeID, bytes)
+	})))
+
 	// // Value payload attached
 	// valuetransfers.Tangle().Events.PayloadAttached.Attach(events.NewClosure(func(cachedPayloadEvent *valuetangle.CachedPayloadEvent) {
 	// 	cachedPayloadEvent.Payload.Release()
