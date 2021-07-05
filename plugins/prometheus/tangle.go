@@ -83,7 +83,7 @@ func registerTangleMetrics() {
 			Name: "tangle_scheduler_node_queue_count",
 			Help: "number of buffered bytes per node queue seen since the start of the node",
 		}, []string{
-			"component",
+			"node",
 		})
 
 	registry.MustRegister(messageTips)
