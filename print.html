@@ -2581,14 +2581,15 @@ config.Node().Int(CfgGossipPort)
 <h3 id="new-way"><a class="header" href="#new-way">New way</a></h3>
 <p>Defining configuration parameters using the new way is really similar, however the parameters are not registered directly with the package reading the configuration,
 but rather with our custom package that contains all the logic required to make it work seamlessly. </p>
-<p>In this approach, instead of defining a parameter name, a new structure is defined with all necessary parameters, their default values and usage descriptions using Go's struct field tags.</p>
+<p>In this approach, instead of defining a parameter name, a new type is defined with all necessary parameters, their default values and usage descriptions using Go's struct field tags.
+A variable is then initialized with the defined type.</p>
 <p>One difference is that parameter names do not contain the namespace they belong to, the namespace is set when registering the parameters structure with the <code>configuration</code> package. One <code>parameters.go</code> file can contain definitions and register multiple parameter structures.</p>
 <pre><code class="language-go">package customPlugin
 
 import &quot;github.com/iotaledger/hive.go/configuration&quot;
 
 // Parameters contains the configuration parameters used by the custom plugin.
-var Parameters = struct {
+type ParametersDefinition struct {
 	// ParamName contains some value used within the plugin
 	ParamName float64 `default:&quot;0.31&quot; usage:&quot;ParamName used in some calculation&quot;`
 
@@ -2599,10 +2600,12 @@ var Parameters = struct {
 		// DetailedParam2 is the example value
 		DetailedParam2        string `default:&quot;defaultValue&quot; usage:&quot;DetailedParam2 used in the plugin&quot;`
 	}
-}{}
+}
+
+var Parameters = &amp;ParametersDefinition{}
 
 func init() {
-	configuration.BindParameters(&amp;Parameters, &quot;customPlugin&quot;)
+	configuration.BindParameters(Parameters, &quot;customPlugin&quot;)
 }
 </code></pre>
 <p>In order to access the parameter value, a user can simply access the structure's field: <code>Parameters.ParamName</code> or <code>Parameters.ParamGroup.DetailedParam1</code> 
