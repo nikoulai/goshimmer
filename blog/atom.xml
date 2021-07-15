@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+    <id>https://goshimmer.docs.iota.org/blog</id>
+    <title>GoShimmer Blog</title>
+    <updated>2021-07-14T00:00:00.000Z</updated>
+    <generator>https://github.com/jpmonette/feed</generator>
+    <link rel="alternate" href="https://goshimmer.docs.iota.org/blog"/>
+    <subtitle>GoShimmer Blog</subtitle>
+    <icon>https://goshimmer.docs.iota.org/img/logo/favicon.ico</icon>
+    <entry>
+        <title type="html"><![CDATA[Welcome 👋]]></title>
+        <id>welcome</id>
+        <link href="https://goshimmer.docs.iota.org/blog/welcome"/>
+        <updated>2021-07-14T00:00:00.000Z</updated>
+        <summary type="html"><![CDATA[At the IOTA Foundation we love the vision of decentralization - and this also applies to our documentation.]]></summary>
+    </entry>
+    <entry>
+        <title type="html"><![CDATA[New Release v0.7.4]]></title>
+        <id>new-release-v0.7.4</id>
+        <link href="https://goshimmer.docs.iota.org/blog/new-release-v0.7.4"/>
+        <updated>2021-07-08T00:00:00.000Z</updated>
+        <summary type="html"><![CDATA[We have released GoShimmer v0.7.4:]]></summary>
+    </entry>
+</feed>
