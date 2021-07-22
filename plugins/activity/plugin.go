@@ -36,7 +36,7 @@ func configure(_ *node.Plugin) {
 // broadcastActivityMessage broadcasts a sync beacon via communication layer.
 func broadcastActivityMessage() {
 	activityPayload := payload.NewGenericDataPayload([]byte("activity"))
-	msg, err := messagelayer.Tangle().IssuePayload(activityPayload, Parameters.ParentsCount)
+	msg, err := messagelayer.Tangle().IssuePayload(activityPayload, messagelayer.Tangle().Options.Identity, Parameters.ParentsCount)
 	if err != nil {
 		plugin.LogWarnf("error issuing activity message: %s", err)
 		return

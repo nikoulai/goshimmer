@@ -70,7 +70,7 @@ func requestFunds(c echo.Context) error {
 
 	faucetPayload := faucetpkg.NewRequest(addr, accessManaPledgeID, consensusManaPledgeID, request.Nonce)
 
-	msg, err := messagelayer.Tangle().MessageFactory.IssuePayload(faucetPayload)
+	msg, err := messagelayer.Tangle().MessageFactory.IssuePayload(faucetPayload, messagelayer.Tangle().Options.Identity)
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, jsonmodels.FaucetResponse{Error: fmt.Sprintf("Failed to send faucetrequest: %s", err.Error())})
 	}

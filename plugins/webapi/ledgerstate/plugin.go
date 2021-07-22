@@ -549,7 +549,7 @@ func PostTransaction(c echo.Context) error {
 	}
 
 	issueTransaction := func() (*tangle.Message, error) {
-		return messagelayer.Tangle().IssuePayload(tx)
+		return messagelayer.Tangle().IssuePayload(tx, messagelayer.Tangle().Options.Identity)
 	}
 
 	// add tx to double spend doubleSpendFilter

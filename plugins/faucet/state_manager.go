@@ -499,7 +499,7 @@ func (s *StateManager) createSplittingTx() *ledgerstate.Transaction {
 func (s *StateManager) issueTX(tx *ledgerstate.Transaction) (msg *tangle.Message, err error) {
 	// attach to message layer
 	issueTransaction := func() (*tangle.Message, error) {
-		message, e := messagelayer.Tangle().IssuePayload(tx)
+		message, e := messagelayer.Tangle().IssuePayload(tx, messagelayer.Tangle().Options.Identity)
 		if e != nil {
 			return nil, e
 		}

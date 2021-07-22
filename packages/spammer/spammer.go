@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/cockroachdb/errors"
+	"github.com/iotaledger/hive.go/identity"
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/hive.go/typeutils"
 
@@ -14,20 +15,22 @@ import (
 )
 
 // IssuePayloadFunc is a function which issues a payload.
-type IssuePayloadFunc = func(payload payload.Payload, parentsCount ...int) (*tangle.Message, error)
+type IssuePayloadFunc = func(payload payload.Payload, nodeIdentity *identity.LocalIdentity, parentsCount ...int) (*tangle.Message, error)
 
 // Spammer spams messages with a static data payload.
 type Spammer struct {
 	issuePayloadFunc IssuePayloadFunc
+	localIdentity    *identity.LocalIdentity
 	log              *logger.Logger
 	running          typeutils.AtomicBool
 	wg               sync.WaitGroup
 }
 
 // New creates a new spammer.
-func New(issuePayloadFunc IssuePayloadFunc, log *logger.Logger) *Spammer {
+func New(issuePayloadFunc IssuePayloadFunc, localIdentity *identity.LocalIdentity, log *logger.Logger) *Spammer {
 	return &Spammer{
 		issuePayloadFunc: issuePayloadFunc,
+		localIdentity:    localIdentity,
 		log:              log,
 	}
 }
@@ -62,7 +65,7 @@ func (s *Spammer) run(rate int, timeUnit time.Duration, imif string) {
 		}
 
 		// we don't care about errors or the actual issued message
-		_, err := s.issuePayloadFunc(payload.NewGenericDataPayload([]byte("SPAM")))
+		_, err := s.issuePayloadFunc(payload.NewGenericDataPayload([]byte("SPAM")), s.localIdentity)
 		if errors.Is(err, tangle.ErrNotSynced) {
 			s.log.Info("Stopped spamming messages because node lost sync")
 			s.running.SetTo(false)

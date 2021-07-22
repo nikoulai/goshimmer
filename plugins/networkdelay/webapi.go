@@ -32,7 +32,7 @@ func broadcastNetworkDelayPayload(c echo.Context) error {
 
 	nowWithoutClock := time.Now()
 
-	msg, err := messagelayer.Tangle().IssuePayload(payload)
+	msg, err := messagelayer.Tangle().IssuePayload(payload, messagelayer.Tangle().Options.Identity)
 	if err != nil {
 		return c.JSON(http.StatusBadRequest, Response{Error: err.Error()})
 	}

@@ -144,7 +144,7 @@ func (t *Tangle) ProcessGossipMessage(messageBytes []byte, peer *peer.Peer) {
 }
 
 // IssuePayload allows to attach a payload (i.e. a Transaction) to the Tangle.
-func (t *Tangle) IssuePayload(p payload.Payload, parentsCount ...int) (message *Message, err error) {
+func (t *Tangle) IssuePayload(p payload.Payload, local *identity.LocalIdentity, parentsCount ...int) (message *Message, err error) {
 	if !t.Synced() {
 		err = errors.Errorf("can't issue payload: %w", ErrNotSynced)
 		return
@@ -169,7 +169,7 @@ func (t *Tangle) IssuePayload(p payload.Payload, parentsCount ...int) (message *
 		}
 	}
 
-	return t.MessageFactory.IssuePayload(p, parentsCount...)
+	return t.MessageFactory.IssuePayload(p, local, parentsCount...)
 }
 
 // Synced returns a boolean value that indicates if the node is fully synced and the Tangle has solidified all messages
