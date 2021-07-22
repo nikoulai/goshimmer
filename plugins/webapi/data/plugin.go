@@ -64,7 +64,7 @@ func broadcastData(c echo.Context) error {
 	}
 
 	// await MessageScheduled event to be triggered.
-	msg, err := messagelayer.AwaitMessageToBeIssued(issueData, messagelayer.Tangle().Options.Identity.PublicKey(), maxIssuedAwaitTime)
+	msg, err := messagelayer.AwaitMessageToBeIssued(issueData, nodeIdentity.PublicKey(), maxIssuedAwaitTime)
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, jsonmodels.DataResponse{Error: err.Error()})
 	}
