@@ -157,10 +157,12 @@ func (b *BufferQueue) Current() *NodeQueue {
 func (b *BufferQueue) PopFront() Element {
 	q := b.Current()
 	msg := q.PopFront()
-	if q.Size() == 0 {
-		b.ringRemove(b.ring)
-		delete(b.activeNode, identity.NewID(msg.IssuerPublicKey()))
-	}
+
+	// TODO: this assures that the deficit is always increased
+	// if q.Size() == 0 {
+	//		b.ringRemove(b.ring)
+	//		delete(b.activeNode, identity.NewID(msg.IssuerPublicKey()))
+	//	}
 
 	b.size -= msg.Size()
 	return msg
