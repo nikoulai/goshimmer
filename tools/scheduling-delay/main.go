@@ -3,9 +3,15 @@ package main
 import (
 	"encoding/csv"
 	"fmt"
+	"math/rand"
 	"net/http"
 	"strconv"
+	"sync"
 	"time"
+
+	"github.com/iotaledger/hive.go/crypto/ed25519"
+	"github.com/iotaledger/hive.go/identity"
+	"github.com/mr-tron/base58"
 
 	"github.com/iotaledger/goshimmer/client"
 )
@@ -15,6 +21,20 @@ var (
 	timeWindow      = -10 * time.Minute
 	nodeInfos       []*nodeInfo
 	nameNodeInfoMap map[string]*nodeInfo
+)
+
+var (
+	seeds = []string{
+		"CDDzcUNbok6zyoF8zC8gpD2E2pjGdBEm2Lkpauc3PSGk",
+		"7RcW1L4xfUXCyubnYxSeJ3XWMfhXyAJMBDppQUmQAo6z",
+		"2j9tYwGkannQ92FPZ5uwn6eutcQaJDDvuEDFZNESGQxz",
+		"AzZ4wGrPqgP5mbZLGQc9onKzsJ2NJvtjLQQ9Bkrins87",
+		// "BBew186Ms89jqaAyuVANuhkoR9wu37o1nZ36K5NztDze",
+	}
+
+	nine = []string{
+		"BBew186Ms89jqaAyuVANuhkoR9wu37o1nZ36K5NztDze",
+	}
 )
 
 type nodeInfo struct {
@@ -41,17 +61,24 @@ func main() {
 		{
 			name:   "master",
 			apiURL: "http://127.0.0.1:8080",
+			mpm:    814,
+		},
+		{
+			name:   "faucet",
+			apiURL: "http://127.0.0.1:8090",
 			mpm:    274,
 		},
 	}
 	nameNodeInfoMap = make(map[string]*nodeInfo, len(nodeInfos))
 	bindGoShimmerAPIAndNodeID()
 
+	fmt.Println(time.Now())
+
 	// start spamming
 	toggleSpammer(true)
+	spamWithNodes(nameNodeInfoMap["faucet"].client)
 
-	fmt.Println(time.Now())
-	time.Sleep(11 * time.Minute)
+	// time.Sleep(11 * time.Minute)
 
 	// start collecting metrics
 	endTime := time.Now()
@@ -239,9 +266,15 @@ func printResults(delayMaps map[string]map[string]schedulingInfo) {
 	}
 	fmt.Printf("%s\n\n", title)
 
-	for _, issuer := range nodeInfos {
-		row := fmt.Sprintf("%-15s", issuer.name)
-		issuerID := issuer.nodeID
+	var issuers map[string]schedulingInfo
+	for _, v := range delayMaps {
+		issuers = v
+		break
+	}
+
+	for issuerID := range issuers {
+		row := fmt.Sprintf("%-15s", issuerID)
+		// issuerID := issuer.nodeID
 		for _, node := range nodeInfos {
 			nodeID := node.nodeID
 			delayQLenstr := fmt.Sprintf("%v (Q size:%d)",
@@ -263,10 +296,16 @@ func printMPSResults(mpsMaps map[string]map[string]mpsInfo) {
 	}
 	fmt.Printf("%s\n\n", title)
 
-	for _, issuer := range nodeInfos {
-		row := fmt.Sprintf("%-15s", issuer.name)
+	var issuers map[string]mpsInfo
+	for _, v := range mpsMaps {
+		issuers = v
+		break
+	}
+
+	for issuerID := range issuers {
+		row := fmt.Sprintf("%-15s", issuerID)
 		for _, node := range nodeInfos {
-			row = fmt.Sprintf("%s %-30f", row, mpsMaps[node.nodeID][issuer.nodeID].mps)
+			row = fmt.Sprintf("%s %-30f", row, mpsMaps[node.nodeID][issuerID].mps)
 		}
 		fmt.Println(row)
 	}
@@ -282,11 +321,94 @@ func printStoredMsgsPercentage(mpsMaps map[string]map[string]mpsInfo) {
 	}
 	fmt.Printf("%s\n\n", title)
 
-	for _, issuer := range nodeInfos {
-		row := fmt.Sprintf("%-15s", issuer.name)
+	var issuers map[string]mpsInfo
+	for _, v := range mpsMaps {
+		issuers = v
+		break
+	}
+
+	for issuerID := range issuers {
+		row := fmt.Sprintf("%-15s", issuerID)
 		for _, node := range nodeInfos {
-			row = fmt.Sprintf("%s %-30f", row, mpsMaps[node.nodeID][issuer.nodeID].msgs)
+			row = fmt.Sprintf("%s %-30f", row, mpsMaps[node.nodeID][issuerID].msgs)
 		}
 		fmt.Println(row)
 	}
+}
+
+func spam(api *client.GoShimmerAPI, pk ed25519.PrivateKey, rate time.Duration, shutdown chan struct{}) {
+	ticker := time.NewTicker(rate)
+	defer ticker.Stop()
+	for {
+		select {
+		case <-ticker.C:
+			msgID, err := api.Data(pk.Public().Bytes(), pk.Public(), pk)
+			fmt.Println(msgID, err)
+		case <-shutdown:
+			return
+		}
+	}
+}
+
+func spamWithNodes(api *client.GoShimmerAPI) {
+	nodes := make(map[string]*identity.LocalIdentity)
+	// api := client.NewGoShimmerAPI(apiURL)
+	shutdown := make(chan struct{})
+	var wg sync.WaitGroup
+	for _, seed := range seeds {
+		s, _ := base58.Decode(seed)
+		pk := ed25519.PrivateKeyFromSeed(s[:])
+		nodeIdentity := identity.NewLocalIdentity(pk.Public(), pk)
+		fmt.Println(base58.Encode(nodeIdentity.ID().Bytes()))
+		nodes[nodeIdentity.ID().String()] = nodeIdentity
+		wg.Add(1)
+
+		go func() {
+			defer wg.Done()
+			randomizedStart := rand.Intn(5000)
+			time.Sleep(time.Duration(randomizedStart) * time.Millisecond)
+			spam(api, pk, 5*time.Second, shutdown)
+		}()
+	}
+
+	for _, seed := range nine {
+		s, _ := base58.Decode(seed)
+		pk := ed25519.PrivateKeyFromSeed(s[:])
+		nodeIdentity := identity.NewLocalIdentity(pk.Public(), pk)
+		fmt.Println(base58.Encode(nodeIdentity.ID().Bytes()))
+		nodes[nodeIdentity.ID().String()] = nodeIdentity
+		wg.Add(1)
+
+		go func() {
+			defer wg.Done()
+			randomizedStart := rand.Intn(5000)
+			time.Sleep(time.Duration(randomizedStart) * time.Millisecond)
+			spam(api, pk, 5556*time.Millisecond, shutdown)
+		}()
+	}
+
+	for i := 0; i < 1; i++ {
+		b := make([]byte, 32)
+		_, err := rand.Read(b)
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
+		pk := ed25519.PrivateKeyFromSeed(b[:])
+		nodeIdentity := identity.NewLocalIdentity(pk.Public(), pk)
+		fmt.Println(base58.Encode(nodeIdentity.ID().Bytes()))
+		nodes[nodeIdentity.ID().String()] = nodeIdentity
+		wg.Add(1)
+
+		go func() {
+			defer wg.Done()
+			randomizedStart := rand.Intn(5000)
+			time.Sleep(time.Duration(randomizedStart) * time.Millisecond)
+			spam(api, pk, 72*time.Second, shutdown)
+		}()
+	}
+
+	time.Sleep(11 * time.Minute)
+	close(shutdown)
+	wg.Wait()
 }

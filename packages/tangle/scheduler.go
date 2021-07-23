@@ -1,7 +1,6 @@
 package tangle
 
 import (
-	"fmt"
 	"math"
 	"sync"
 	"time"
@@ -356,31 +355,31 @@ loop:
 		select {
 		// every rate time units
 		case <-s.ticker.C:
-			var triggerEnd time.Duration
-			var scheduleEnd time.Duration
-			var storageEnd time.Duration
+			// var triggerEnd time.Duration
+			// var scheduleEnd time.Duration
+			// var storageEnd time.Duration
 
-			start := time.Now()
+			// start := time.Now()
 			// TODO: pause the ticker, if there are no ready messages
 			msg := s.schedule()
-			scheduleEnd = time.Since(start)
+			// scheduleEnd = time.Since(start)
 
 			if msg != nil {
-				storageStart := time.Now()
+				// storageStart := time.Now()
 				s.tangle.Storage.MessageMetadata(msg.ID()).Consume(func(messageMetadata *MessageMetadata) {
-					storageEnd = time.Since(storageStart)
+					// storageEnd = time.Since(storageStart)
 					if messageMetadata.SetScheduled(true) {
-						triggerStart := time.Now()
+						// triggerStart := time.Now()
 						s.Events.MessageScheduled.Trigger(msg.ID())
-						triggerEnd = time.Since(triggerStart)
+						// triggerEnd = time.Since(triggerStart)
 					}
 				})
 			}
 
-			d := time.Since(start)
-			if d > 1*time.Millisecond {
-				fmt.Printf("###### duration of scheduling operations: Total: %v - Schedule: %v - Storage: %v - Trigger: %v\n", d, scheduleEnd, storageEnd, triggerEnd)
-			}
+			// d := time.Since(start)
+			// if d > 1*time.Millisecond {
+			// 	fmt.Printf("###### duration of scheduling operations: Total: %v - Schedule: %v - Storage: %v - Trigger: %v\n", d, scheduleEnd, storageEnd, triggerEnd)
+			// }
 
 		// on close, exit the loop
 		case <-s.shutdownSignal:

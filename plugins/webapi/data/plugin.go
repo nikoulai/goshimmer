@@ -1,7 +1,6 @@
 package data
 
 import (
-	"fmt"
 	"net/http"
 	"sync"
 	"time"
@@ -57,8 +56,6 @@ func broadcastData(c echo.Context) error {
 	}
 
 	nodeIdentity := identity.NewLocalIdentity(request.PublicKey, request.PrivateKey)
-	fmt.Println(request.PrivateKey, request.PublicKey)
-
 	issueData := func() (*tangle.Message, error) {
 		return messagelayer.Tangle().IssuePayload(payload.NewGenericDataPayload(request.Data), nodeIdentity)
 	}
