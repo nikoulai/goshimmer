@@ -111,6 +111,7 @@ func main() {
 	printMinMaxAvg(delayMaps)
 	printMPSResults(mpsMaps)
 	printStoredMsgsPercentage(mpsMaps)
+	writeResultsToCSV(delayMaps)
 
 	manaPercentage := fetchManaPercentage(nodeInfos[0].client)
 	renderChart(delayMaps, manaPercentage)
@@ -301,85 +302,6 @@ func fetchManaPercentage(goshimmerAPI *client.GoShimmerAPI) map[string]float64 {
 func timestampFromString(timeString string) time.Time {
 	timeInt64, _ := strconv.ParseInt(timeString, 10, 64)
 	return time.Unix(0, timeInt64)
-}
-
-func printResults(delayMaps map[string]map[string]schedulingInfo) {
-	fmt.Printf("The average scheduling delay of different issuers on different nodes:\n\n")
-
-	title := fmt.Sprintf("%-15s", "Issuer\\NodeID")
-	for _, info := range nodeInfos {
-		title = fmt.Sprintf("%s %-30s %-15s", title, info.name, "scheduled msgs")
-	}
-	fmt.Printf("%s\n\n", title)
-
-	var issuers map[string]schedulingInfo
-	for _, v := range delayMaps {
-		issuers = v
-		break
-	}
-
-	for issuerID := range issuers {
-		row := fmt.Sprintf("%-15s", issuerID)
-		// issuerID := issuer.nodeID
-		for _, node := range nodeInfos {
-			nodeID := node.nodeID
-			delayQLenstr := fmt.Sprintf("%v (Q size:%d)",
-				time.Duration(delayMaps[nodeID][issuerID].avgDelay)*time.Nanosecond,
-				delayMaps[nodeID][issuerID].nodeQLen)
-			row = fmt.Sprintf("%s %-30s %-15d", row, delayQLenstr, delayMaps[nodeID][issuerID].scheduledMsgs)
-		}
-		fmt.Println(row)
-	}
-	fmt.Printf("\n")
-}
-
-func printMPSResults(mpsMaps map[string]map[string]mpsInfo) {
-	fmt.Printf("The average mps of different issuers on different nodes:\n\n")
-
-	title := fmt.Sprintf("%-15s", "Issuer\\NodeID")
-	for _, info := range nodeInfos {
-		title = fmt.Sprintf("%s %-30s", title, info.name)
-	}
-	fmt.Printf("%s\n\n", title)
-
-	var issuers map[string]mpsInfo
-	for _, v := range mpsMaps {
-		issuers = v
-		break
-	}
-
-	for issuerID := range issuers {
-		row := fmt.Sprintf("%-15s", issuerID)
-		for _, node := range nodeInfos {
-			row = fmt.Sprintf("%s %-30f", row, mpsMaps[node.nodeID][issuerID].mps)
-		}
-		fmt.Println(row)
-	}
-	fmt.Printf("\n")
-}
-
-func printStoredMsgsPercentage(mpsMaps map[string]map[string]mpsInfo) {
-	fmt.Printf("The proportion of msgs from different issuers on different nodes:\n\n")
-
-	title := fmt.Sprintf("%-15s", "Issuer\\NodeID")
-	for _, info := range nodeInfos {
-		title = fmt.Sprintf("%s %-30s", title, info.name)
-	}
-	fmt.Printf("%s\n\n", title)
-
-	var issuers map[string]mpsInfo
-	for _, v := range mpsMaps {
-		issuers = v
-		break
-	}
-
-	for issuerID := range issuers {
-		row := fmt.Sprintf("%-15s", issuerID)
-		for _, node := range nodeInfos {
-			row = fmt.Sprintf("%s %-30f", row, mpsMaps[node.nodeID][issuerID].msgs)
-		}
-		fmt.Println(row)
-	}
 }
 
 func spam(api *client.GoShimmerAPI, pk ed25519.PrivateKey, rate time.Duration, shutdown chan struct{}) {
