@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/csv"
 	"fmt"
+	"math"
 	"math/rand"
 	"net/http"
 	"strconv"
@@ -51,9 +52,12 @@ type mpsInfo struct {
 }
 
 type schedulingInfo struct {
-	avgDelay      int64
-	scheduledMsgs int
-	nodeQLen      int
+	minDelay                 int64
+	maxDelay                 int64
+	avgDelay                 int64
+	arrivalScheduledAvgDelay int64
+	scheduledMsgs            int
+	nodeQLen                 int
 }
 
 func main() {
@@ -104,6 +108,7 @@ func main() {
 	toggleSpammer(false)
 
 	printResults(delayMaps)
+	printMinMaxAvg(delayMaps)
 	printMPSResults(mpsMaps)
 	printStoredMsgsPercentage(mpsMaps)
 
@@ -130,7 +135,7 @@ func bindGoShimmerAPIAndNodeID() {
 
 func toggleSpammer(enabled bool) {
 	for _, info := range nodeInfos {
-		if enabled && info.mpm <= 0 {
+		if info.mpm <= 0 {
 			continue
 		}
 
@@ -153,19 +158,38 @@ func analyzeSchedulingDelay(goshimmerAPI *client.GoShimmerAPI, endTime time.Time
 		fmt.Println(err)
 		return nil
 	}
+	messageInfos, _ := csvRes.ReadAll()
 
-	scheduleDelays := calculateSchedulingDelay(csvRes, endTime)
+	scheduleDelays := calculateSchedulingDelay(messageInfos, endTime)
+	arrivalScheduledDelays := calculateArrivalScheduledDelay(messageInfos, endTime)
 
 	// the average of delay per node
 	avgScheduleDelay := make(map[string]schedulingInfo)
 	for nodeID, delays := range scheduleDelays {
-		var sum int64 = 0
+		var bookedScheduledSum, arrivalScheduledSum int64 = 0, 0
+		var max, min int64 = 0, math.MaxInt64
+
+		// arrival ~ scheduled
+		for _, d := range arrivalScheduledDelays[nodeID] {
+			arrivalScheduledSum += d.Nanoseconds()
+		}
+
+		// booked ~ scheduled
 		for _, d := range delays {
-			sum += d.Nanoseconds()
+			bookedScheduledSum += d.Nanoseconds()
+			if d.Nanoseconds() < min {
+				min = d.Nanoseconds()
+			}
+			if d.Nanoseconds() > max {
+				max = d.Nanoseconds()
+			}
 		}
 		avgScheduleDelay[nodeID] = schedulingInfo{
-			avgDelay:      sum / int64(len(delays)),
-			scheduledMsgs: len(delays),
+			minDelay:                 min,
+			maxDelay:                 max,
+			avgDelay:                 bookedScheduledSum / int64(len(delays)),
+			arrivalScheduledAvgDelay: arrivalScheduledSum / int64(len(arrivalScheduledDelays[nodeID])),
+			scheduledMsgs:            len(delays),
 		}
 	}
 
@@ -182,10 +206,32 @@ func analyzeMPSDistribution(goshimmerAPI *client.GoShimmerAPI, endTime time.Time
 	return calculateMPS(csvRes, endTime)
 }
 
-func calculateSchedulingDelay(response *csv.Reader, endTime time.Time) map[string][]time.Duration {
+func calculateSchedulingDelay(messageInfos [][]string, endTime time.Time) map[string][]time.Duration {
 	startTime := endTime.Add(timeWindow)
 	nodeDelayMap := make(map[string][]time.Duration)
-	messageInfos, _ := response.ReadAll()
+
+	for _, msg := range messageInfos {
+		bookedTime := timestampFromString(msg[7])
+		// ignore data that is issued before collectTime
+		if bookedTime.Before(startTime) || bookedTime.After(endTime) {
+			continue
+		}
+
+		scheduledTime := timestampFromString(msg[6])
+		// ignore if the message is not yet scheduled
+		if scheduledTime.Before(startTime) || scheduledTime.After(endTime) {
+			continue
+		}
+
+		issuer := msg[1]
+		nodeDelayMap[issuer] = append(nodeDelayMap[issuer], scheduledTime.Sub(bookedTime))
+	}
+	return nodeDelayMap
+}
+
+func calculateArrivalScheduledDelay(messageInfos [][]string, endTime time.Time) map[string][]time.Duration {
+	startTime := endTime.Add(timeWindow)
+	nodeDelayMap := make(map[string][]time.Duration)
 
 	for _, msg := range messageInfos {
 		arrivalTime := timestampFromString(msg[4])
