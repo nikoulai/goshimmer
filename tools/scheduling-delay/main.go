@@ -7,7 +7,6 @@ import (
 	"math/rand"
 	"net/http"
 	"strconv"
-	"sync"
 	"time"
 
 	"github.com/iotaledger/hive.go/crypto/ed25519"
@@ -51,6 +50,11 @@ type mpsInfo struct {
 	msgs float64
 }
 
+type nodeQueueSize struct {
+	size      int
+	timestamp int64
+}
+
 type schedulingInfo struct {
 	minDelay                 int64
 	maxDelay                 int64
@@ -58,6 +62,11 @@ type schedulingInfo struct {
 	arrivalScheduledAvgDelay int64
 	scheduledMsgs            int
 	nodeQLen                 int
+}
+
+type backgroundAnalysisChan struct {
+	shutdown   chan struct{}
+	nodeQSizes chan map[string]map[string][]nodeQueueSize
 }
 
 func main() {
@@ -80,9 +89,19 @@ func main() {
 
 	// start spamming
 	toggleSpammer(true)
-	spamWithNodes(nameNodeInfoMap["faucet"].client)
 
-	// time.Sleep(11 * time.Minute)
+	// run background analysis: spammer, nodeQ size tracker
+	bgAnalysisChan := &backgroundAnalysisChan{
+		shutdown:   make(chan struct{}),
+		nodeQSizes: make(chan map[string]map[string][]nodeQueueSize),
+	}
+	runBackgroundAnalysis(bgAnalysisChan)
+
+	time.Sleep(11 * time.Minute)
+
+	// stop background analysis
+	close(bgAnalysisChan.shutdown)
+	nodeQSizes := <-bgAnalysisChan.nodeQSizes
 
 	// start collecting metrics
 	endTime := time.Now()
@@ -111,7 +130,9 @@ func main() {
 	printMinMaxAvg(delayMaps)
 	printMPSResults(mpsMaps)
 	printStoredMsgsPercentage(mpsMaps)
-	writeResultsToCSV(delayMaps)
+
+	writeDelayResultsToCSV(delayMaps)
+	writeNodeQueueSizesToCSV(nodeQSizes)
 
 	manaPercentage := fetchManaPercentage(nodeInfos[0].client)
 	renderChart(delayMaps, manaPercentage)
@@ -151,6 +172,11 @@ func toggleSpammer(enabled bool) {
 			fmt.Println(info.name, "stop spamming")
 		}
 	}
+}
+
+func runBackgroundAnalysis(bgChans *backgroundAnalysisChan) {
+	spamWithNodes(nameNodeInfoMap["faucet"].client, bgChans.shutdown)
+	getNodeQueueSizes(nodeInfos, bgChans.shutdown, bgChans.nodeQSizes)
 }
 
 func analyzeSchedulingDelay(goshimmerAPI *client.GoShimmerAPI, endTime time.Time) map[string]schedulingInfo {
@@ -318,21 +344,17 @@ func spam(api *client.GoShimmerAPI, pk ed25519.PrivateKey, rate time.Duration, s
 	}
 }
 
-func spamWithNodes(api *client.GoShimmerAPI) {
+func spamWithNodes(api *client.GoShimmerAPI, shutdown chan struct{}) {
 	nodes := make(map[string]*identity.LocalIdentity)
 	// api := client.NewGoShimmerAPI(apiURL)
-	shutdown := make(chan struct{})
-	var wg sync.WaitGroup
 	for _, seed := range seeds {
 		s, _ := base58.Decode(seed)
 		pk := ed25519.PrivateKeyFromSeed(s[:])
 		nodeIdentity := identity.NewLocalIdentity(pk.Public(), pk)
 		fmt.Println(base58.Encode(nodeIdentity.ID().Bytes()))
 		nodes[nodeIdentity.ID().String()] = nodeIdentity
-		wg.Add(1)
 
 		go func() {
-			defer wg.Done()
 			randomizedStart := rand.Intn(5000)
 			time.Sleep(time.Duration(randomizedStart) * time.Millisecond)
 			spam(api, pk, 5*time.Second, shutdown)
@@ -345,10 +367,8 @@ func spamWithNodes(api *client.GoShimmerAPI) {
 		nodeIdentity := identity.NewLocalIdentity(pk.Public(), pk)
 		fmt.Println(base58.Encode(nodeIdentity.ID().Bytes()))
 		nodes[nodeIdentity.ID().String()] = nodeIdentity
-		wg.Add(1)
 
 		go func() {
-			defer wg.Done()
 			randomizedStart := rand.Intn(5000)
 			time.Sleep(time.Duration(randomizedStart) * time.Millisecond)
 			spam(api, pk, 5556*time.Millisecond, shutdown)
@@ -366,17 +386,48 @@ func spamWithNodes(api *client.GoShimmerAPI) {
 		nodeIdentity := identity.NewLocalIdentity(pk.Public(), pk)
 		fmt.Println(base58.Encode(nodeIdentity.ID().Bytes()))
 		nodes[nodeIdentity.ID().String()] = nodeIdentity
-		wg.Add(1)
 
 		go func() {
-			defer wg.Done()
 			randomizedStart := rand.Intn(5000)
 			time.Sleep(time.Duration(randomizedStart) * time.Millisecond)
 			spam(api, pk, 72*time.Second, shutdown)
 		}()
 	}
+}
 
-	time.Sleep(11 * time.Minute)
-	close(shutdown)
-	wg.Wait()
+func getNodeQueueSizes(apis []*nodeInfo, shutdown chan struct{}, sendResult chan map[string]map[string][]nodeQueueSize) {
+	qSizes := make(map[string]map[string][]nodeQueueSize, len(apis))
+
+	go func() {
+		ticker := time.NewTicker(1 * time.Second)
+		defer ticker.Stop()
+		for {
+			select {
+			case <-ticker.C:
+				for _, api := range apis {
+					now := time.Now().UnixNano()
+					info, err := api.client.Info()
+					if err != nil {
+						continue
+					}
+					// get node queue sizes
+					for issuer, qLen := range info.Scheduler.NodeQueueSizes {
+						if qSizes[api.nodeID] == nil {
+							qSizes[api.nodeID] = make(map[string][]nodeQueueSize)
+						}
+
+						t := qSizes[api.nodeID][issuer]
+						t = append(t, nodeQueueSize{
+							size:      qLen,
+							timestamp: now,
+						})
+						qSizes[api.nodeID][issuer] = t
+					}
+				}
+			case <-shutdown:
+				sendResult <- qSizes
+				return
+			}
+		}
+	}()
 }

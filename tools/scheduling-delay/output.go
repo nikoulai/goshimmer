@@ -7,7 +7,7 @@ import (
 	"time"
 )
 
-var tableDescription = []string{
+var delayTableDescription = []string{
 	"ID",
 	"IssuerID",
 	"ArrivalScheduledAvgDelay",
@@ -16,7 +16,7 @@ var tableDescription = []string{
 	"MaxDelay",
 }
 
-func toCSVRow(nodeID, issuer string, delay schedulingInfo) []string {
+func delayToCSVRow(nodeID, issuer string, delay schedulingInfo) []string {
 	return []string{
 		nodeID,
 		issuer,
@@ -27,7 +27,23 @@ func toCSVRow(nodeID, issuer string, delay schedulingInfo) []string {
 	}
 }
 
-func writeResultsToCSV(delayMaps map[string]map[string]schedulingInfo) {
+var nodeQSizeTableDescription = []string{
+	"ID",
+	"IssuerID",
+	"Timestamp",
+	"QSize",
+}
+
+func nodeQToCSVRow(nodeID, issuer string, qSize nodeQueueSize) []string {
+	return []string{
+		nodeID,
+		issuer,
+		fmt.Sprint(qSize.timestamp),
+		fmt.Sprint(qSize.size),
+	}
+}
+
+func writeDelayResultsToCSV(delayMaps map[string]map[string]schedulingInfo) {
 	file, err := os.Create("schedulingDelay.csv")
 	if err != nil {
 		fmt.Println("open file is failed, err: ", err)
@@ -35,16 +51,46 @@ func writeResultsToCSV(delayMaps map[string]map[string]schedulingInfo) {
 	defer file.Close()
 
 	csvWriter := csv.NewWriter(file)
-	if err := csvWriter.Write(tableDescription); err != nil {
+	if err := csvWriter.Write(delayTableDescription); err != nil {
 		fmt.Println("failed to write table description row: %w", err)
 	}
 
 	for nodeID, delays := range delayMaps {
 		for issuer, delayInfo := range delays {
-			row := toCSVRow(nodeID, issuer, delayInfo)
+			row := delayToCSVRow(nodeID, issuer, delayInfo)
 			if err := csvWriter.Write(row); err != nil {
 				fmt.Println("failed to write message diagnostic info row: %w", err)
 				return
+			}
+		}
+	}
+
+	csvWriter.Flush()
+	if err := csvWriter.Error(); err != nil {
+		fmt.Println("csv writer failed after flush: %w", err)
+	}
+}
+
+func writeNodeQueueSizesToCSV(nodeQSizes map[string]map[string][]nodeQueueSize) {
+	file, err := os.Create("nodeQueueSizes.csv")
+	if err != nil {
+		fmt.Println("open file is failed, err: ", err)
+	}
+	defer file.Close()
+
+	csvWriter := csv.NewWriter(file)
+	if err := csvWriter.Write(nodeQSizeTableDescription); err != nil {
+		fmt.Println("failed to write table description row: %w", err)
+	}
+
+	for nodeID, qSizes := range nodeQSizes {
+		for issuer, qsz := range qSizes {
+			for _, sz := range qsz {
+				row := nodeQToCSVRow(nodeID, issuer, sz)
+				if err := csvWriter.Write(row); err != nil {
+					fmt.Println("failed to write message diagnostic info row: %w", err)
+					return
+				}
 			}
 		}
 	}
