@@ -14,7 +14,8 @@ import (
 var xAxis = []string{}
 
 func renderChart(nodeQSizes map[string]map[string][]nodeQueueSize,
-	delayMaps map[string]map[string]schedulingInfo, manaPercentage map[string]float64) {
+	delayMaps map[string]map[string]schedulingInfo,
+	rawDelay map[string]map[string][]time.Duration, manaPercentage map[string]float64) {
 	// set xAxis
 	for _, info := range nodeInfos {
 		xAxis = append(xAxis, info.name)
@@ -23,7 +24,9 @@ func renderChart(nodeQSizes map[string]map[string][]nodeQueueSize,
 	page := components.NewPage()
 	page.AddCharts(
 		schedulingDelayLineChart(delayMaps, manaPercentage),
+		schedulingDelayBoxPlot(rawDelay),
 	)
+	// nodeQ sizes charts are split by node
 	nodeQCharts := nodeQSizeLineChart(nodeQSizes)
 	for _, c := range nodeQCharts {
 		page.AddCharts(c)
@@ -83,6 +86,83 @@ func schedulingDelayLineChart(delayMaps map[string]map[string]schedulingInfo, ma
 	line.Overlap(manaBarChart(manaPercentage))
 
 	return line
+}
+
+func schedulingDelayBoxPlot(rawData map[string]map[string][]time.Duration) *charts.BoxPlot {
+	boxPlot := charts.NewBoxPlot()
+	boxPlot.SetGlobalOptions(
+		charts.WithTitleOpts(opts.Title{Title: "Boxplot of scheduling delay"}),
+		charts.WithXAxisOpts(opts.XAxis{
+			Name: "nodeID",
+		}),
+		charts.WithYAxisOpts(opts.YAxis{
+			Name:      "ms",
+			Type:      "value",
+			AxisLabel: &opts.AxisLabel{Show: true, Formatter: "{value} ms"},
+		}),
+		charts.WithDataZoomOpts(opts.DataZoom{
+			Type:  "inside",
+			Start: 10,
+			End:   50,
+		}),
+		charts.WithTooltipOpts(opts.Tooltip{Show: true}),
+		charts.WithLegendOpts(opts.Legend{
+			Show:   true,
+			Right:  "1%",
+			Top:    "10%",
+			Orient: "vertical",
+		}),
+		charts.WithToolboxOpts(opts.Toolbox{
+			Show:  true,
+			Right: "5%",
+			Feature: &opts.ToolBoxFeature{
+				SaveAsImage: &opts.ToolBoxFeatureSaveAsImage{
+					Show:  true,
+					Type:  "png",
+					Title: "Download png file",
+				},
+				DataView: &opts.ToolBoxFeatureDataView{
+					Show:  true,
+					Title: "DataView",
+					// set the language
+					// Chinese version: ["数据视图", "关闭", "刷新"]
+					Lang: []string{"data view", "turn off", "refresh"},
+				},
+			},
+		}),
+	)
+
+	boxPlot.SetXAxis(xAxis)
+	lineItems := schedulingDelayBoxPlotItems(rawData)
+	for issuerID, items := range lineItems {
+		boxPlot.AddSeries(issuerID, items)
+	}
+
+	return boxPlot
+}
+
+func schedulingDelayBoxPlotItems(rawData map[string]map[string][]time.Duration) map[string][]opts.BoxPlotData {
+	items := make(map[string][]opts.BoxPlotData, len(xAxis))
+	var issuersOrder []string
+	for _, v := range rawData {
+		for issuer := range v {
+			issuersOrder = append(issuersOrder, issuer)
+		}
+		break
+	}
+
+	for _, issuerID := range issuersOrder {
+		for _, node := range xAxis {
+			nodeID := nameNodeInfoMap[node].nodeID
+			var delays []int64
+			for _, d := range rawData[nodeID][issuerID] {
+				delays = append(delays, d.Microseconds())
+			}
+			items[issuerID] = append(items[issuerID],
+				opts.BoxPlotData{Value: delays})
+		}
+	}
+	return items
 }
 
 func nodeQSizeLineChart(qSizes map[string]map[string][]nodeQueueSize) []*charts.Line {
