@@ -18,9 +18,10 @@ import (
 
 var (
 	// only messages issued in the last timeWindow mins are taken into analysis
-	timeWindow      = -10 * time.Minute
-	nodeInfos       []*nodeInfo
-	nameNodeInfoMap map[string]*nodeInfo
+	timeWindow             = -10 * time.Minute
+	nodeInfos              []*nodeInfo
+	nameNodeInfoMap        map[string]*nodeInfo
+	schedulingDelayRawData map[string]map[string][]time.Duration
 )
 
 var (
@@ -105,6 +106,7 @@ func main() {
 
 	// start collecting metrics
 	endTime := time.Now()
+	schedulingDelayRawData = make(map[string]map[string][]time.Duration)
 	delayMaps := make(map[string]map[string]schedulingInfo, len(nodeInfos))
 	mpsMaps := make(map[string]map[string]mpsInfo, len(nodeInfos))
 	for _, info := range nodeInfos {
@@ -113,7 +115,7 @@ func main() {
 			fmt.Println(info.apiURL, "crashed")
 			continue
 		}
-		delayMaps[info.nodeID] = analyzeSchedulingDelay(info.client, endTime)
+		delayMaps[info.nodeID], schedulingDelayRawData[info.nodeID] = analyzeSchedulingDelay(info.client, endTime)
 		mpsMaps[info.nodeID] = analyzeMPSDistribution(info.client, endTime)
 		// get node queue sizes
 		for issuer, qLen := range apiInfo.Scheduler.NodeQueueSizes {
@@ -132,6 +134,7 @@ func main() {
 	printStoredMsgsPercentage(mpsMaps)
 
 	writeDelayResultsToCSV(delayMaps)
+	writeDelayRawDataToCSV(schedulingDelayRawData)
 	writeNodeQueueSizesToCSV(nodeQSizes)
 
 	manaPercentage := fetchManaPercentage(nodeInfos[0].client)
@@ -179,11 +182,11 @@ func runBackgroundAnalysis(bgChans *backgroundAnalysisChan) {
 	getNodeQueueSizes(nodeInfos, bgChans.shutdown, bgChans.nodeQSizes)
 }
 
-func analyzeSchedulingDelay(goshimmerAPI *client.GoShimmerAPI, endTime time.Time) map[string]schedulingInfo {
+func analyzeSchedulingDelay(goshimmerAPI *client.GoShimmerAPI, endTime time.Time) (map[string]schedulingInfo, map[string][]time.Duration) {
 	csvRes, err := goshimmerAPI.GetDiagnosticsMessages()
 	if err != nil {
 		fmt.Println(err)
-		return nil
+		return nil, nil
 	}
 	messageInfos, _ := csvRes.ReadAll()
 
@@ -220,7 +223,7 @@ func analyzeSchedulingDelay(goshimmerAPI *client.GoShimmerAPI, endTime time.Time
 		}
 	}
 
-	return avgScheduleDelay
+	return avgScheduleDelay, scheduleDelays
 }
 
 func analyzeMPSDistribution(goshimmerAPI *client.GoShimmerAPI, endTime time.Time) map[string]mpsInfo {

@@ -27,6 +27,20 @@ func delayToCSVRow(nodeID, issuer string, delay schedulingInfo) []string {
 	}
 }
 
+var rawDelayTableDescription = []string{
+	"ID",
+	"IssuerID",
+	"delay",
+}
+
+func rawDelayToCSVRow(nodeID, issuer string, delay time.Duration) []string {
+	return []string{
+		nodeID,
+		issuer,
+		fmt.Sprint(delay.Nanoseconds()),
+	}
+}
+
 var nodeQSizeTableDescription = []string{
 	"ID",
 	"IssuerID",
@@ -61,6 +75,36 @@ func writeDelayResultsToCSV(delayMaps map[string]map[string]schedulingInfo) {
 			if err := csvWriter.Write(row); err != nil {
 				fmt.Println("failed to write message diagnostic info row: %w", err)
 				return
+			}
+		}
+	}
+
+	csvWriter.Flush()
+	if err := csvWriter.Error(); err != nil {
+		fmt.Println("csv writer failed after flush: %w", err)
+	}
+}
+
+func writeDelayRawDataToCSV(delayMaps map[string]map[string][]time.Duration) {
+	file, err := os.Create("schedulingDelayRawData.csv")
+	if err != nil {
+		fmt.Println("open file is failed, err: ", err)
+	}
+	defer file.Close()
+
+	csvWriter := csv.NewWriter(file)
+	if err := csvWriter.Write(rawDelayTableDescription); err != nil {
+		fmt.Println("failed to write table description row: %w", err)
+	}
+
+	for nodeID, delays := range delayMaps {
+		for issuer, delay := range delays {
+			for _, d := range delay {
+				row := rawDelayToCSVRow(nodeID, issuer, d)
+				if err := csvWriter.Write(row); err != nil {
+					fmt.Println("failed to write message diagnostic info row: %w", err)
+					return
+				}
 			}
 		}
 	}
