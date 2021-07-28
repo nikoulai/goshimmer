@@ -135,7 +135,7 @@ func main() {
 	writeNodeQueueSizesToCSV(nodeQSizes)
 
 	manaPercentage := fetchManaPercentage(nodeInfos[0].client)
-	renderChart(delayMaps, manaPercentage)
+	renderChart(nodeQSizes, delayMaps, manaPercentage)
 }
 
 func bindGoShimmerAPIAndNodeID() {

@@ -13,7 +13,8 @@ import (
 
 var xAxis = []string{}
 
-func renderChart(delayMaps map[string]map[string]schedulingInfo, manaPercentage map[string]float64) {
+func renderChart(nodeQSizes map[string]map[string][]nodeQueueSize,
+	delayMaps map[string]map[string]schedulingInfo, manaPercentage map[string]float64) {
 	// set xAxis
 	for _, info := range nodeInfos {
 		xAxis = append(xAxis, info.name)
@@ -22,8 +23,12 @@ func renderChart(delayMaps map[string]map[string]schedulingInfo, manaPercentage 
 	page := components.NewPage()
 	page.AddCharts(
 		schedulingDelayLineChart(delayMaps, manaPercentage),
-		nodeQSizeLineChart(delayMaps, manaPercentage),
 	)
+	nodeQCharts := nodeQSizeLineChart(nodeQSizes)
+	for _, c := range nodeQCharts {
+		page.AddCharts(c)
+	}
+
 	f, err := os.Create("./bar.html")
 	if err != nil {
 		panic(err)
@@ -80,78 +85,104 @@ func schedulingDelayLineChart(delayMaps map[string]map[string]schedulingInfo, ma
 	return line
 }
 
-func nodeQSizeLineChart(delayMaps map[string]map[string]schedulingInfo, manaPercentage map[string]float64) *charts.Line {
-	line := charts.NewLine()
-	line.SetGlobalOptions(
-		charts.WithTitleOpts(opts.Title{Title: "The NodeQueue Size of Each Issuer per Node"}),
-		charts.WithXAxisOpts(opts.XAxis{
-			Name: "NodeID",
-		}),
-		charts.WithYAxisOpts(opts.YAxis{
-			Name:      "buffered bytes in nodeQ",
-			AxisLabel: &opts.AxisLabel{Show: true, Formatter: "{value} bytes"},
-		}),
-		charts.WithTooltipOpts(opts.Tooltip{Show: true}),
-		charts.WithLegendOpts(opts.Legend{
-			Show:   true,
-			Right:  "1%",
-			Top:    "10%",
-			Orient: "vertical",
-		}),
-		charts.WithToolboxOpts(opts.Toolbox{
-			Show:  true,
-			Right: "5%",
-			Feature: &opts.ToolBoxFeature{
-				SaveAsImage: &opts.ToolBoxFeatureSaveAsImage{
-					Show:  true,
-					Type:  "png",
-					Title: "Download png file",
-				},
-				DataView: &opts.ToolBoxFeatureDataView{
-					Show:  true,
-					Title: "DataView",
-					// set the language
-					// Chinese version: ["数据视图", "关闭", "刷新"]
-					Lang: []string{"data view", "turn off", "refresh"},
-				},
-			},
-		}),
-	)
-	line.SetXAxis(xAxis)
-
-	lineItems := nodeQueueSizeLineItems(delayMaps)
-	for nodeID, items := range lineItems {
-		line.AddSeries(nodeID, items)
+func nodeQSizeLineChart(qSizes map[string]map[string][]nodeQueueSize) []*charts.Line {
+	var lineCharts []*charts.Line
+	var issuersOrder []string
+	var node string
+	for n, v := range qSizes {
+		node = n
+		for issuer := range v {
+			issuersOrder = append(issuersOrder, issuer)
+		}
+		break
+	}
+	var nodeQXAxis []int
+	for i := 0; i < len(qSizes[node][issuersOrder[0]]); i++ {
+		nodeQXAxis = append(nodeQXAxis, i)
 	}
 
-	line.Overlap(manaBarChart(manaPercentage))
-	line.Overlap(scheduledMsgBarChart(delayMaps))
+	for nodeID, qsz := range qSizes {
+		line := charts.NewLine()
+		title := "The NodeQueue Size of Each Issuer on " + nodeID
+		line.SetGlobalOptions(
+			charts.WithTitleOpts(opts.Title{Title: title}),
+			charts.WithXAxisOpts(opts.XAxis{
+				Name: "time",
+			}),
+			charts.WithYAxisOpts(opts.YAxis{
+				Name:      "buffered bytes in nodeQ",
+				AxisLabel: &opts.AxisLabel{Show: true, Formatter: "{value} bytes"},
+			}),
+			charts.WithDataZoomOpts(opts.DataZoom{
+				Type:  "inside",
+				Start: 10,
+				End:   50,
+			}),
+			charts.WithTooltipOpts(opts.Tooltip{Show: true}),
+			charts.WithLegendOpts(opts.Legend{
+				Show:   true,
+				Right:  "1%",
+				Top:    "10%",
+				Orient: "vertical",
+			}),
+			charts.WithToolboxOpts(opts.Toolbox{
+				Show:  true,
+				Right: "5%",
+				Feature: &opts.ToolBoxFeature{
+					SaveAsImage: &opts.ToolBoxFeatureSaveAsImage{
+						Show:  true,
+						Type:  "png",
+						Title: "Download png file",
+					},
+					DataView: &opts.ToolBoxFeatureDataView{
+						Show:  true,
+						Title: "DataView",
+						// set the language
+						// Chinese version: ["数据视图", "关闭", "刷新"]
+						Lang: []string{"data view", "turn off", "refresh"},
+					},
+				},
+			}),
+		)
+		line.SetXAxis(nodeQXAxis)
+		lineItems := nodeQueueSizeLineItems(issuersOrder, qsz)
+		for issuerID, items := range lineItems {
+			line.AddSeries(issuerID, items)
+		}
+		lineCharts = append(lineCharts, line)
+	}
 
-	return line
+	return lineCharts
 }
 
 func schedulingDelayLineItems(delayMaps map[string]map[string]schedulingInfo) map[string][]opts.LineData {
 	items := make(map[string][]opts.LineData, len(xAxis))
-	for _, issuer := range xAxis {
-		issuerID := nameNodeInfoMap[issuer].nodeID
+	var issuersOrder []string
+	for _, v := range delayMaps {
+		for issuer := range v {
+			issuersOrder = append(issuersOrder, issuer)
+		}
+		break
+	}
+
+	for _, issuerID := range issuersOrder {
 		for _, node := range xAxis {
 			nodeID := nameNodeInfoMap[node].nodeID
 			delay := time.Duration(delayMaps[nodeID][issuerID].avgDelay) * time.Nanosecond
-			items[issuer] = append(items[issuer],
+			items[issuerID] = append(items[issuerID],
 				opts.LineData{Value: delay.Milliseconds()})
 		}
 	}
 	return items
 }
 
-func nodeQueueSizeLineItems(delayMaps map[string]map[string]schedulingInfo) map[string][]opts.LineData {
+func nodeQueueSizeLineItems(issuersOrder []string, nodeQSizes map[string][]nodeQueueSize) map[string][]opts.LineData {
 	items := make(map[string][]opts.LineData, len(xAxis))
-	for _, issuer := range xAxis {
-		issuerID := nameNodeInfoMap[issuer].nodeID
-		for _, node := range xAxis {
-			nodeID := nameNodeInfoMap[node].nodeID
-			items[issuer] = append(items[issuer],
-				opts.LineData{Value: delayMaps[nodeID][issuerID].nodeQLen})
+
+	for _, issuerID := range issuersOrder {
+		for _, sz := range nodeQSizes[issuerID] {
+			items[issuerID] = append(items[issuerID],
+				opts.LineData{Value: sz.size})
 		}
 	}
 	return items
