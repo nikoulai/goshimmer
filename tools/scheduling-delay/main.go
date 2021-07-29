@@ -88,7 +88,7 @@ func main() {
 	if run {
 		runFromScratch()
 	} else {
-		renderCharts()
+		renderChartsFromCSVs()
 	}
 }
 
@@ -100,7 +100,7 @@ func renderChartOrRun() bool {
 	return text == 'Y'
 }
 
-func renderCharts() {
+func renderChartsFromCSVs() {
 	nodeQSizes, delayMaps, schedulingDelayRaw := readFromCSVs()
 	// Improve this if possible :P
 	nameNodeInfoMap = make(map[string]*nodeInfo, len(nodeInfos))
