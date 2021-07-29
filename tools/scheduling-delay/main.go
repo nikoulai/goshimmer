@@ -94,12 +94,10 @@ func main() {
 
 func renderChartOrRun() bool {
 	reader := bufio.NewReader(os.Stdin)
-	fmt.Print("render charts from existed csv files? [Y/N] ")
-	text, _ := reader.ReadString('\n')
-	if text == "Y" {
-		return true
-	}
-	return false
+	fmt.Print("run the analysis from scratch? [Y/N] ")
+
+	text, _ := reader.ReadByte()
+	return text == 'Y'
 }
 
 func renderCharts() {
