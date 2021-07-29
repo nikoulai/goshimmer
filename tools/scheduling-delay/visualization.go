@@ -161,7 +161,7 @@ func schedulingDelayBoxPlotItems(rawData map[string]map[string][]time.Duration) 
 			nodeID := nameNodeInfoMap[node].nodeID
 			var delays []int64
 			for _, d := range rawData[nodeID][issuerID] {
-				delays = append(delays, d.Microseconds())
+				delays = append(delays, d.Milliseconds())
 			}
 			items[issuerID] = append(items[issuerID],
 				opts.BoxPlotData{Value: delays})
