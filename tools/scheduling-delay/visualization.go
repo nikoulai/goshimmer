@@ -1,9 +1,12 @@
 package main
 
 import (
+	"encoding/csv"
+	"fmt"
 	"io"
 	"math"
 	"os"
+	"strconv"
 	"time"
 
 	"github.com/go-echarts/go-echarts/v2/charts"
@@ -83,7 +86,9 @@ func schedulingDelayLineChart(delayMaps map[string]map[string]schedulingInfo, ma
 		line.AddSeries(nodeID, items)
 	}
 
-	line.Overlap(manaBarChart(manaPercentage))
+	if manaPercentage != nil {
+		line.Overlap(manaBarChart(manaPercentage))
+	}
 
 	return line
 }
@@ -292,24 +297,113 @@ func manaBarChart(manaMap map[string]float64) *charts.Bar {
 	return bar
 }
 
-func scheduledMsgBarChart(delayMaps map[string]map[string]schedulingInfo) *charts.Bar {
-	bar := charts.NewBar()
-	items := []opts.BarData{}
+func readFromCSVs() (nodeQSizes map[string]map[string][]nodeQueueSize,
+	delayMaps map[string]map[string]schedulingInfo,
+	rawDelay map[string]map[string][]time.Duration) {
+	nodeQSizes = readNodeQSizesFromCSV("./nodeQueueSizes.csv")
+	delayMaps = readSchedulingDelayFromCSV("./schedulingDelay.csv")
+	rawDelay = readRawSchedulingDelayFromCSV("./schedulingDelayRawData.csv")
 
-	xID := nameNodeInfoMap[xAxis[0]].nodeID
-	for _, issuer := range xAxis {
-		issuerID := nameNodeInfoMap[issuer].nodeID
-		items = append(items, opts.BarData{Value: delayMaps[xID][issuerID].scheduledMsgs})
+	return nodeQSizes, delayMaps, rawDelay
+}
+
+func readSchedulingDelayFromCSV(filePath string) (delayMaps map[string]map[string]schedulingInfo) {
+	scheDelayFile, err := os.Open(filePath)
+	if err != nil {
+		fmt.Println("cannot open" + filePath)
+		return nil
 	}
 
-	bar.SetXAxis(xAxis).
-		AddSeries("# of scheduled msgs", items).
-		SetSeriesOptions(
-			charts.WithLabelOpts(opts.Label{
-				Show:      true,
-				Position:  "insideBottom",
-				Formatter: "{c} msgs",
-			}),
-		)
-	return bar
+	// read scheduling delay from csv file
+	scheDelayReader := csv.NewReader(scheDelayFile)
+	delayMaps = make(map[string]map[string]schedulingInfo)
+	// skip header
+	if _, err := scheDelayReader.Read(); err != nil {
+		panic(err)
+	}
+	records, err := scheDelayReader.ReadAll()
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	for _, row := range records {
+		if _, exist := delayMaps[row[0]]; !exist {
+			delayMaps[row[0]] = make(map[string]schedulingInfo)
+		}
+		delayMaps[row[0]][row[1]] = schedulingInfo{
+			arrivalScheduledAvgDelay: durationFromString(row[2]).Nanoseconds(),
+			minDelay:                 durationFromString(row[3]).Nanoseconds(),
+			avgDelay:                 durationFromString(row[4]).Nanoseconds(),
+			maxDelay:                 durationFromString(row[5]).Nanoseconds(),
+		}
+	}
+
+	return delayMaps
+}
+
+func readRawSchedulingDelayFromCSV(filePath string) (rawDelay map[string]map[string][]time.Duration) {
+	rawScheDelayFile, err := os.Open(filePath)
+	if err != nil {
+		fmt.Println("cannot open" + filePath)
+		return nil
+	}
+	// read scheduling delay raw data from csv file
+	rawScheDelayReader := csv.NewReader(rawScheDelayFile)
+	rawDelay = make(map[string]map[string][]time.Duration)
+	// skip header
+	if _, err := rawScheDelayReader.Read(); err != nil {
+		panic(err)
+	}
+
+	records, err := rawScheDelayReader.ReadAll()
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	for _, row := range records {
+		if _, exist := rawDelay[row[0]]; !exist {
+			rawDelay[row[0]] = make(map[string][]time.Duration)
+		}
+		rawDelay[row[0]][row[1]] = append(rawDelay[row[0]][row[1]], durationFromString(row[2]))
+	}
+
+	return rawDelay
+}
+
+func readNodeQSizesFromCSV(filePath string) (nodeQSizes map[string]map[string][]nodeQueueSize) {
+	nodeQFile, err := os.Open(filePath)
+	if err != nil {
+		fmt.Println("cannot open" + filePath)
+		return nil
+	}
+	// read nodeQueue sizes from csv file
+	nodeQSizeReader := csv.NewReader(nodeQFile)
+	nodeQSizes = make(map[string]map[string][]nodeQueueSize)
+	// skip header
+	if _, err := nodeQSizeReader.Read(); err != nil {
+		panic(err)
+	}
+
+	records, err := nodeQSizeReader.ReadAll()
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	for _, row := range records {
+		if _, exist := nodeQSizes[row[0]]; !exist {
+			nodeQSizes[row[0]] = make(map[string][]nodeQueueSize)
+		}
+		sz, _ := strconv.ParseInt(row[3], 10, 0)
+		nodeQSizes[row[0]][row[1]] = append(nodeQSizes[row[0]][row[1]], nodeQueueSize{
+			size:      int(sz),
+			timestamp: timestampFromString(row[2]).UnixNano(),
+		})
+	}
+
+	return nodeQSizes
+}
+
+func durationFromString(timeStr string) time.Duration {
+	d, _ := strconv.ParseInt(timeStr, 10, 64)
+	return time.Duration(d) * time.Nanosecond
 }

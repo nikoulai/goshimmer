@@ -162,7 +162,6 @@ func printResults(delayMaps map[string]map[string]schedulingInfo) {
 
 	for issuerID := range issuers {
 		row := fmt.Sprintf("%-15s", issuerID)
-		// issuerID := issuer.nodeID
 		for _, node := range nodeInfos {
 			nodeID := node.nodeID
 			delayQLenstr := fmt.Sprintf("%v (Q size:%d)",

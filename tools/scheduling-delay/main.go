@@ -1,11 +1,13 @@
 package main
 
 import (
+	"bufio"
 	"encoding/csv"
 	"fmt"
 	"math"
 	"math/rand"
 	"net/http"
+	"os"
 	"strconv"
 	"time"
 
@@ -18,8 +20,19 @@ import (
 
 var (
 	// only messages issued in the last timeWindow mins are taken into analysis
-	timeWindow             = -10 * time.Minute
-	nodeInfos              []*nodeInfo
+	timeWindow = -10 * time.Minute
+	nodeInfos  = []*nodeInfo{
+		{
+			name:   "master",
+			apiURL: "http://127.0.0.1:8080",
+			mpm:    808,
+		},
+		{
+			name:   "faucet",
+			apiURL: "http://127.0.0.1:8090",
+			mpm:    274,
+		},
+	}
 	nameNodeInfoMap        map[string]*nodeInfo
 	schedulingDelayRawData map[string]map[string][]time.Duration
 )
@@ -71,18 +84,40 @@ type backgroundAnalysisChan struct {
 }
 
 func main() {
-	nodeInfos = []*nodeInfo{
-		{
-			name:   "master",
-			apiURL: "http://127.0.0.1:8080",
-			mpm:    814,
-		},
-		{
-			name:   "faucet",
-			apiURL: "http://127.0.0.1:8090",
-			mpm:    274,
-		},
+	run := renderChartOrRun()
+	if run {
+		runFromScratch()
+	} else {
+		renderCharts()
 	}
+}
+
+func renderChartOrRun() bool {
+	reader := bufio.NewReader(os.Stdin)
+	fmt.Print("render charts from existed csv files? [Y/N] ")
+	text, _ := reader.ReadString('\n')
+	if text == "Y" {
+		return true
+	}
+	return false
+}
+
+func renderCharts() {
+	nodeQSizes, delayMaps, schedulingDelayRaw := readFromCSVs()
+	// Improve this if possible :P
+	nameNodeInfoMap = make(map[string]*nodeInfo, len(nodeInfos))
+	nodeInfos[1].nodeID = "dAnF7pQ6k7a"
+	nodeInfos[0].nodeID = "4AeXyZ26e4G"
+	nameNodeInfoMap["faucet"] = nodeInfos[1]
+	nameNodeInfoMap["master"] = nodeInfos[0]
+
+	printResults(delayMaps)
+	printMinMaxAvg(delayMaps)
+
+	renderChart(nodeQSizes, delayMaps, schedulingDelayRaw, nil)
+}
+
+func runFromScratch() {
 	nameNodeInfoMap = make(map[string]*nodeInfo, len(nodeInfos))
 	bindGoShimmerAPIAndNodeID()
 
