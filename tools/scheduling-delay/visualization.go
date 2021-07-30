@@ -27,7 +27,7 @@ func renderChart(nodeQSizes map[string]map[string][]nodeQueueSize,
 	page := components.NewPage()
 	page.AddCharts(
 		schedulingDelayLineChart(delayMaps, manaPercentage),
-		schedulingDelayBoxPlot(rawDelay),
+		//schedulingDelayBoxPlot(rawDelay),
 	)
 	// nodeQ sizes charts are split by node
 	nodeQCharts := nodeQSizeLineChart(nodeQSizes)
@@ -173,16 +173,18 @@ func schedulingDelayBoxPlotItems(rawData map[string]map[string][]time.Duration) 
 func nodeQSizeLineChart(qSizes map[string]map[string][]nodeQueueSize) []*charts.Line {
 	var lineCharts []*charts.Line
 	var issuersOrder []string
-	var node string
-	for n, v := range qSizes {
-		node = n
-		for issuer := range v {
+	var numData int = 0
+	for _, v := range qSizes {
+		for issuer, num := range v {
 			issuersOrder = append(issuersOrder, issuer)
+			if len(num) > numData {
+				numData = len(num)
+			}
 		}
 		break
 	}
 	var nodeQXAxis []int
-	for i := 0; i < len(qSizes[node][issuersOrder[0]]); i++ {
+	for i := 0; i < numData; i++ {
 		nodeQXAxis = append(nodeQXAxis, i)
 	}
 

@@ -79,8 +79,8 @@ type schedulingInfo struct {
 }
 
 type backgroundAnalysisChan struct {
-	shutdown   chan struct{}
-	nodeQSizes chan map[string]map[string][]nodeQueueSize
+	shutdown chan struct{}
+	//nodeQSizes chan map[string]map[string][]nodeQueueSize
 }
 
 func main() {
@@ -123,11 +123,12 @@ func runFromScratch() {
 
 	// start spamming
 	toggleSpammer(true)
+	toggleNodeQTracker(true)
 
 	// run background analysis: spammer, nodeQ size tracker
 	bgAnalysisChan := &backgroundAnalysisChan{
-		shutdown:   make(chan struct{}),
-		nodeQSizes: make(chan map[string]map[string][]nodeQueueSize),
+		shutdown: make(chan struct{}),
+		//nodeQSizes: make(chan map[string]map[string][]nodeQueueSize),
 	}
 	runBackgroundAnalysis(bgAnalysisChan)
 
@@ -135,7 +136,7 @@ func runFromScratch() {
 
 	// stop background analysis
 	close(bgAnalysisChan.shutdown)
-	nodeQSizes := <-bgAnalysisChan.nodeQSizes
+	//nodeQSizes := <-bgAnalysisChan.nodeQSizes
 
 	// start collecting metrics
 	endTime := time.Now()
@@ -160,6 +161,8 @@ func runFromScratch() {
 
 	// stop spamming
 	toggleSpammer(false)
+	nodeQCSVs := toggleNodeQTracker(false)
+	nodeQSizes := processNodeQCSVS(nodeQCSVs)
 
 	printResults(delayMaps)
 	printMinMaxAvg(delayMaps)
@@ -191,6 +194,26 @@ func bindGoShimmerAPIAndNodeID() {
 	}
 }
 
+func toggleNodeQTracker(enabled bool) (nodeQCSVs []*csv.Reader) {
+	for _, info := range nodeInfos {
+		resp, err := info.client.ToggleNodeQSizeTracker(enabled)
+		if err != nil {
+			panic(err)
+		}
+		// debug logging
+		if enabled {
+			fmt.Println(info.name, "enables nodeQ size tracker", resp)
+		} else {
+			fmt.Println(info.name, "stops nodeQ size tracker")
+		}
+
+		if resp != nil {
+			nodeQCSVs = append(nodeQCSVs, resp)
+		}
+	}
+	return nodeQCSVs
+}
+
 func toggleSpammer(enabled bool) {
 	for _, info := range nodeInfos {
 		if info.mpm <= 0 {
@@ -212,7 +235,7 @@ func toggleSpammer(enabled bool) {
 
 func runBackgroundAnalysis(bgChans *backgroundAnalysisChan) {
 	spamWithNodes(nameNodeInfoMap["faucet"].client, bgChans.shutdown)
-	getNodeQueueSizes(nodeInfos, bgChans.shutdown, bgChans.nodeQSizes)
+	//getNodeQueueSizes(nodeInfos, bgChans.shutdown, bgChans.nodeQSizes)
 }
 
 func analyzeSchedulingDelay(goshimmerAPI *client.GoShimmerAPI, endTime time.Time) (map[string]schedulingInfo, map[string][]time.Duration) {
@@ -466,4 +489,35 @@ func getNodeQueueSizes(apis []*nodeInfo, shutdown chan struct{}, sendResult chan
 			}
 		}
 	}()
+}
+
+func processNodeQCSVS(csvs []*csv.Reader) (result map[string]map[string][]nodeQueueSize) {
+	result = make(map[string]map[string][]nodeQueueSize)
+	for _, reader := range csvs {
+		// skip header
+		if _, err := reader.Read(); err != nil {
+			panic(err)
+		}
+		records, err := reader.ReadAll()
+		if err != nil {
+			fmt.Println(err)
+		}
+
+		for _, row := range records {
+			nodeID, issuerID := row[0], row[1]
+			if result[nodeID] == nil {
+				result[nodeID] = make(map[string][]nodeQueueSize)
+			}
+
+			t := result[nodeID][issuerID]
+			ts, _ := strconv.ParseInt(row[2], 10, 64)
+			sz, _ := strconv.ParseInt(row[3], 10, 0)
+			t = append(t, nodeQueueSize{
+				size:      int(sz),
+				timestamp: ts,
+			})
+			result[nodeID][issuerID] = t
+		}
+	}
+	return result
 }

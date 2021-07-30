@@ -71,6 +71,7 @@ func NewScheduler(tangle *Tangle) *Scheduler {
 			MessageScheduled: events.NewEvent(MessageIDCaller),
 			MessageDiscarded: events.NewEvent(MessageIDCaller),
 			NodeBlacklisted:  events.NewEvent(NodeIDCaller),
+			SchedulerTicked:  events.NewEvent(events.VoidCaller),
 			Error:            events.NewEvent(events.ErrorCaller),
 		},
 		tangle:         tangle,
@@ -375,7 +376,7 @@ loop:
 					}
 				})
 			}
-
+			s.Events.SchedulerTicked.Trigger()
 			// d := time.Since(start)
 			// if d > 1*time.Millisecond {
 			// 	fmt.Printf("###### duration of scheduling operations: Total: %v - Schedule: %v - Storage: %v - Trigger: %v\n", d, scheduleEnd, storageEnd, triggerEnd)
@@ -414,6 +415,7 @@ type SchedulerEvents struct {
 	MessageScheduled *events.Event
 	MessageDiscarded *events.Event
 	NodeBlacklisted  *events.Event
+	SchedulerTicked  *events.Event
 	Error            *events.Event
 }
 
