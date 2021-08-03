@@ -5,12 +5,12 @@ import (
 	"sync"
 	"time"
 
-	"github.com/iotaledger/goshimmer/packages/tangle/schedulerutils"
-
 	"github.com/cockroachdb/errors"
 	"github.com/iotaledger/hive.go/events"
 	"github.com/iotaledger/hive.go/identity"
 	"go.uber.org/atomic"
+
+	"github.com/iotaledger/goshimmer/packages/tangle/schedulerutils"
 )
 
 const (
@@ -62,10 +62,16 @@ type RateSetter struct {
 
 // NewRateSetter returns a new RateSetter.
 func NewRateSetter(tangle *Tangle) *RateSetter {
+	if tangle.Options.RateSetterParams.Initial != nil {
+		Initial = *tangle.Options.RateSetterParams.Initial
+	}
+
 	rateSetter := &RateSetter{
 		tangle: tangle,
 		Events: &RateSetterEvents{
 			MessageDiscarded: events.NewEvent(MessageIDCaller),
+			MessageIssued:    events.NewEvent(MessageCaller),
+			Error:            events.NewEvent(events.ErrorCaller),
 		},
 		self:           tangle.Options.Identity.ID(),
 		issuingQueue:   schedulerutils.NewNodeQueue(tangle.Options.Identity.ID()),
@@ -75,9 +81,6 @@ func NewRateSetter(tangle *Tangle) *RateSetter {
 		shutdownSignal: make(chan struct{}),
 		shutdownOnce:   sync.Once{},
 	}
-	if tangle.Options.RateSetterParams.Initial != nil {
-		Initial = *tangle.Options.RateSetterParams.Initial
-	}
 
 	go rateSetter.issuerLoop()
 	return rateSetter
@@ -85,8 +88,13 @@ func NewRateSetter(tangle *Tangle) *RateSetter {
 
 // Setup sets up the behavior of the component by making it attach to the relevant events of the other components.
 func (r *RateSetter) Setup() {
+	r.tangle.MessageFactory.Events.MessageConstructed.Attach(events.NewClosure(func(msg *Message) {
+		if err := r.Issue(msg); err != nil {
+			r.Events.Error.Trigger(errors.Errorf("failed to submit to rate setter: %w", err))
+		}
+	}))
 	// update own rate setting
-	r.tangle.Scheduler.Events.MessageScheduled.Attach(events.NewClosure(func(MessageID) {
+	r.tangle.Scheduler.Events.MessageScheduled.Attach(events.NewClosure(func(messageID MessageID) {
 		if r.pauseUpdates > 0 {
 			r.pauseUpdates--
 			return
@@ -128,6 +136,14 @@ func (r *RateSetter) Size() int {
 	return r.issuingQueue.Size()
 }
 
+// Estimate estimates the issuing time of new message.
+func (r *RateSetter) Estimate() time.Duration {
+	// TODO: https://github.com/iotaledger/goshimmer/issues/1483
+
+	// dummy estimate
+	return time.Duration(math.Ceil(float64(r.Size()) / r.ownRate.Load() * float64(time.Second)))
+}
+
 // rateSetting updates the rate ownRate at which messages can be issued by the node.
 func (r *RateSetter) rateSetting() {
 	ownMana := r.tangle.Options.SchedulerParams.AccessManaRetrieveFunc(r.self)
@@ -162,9 +178,7 @@ loop:
 			}
 
 			msg := r.issuingQueue.PopFront().(*Message)
-			if err := r.tangle.Scheduler.SubmitAndReady(msg.ID()); err != nil {
-				r.Events.MessageDiscarded.Trigger(msg.ID())
-			}
+			r.Events.MessageIssued.Trigger(msg)
 			lastIssueTime = time.Now()
 
 			if next := r.issuingQueue.Front(); next != nil {
@@ -174,7 +188,7 @@ loop:
 
 		// add a new message to the local issuer queue
 		case msg := <-r.issueChan:
-			if r.issuingQueue.Size()+msg.Size() > MaxLocalQueueSize {
+			if r.issuingQueue.Size()+len(msg.Payload().Bytes()) > MaxLocalQueueSize {
 				r.Events.MessageDiscarded.Trigger(msg.ID())
 				continue
 			}
@@ -204,7 +218,7 @@ loop:
 }
 
 func (r *RateSetter) issueInterval(msg *Message) time.Duration {
-	wait := time.Duration(math.Ceil(float64(len(msg.Bytes())) / r.ownRate.Load() * float64(time.Second)))
+	wait := time.Duration(math.Ceil(float64(len(msg.Payload().Bytes())) / r.ownRate.Load() * float64(time.Second)))
 	return wait
 }
 
@@ -215,6 +229,8 @@ func (r *RateSetter) issueInterval(msg *Message) time.Duration {
 // RateSetterEvents represents events happening in the rate setter.
 type RateSetterEvents struct {
 	MessageDiscarded *events.Event
+	MessageIssued    *events.Event
+	Error            *events.Event
 }
 
 // endregion ///////////////////////////////////////////////////////////////////////////////////////////////////////////

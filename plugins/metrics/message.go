@@ -276,6 +276,15 @@ func measureReceivedMPS() {
 	Events.ReceivedMPSUpdated.Trigger(sampledMPS)
 }
 
+func measureRateSetter() {
+	rateSetter := messagelayer.Tangle().RateSetter
+	Events.RateSetterUpdated.Trigger(RateSetterMetric{
+		Size:     rateSetter.Size(),
+		Estimate: rateSetter.Estimate(),
+		Rate:     rateSetter.Rate(),
+	})
+}
+
 func measureRequestQueueSize() {
 	size := int64(messagelayer.Tangle().Requester.RequestQueueSize())
 	requestQueueSize.Store(size)
