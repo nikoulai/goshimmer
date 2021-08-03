@@ -3,6 +3,7 @@ package nodeqsizetracker
 import (
 	"encoding/csv"
 	"net/http"
+	"sort"
 
 	"github.com/labstack/echo"
 	"github.com/pkg/errors"
@@ -43,8 +44,14 @@ func sendCSVResults(c echo.Context) error {
 	}
 
 	nodeID := messagelayer.Tangle().Options.Identity.ID().String()
-	for timestamp, szMap := range nodeQSizeMap {
-		for issuer, sz := range szMap {
+	var keys []int64
+	for k := range nodeQSizeMap {
+		keys = append(keys, k)
+	}
+	sort.Slice(keys, func(i, j int) bool { return keys[i] < keys[j] })
+
+	for _, timestamp := range keys {
+		for issuer, sz := range nodeQSizeMap[timestamp] {
 			row := nodeQToCSVRow(nodeID, issuer.String(), timestamp, sz)
 			if err := csvWriter.Write(row); err != nil {
 				log.Errorf("failed to write message diagnostic info row: %w", err)

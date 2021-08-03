@@ -28,6 +28,7 @@ var (
 	nodeQSizeMap map[int64]map[identity.ID]int
 	getQSize     chan map[identity.ID]int
 	stopChan     chan struct{}
+	wg           sync.WaitGroup
 )
 
 // Plugin gets the plugin instance.
@@ -63,8 +64,11 @@ func start() {
 	stopChan = make(chan struct{})
 	getQSize = make(chan map[identity.ID]int, 1024)
 	messagelayer.Tangle().Scheduler.Events.SchedulerTicked.Attach(closure)
+	wg.Add(1)
 
 	go func() {
+		defer close(getQSize)
+		defer wg.Done()
 		for {
 			select {
 			case nodeQSizes := <-getQSize:
@@ -79,8 +83,8 @@ func start() {
 
 func stop() {
 	messagelayer.Tangle().Scheduler.Events.SchedulerTicked.Detach(closure)
-	close(getQSize)
 	close(stopChan)
+	wg.Wait()
 }
 
 var nodeQSizeTableDescription = []string{

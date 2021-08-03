@@ -360,6 +360,7 @@ loop:
 			// var scheduleEnd time.Duration
 			// var storageEnd time.Duration
 
+			s.Events.SchedulerTicked.Trigger()
 			// start := time.Now()
 			// TODO: pause the ticker, if there are no ready messages
 			msg := s.schedule()
@@ -376,7 +377,6 @@ loop:
 					}
 				})
 			}
-			s.Events.SchedulerTicked.Trigger()
 			// d := time.Since(start)
 			// if d > 1*time.Millisecond {
 			// 	fmt.Printf("###### duration of scheduling operations: Total: %v - Schedule: %v - Storage: %v - Trigger: %v\n", d, scheduleEnd, storageEnd, triggerEnd)
