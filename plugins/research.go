@@ -3,6 +3,8 @@ package plugins
 import (
 	"github.com/iotaledger/hive.go/node"
 
+	"github.com/iotaledger/goshimmer/plugins/ratesettertracker"
+
 	"github.com/iotaledger/goshimmer/plugins/activity"
 	analysisclient "github.com/iotaledger/goshimmer/plugins/analysis/client"
 	analysisdashboard "github.com/iotaledger/goshimmer/plugins/analysis/dashboard"
@@ -29,4 +31,5 @@ var Research = node.Plugins(
 	activity.Plugin(),
 	chat.App(),
 	nodeqsizetracker.Plugin(),
+	ratesettertracker.Plugin(),
 )

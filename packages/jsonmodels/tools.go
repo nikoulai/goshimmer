@@ -23,3 +23,8 @@ type MissingResponse struct {
 type NodeQTrackerRequest struct {
 	Cmd string `json:"cmd"`
 }
+
+// NodeQTrackerRequest contains the parameters of a spammer request.
+type RateSetterTrackerRequest struct {
+	Cmd string `json:"cmd"`
+}

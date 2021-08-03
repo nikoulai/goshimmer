@@ -72,6 +72,8 @@ func NewRateSetter(tangle *Tangle) *RateSetter {
 			MessageDiscarded: events.NewEvent(MessageIDCaller),
 			MessageIssued:    events.NewEvent(MessageCaller),
 			Error:            events.NewEvent(events.ErrorCaller),
+			MessageSubmitted: events.NewEvent(MessageIDCaller),
+			Ticked:           events.NewEvent(MessageIDCaller),
 		},
 		self:           tangle.Options.Identity.ID(),
 		issuingQueue:   schedulerutils.NewNodeQueue(tangle.Options.Identity.ID()),
@@ -172,6 +174,7 @@ loop:
 		select {
 		// a new message can be submitted to the scheduler
 		case <-issueTimer.C:
+			r.Events.Ticked.Trigger(EmptyMessageID)
 			timerStopped = true
 			if r.issuingQueue.Front() == nil {
 				continue
@@ -195,6 +198,7 @@ loop:
 			// add to queue
 			r.issuingQueue.Submit(msg)
 			r.issuingQueue.Ready(msg)
+			r.Events.MessageSubmitted.Trigger(msg.ID())
 
 			// set a new timer if needed
 			// if a timer is already running it is not updated, even if the ownRate has changed
@@ -231,6 +235,9 @@ type RateSetterEvents struct {
 	MessageDiscarded *events.Event
 	MessageIssued    *events.Event
 	Error            *events.Event
+	// Experimentation
+	MessageSubmitted *events.Event
+	Ticked           *events.Event
 }
 
 // endregion ///////////////////////////////////////////////////////////////////////////////////////////////////////////

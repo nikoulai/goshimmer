@@ -12,7 +12,6 @@ import (
 
 	"github.com/iotaledger/goshimmer/packages/tangle"
 	"github.com/iotaledger/goshimmer/packages/tangle/payload"
-	"github.com/iotaledger/goshimmer/plugins/messagelayer"
 )
 
 // IssuePayloadFunc is a function which issues a payload.
@@ -65,8 +64,8 @@ func (s *Spammer) run(rate int, timeUnit time.Duration, imif string) {
 			return
 		}
 
-		estimatedDuration := messagelayer.Tangle().RateSetter.Estimate()
-		time.Sleep(estimatedDuration)
+		//estimatedDuration := messagelayer.Tangle().RateSetter.Estimate()
+		//time.Sleep(estimatedDuration)
 
 		// we don't care about errors or the actual issued message
 		_, err := s.issuePayloadFunc(payload.NewGenericDataPayload([]byte("SPAM")), s.localIdentity)

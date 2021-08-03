@@ -5,13 +5,14 @@ import (
 	"sync"
 	"time"
 
+	"github.com/mr-tron/base58"
+
 	"github.com/iotaledger/goshimmer/packages/consensus/fcob"
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/goshimmer/packages/shutdown"
 	"github.com/iotaledger/goshimmer/packages/tangle"
 	"github.com/iotaledger/goshimmer/plugins/autopeering/local"
 	"github.com/iotaledger/goshimmer/plugins/database"
-	"github.com/mr-tron/base58"
 
 	"github.com/cockroachdb/errors"
 	"github.com/iotaledger/hive.go/crypto/ed25519"
@@ -52,7 +53,7 @@ func configure(plugin *node.Plugin) {
 
 	// Messages created by the node need to pass through the normal flow.
 	Tangle().RateSetter.Events.MessageIssued.Attach(events.NewClosure(func(message *tangle.Message) {
-		Tangle().ProcessGossipMessage(message.Bytes(), local.GetInstance().Peer)
+		go Tangle().ProcessGossipMessage(message.Bytes(), local.GetInstance().Peer)
 	}))
 
 	Tangle().Storage.Events.MessageStored.Attach(events.NewClosure(func(messageID tangle.MessageID) {
