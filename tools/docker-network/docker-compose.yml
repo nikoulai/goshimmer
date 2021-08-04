@@ -107,7 +107,7 @@ services:
       --messageLayer.snapshot.genesisNode=
       --node.disablePlugins=portcheck,clock
       --mana.snapshotResetTime=true
-      --statement.writeStatement=true
+      --statement.writeStatement=false
       --statement.writeManaThreshold=1.0
       --webapi.exportPath=/tmp/
       --scheduler.rate=50ms
@@ -116,8 +116,9 @@ services:
       - ./config.docker.json:/tmp/config.json:ro
       - goshimmer-cache:/go
       - ../integration-tests/assets:/tmp/assets
-    expose:
-      - "8080/tcp" # web API (within Docker network)
+    ports:
+      - "127.0.0.1:8070:8080/tcp" # web API
+      - "127.0.0.1:8071:8081/tcp" # dashboard
     depends_on:
       - entry_node
 

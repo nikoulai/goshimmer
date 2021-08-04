@@ -32,6 +32,11 @@ var (
 			apiURL: "http://127.0.0.1:8090",
 			mpm:    274,
 		},
+		{
+			name:   "replica",
+			apiURL: "http://127.0.0.1:8070",
+			mpm:    0,
+		},
 	}
 	nameNodeInfoMap        map[string]*nodeInfo
 	schedulingDelayRawData map[string]map[string][]time.Duration
