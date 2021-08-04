@@ -66,6 +66,7 @@ services:
 
   faucet:
     image: golang:1.16.2
+    container_name: faucet
     stop_grace_period: 1m
     entrypoint: /go/bin/main
     command: >
@@ -101,7 +102,7 @@ services:
     command: >
       --config=/tmp/config.json
       --database.directory=/tmp/mainnetdb
-      --node.enablePlugins=bootstrap,"webapi tools endpoint"
+      --node.enablePlugins=bootstrap,"webapi tools endpoint",spammer
       --messageLayer.snapshot.file=/tmp/assets/7R1itJx5hVuo9w9hjg5cwKFmek4HMSoBDgJZN8hKGxih.bin
       --messageLayer.snapshot.genesisNode=
       --node.disablePlugins=portcheck,clock
@@ -109,6 +110,8 @@ services:
       --statement.writeStatement=true
       --statement.writeManaThreshold=1.0
       --webapi.exportPath=/tmp/
+      --scheduler.rate=50ms
+      --pow.difficulty=0
     volumes:
       - ./config.docker.json:/tmp/config.json:ro
       - goshimmer-cache:/go
