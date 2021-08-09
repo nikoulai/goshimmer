@@ -21,10 +21,11 @@ const PluginName = "RateSetterTracker"
 
 // MessageTime holds info about when the message was submitted and issued.
 type MessageTime struct {
-	SubmittedAt time.Time
-	IssuedAt    time.Time
-	DiscardedAt time.Time
+	SubmittedAt int64
+	IssuedAt    int64
+	DiscardedAt int64
 	Size        int
+	Rate        float64
 }
 
 var (
@@ -38,6 +39,7 @@ var (
 	messageIssuedClosure    *events.Closure
 	messageDiscardedClosure *events.Closure
 	tickedClosure           *events.Closure
+	removeMessageClosure    *events.Closure
 )
 
 // Plugin gets the plugin instance.
@@ -49,32 +51,38 @@ func Plugin() *node.Plugin {
 }
 
 func configure(plugin *node.Plugin) {
+	messageTimeMap = make(map[tangle.MessageID]*MessageTime)
 	log = logger.NewLogger(PluginName)
 	messageSubmittedClosure = events.NewClosure(func(messageID tangle.MessageID) {
 		messageTimeMap[messageID] = &MessageTime{
-			SubmittedAt: time.Now(),
-			IssuedAt:    time.Time{},
-			DiscardedAt: time.Time{},
+			SubmittedAt: time.Now().UnixNano() / int64(time.Millisecond),
+			IssuedAt:    0,
+			DiscardedAt: 0,
 			Size:        messagelayer.Tangle().RateSetter.Size(),
+			Rate:        messagelayer.Tangle().RateSetter.Rate(),
 		}
 	})
 	messageIssuedClosure = events.NewClosure(func(message *tangle.Message) {
 		if _, ok := messageTimeMap[message.ID()]; !ok {
-			log.Info("something went wrong")
 			return
 		}
-		messageTimeMap[message.ID()].IssuedAt = time.Now()
+		messageTimeMap[message.ID()].IssuedAt = time.Now().UnixNano() / int64(time.Millisecond)
 	})
 	messageDiscardedClosure = events.NewClosure(func(messageID tangle.MessageID) {
 		if _, ok := messageTimeMap[messageID]; !ok {
 			messageTimeMap[messageID] = &MessageTime{
-				DiscardedAt: time.Now(),
-				SubmittedAt: time.Time{},
-				IssuedAt:    time.Time{},
+				DiscardedAt: time.Now().UnixNano() / int64(time.Millisecond),
+				SubmittedAt: 0,
+				IssuedAt:    0,
 				Size:        messagelayer.Tangle().RateSetter.Size(),
+				Rate:        messagelayer.Tangle().RateSetter.Rate(),
 			}
 		}
 	})
+	removeMessageClosure = events.NewClosure(func(messageID tangle.MessageID) {
+		delete(messageTimeMap, messageID)
+	})
+
 	tickedClosure = events.NewClosure(func(_ tangle.MessageID) {
 		ticks = append(ticks, time.Now())
 	})

@@ -11,7 +11,6 @@ import (
 	"github.com/labstack/echo"
 
 	"github.com/iotaledger/goshimmer/packages/jsonmodels"
-	"github.com/iotaledger/goshimmer/packages/tangle"
 	"github.com/iotaledger/goshimmer/packages/tangle/payload"
 	"github.com/iotaledger/goshimmer/plugins/messagelayer"
 	"github.com/iotaledger/goshimmer/plugins/webapi"
@@ -56,12 +55,10 @@ func broadcastData(c echo.Context) error {
 	}
 
 	nodeIdentity := identity.NewLocalIdentity(request.PublicKey, request.PrivateKey)
-	issueData := func() (*tangle.Message, error) {
-		return messagelayer.Tangle().IssuePayload(payload.NewGenericDataPayload(request.Data), nodeIdentity)
-	}
+	msg, err := messagelayer.Tangle().IssuePayload(payload.NewGenericDataPayload(request.Data), nodeIdentity)
 
 	// await MessageScheduled event to be triggered.
-	msg, err := messagelayer.AwaitMessageToBeIssued(issueData, nodeIdentity.PublicKey(), maxIssuedAwaitTime)
+	//msg, err := messagelayer.AwaitMessageToBeIssued(issueData, nodeIdentity.PublicKey(), maxIssuedAwaitTime)
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, jsonmodels.DataResponse{Error: err.Error()})
 	}

@@ -11,7 +11,6 @@ import (
 	analysisserver "github.com/iotaledger/goshimmer/plugins/analysis/server"
 	"github.com/iotaledger/goshimmer/plugins/chat"
 	"github.com/iotaledger/goshimmer/plugins/networkdelay"
-	"github.com/iotaledger/goshimmer/plugins/nodeqsizetracker"
 	"github.com/iotaledger/goshimmer/plugins/prometheus"
 	"github.com/iotaledger/goshimmer/plugins/remotelog"
 	"github.com/iotaledger/goshimmer/plugins/remotelogmetrics"
@@ -30,6 +29,6 @@ var Research = node.Plugins(
 	txstream.Plugin(),
 	activity.Plugin(),
 	chat.App(),
-	nodeqsizetracker.Plugin(),
+	// nodeqsizetracker.Plugin(),
 	ratesettertracker.Plugin(),
 )

@@ -1,6 +1,10 @@
 package main
 
-import "github.com/iotaledger/goshimmer/client"
+import (
+	"time"
+
+	"github.com/iotaledger/goshimmer/client"
+)
 
 type mpsInfo struct {
 	mps  float64
@@ -31,4 +35,12 @@ type nodeInfo struct {
 type backgroundAnalysisChan struct {
 	shutdown chan struct{}
 	//nodeQSizes chan map[string]map[string][]nodeQueueSize
+}
+
+type messageTime struct {
+	SubmittedAt time.Time
+	IssuedAt    time.Time
+	DiscardedAt time.Time
+	Size        int
+	Rate        float64
 }

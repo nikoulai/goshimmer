@@ -92,7 +92,8 @@ func NewRateSetter(tangle *Tangle) *RateSetter {
 func (r *RateSetter) Setup() {
 	r.tangle.MessageFactory.Events.MessageConstructed.Attach(events.NewClosure(func(msg *Message) {
 		if err := r.Issue(msg); err != nil {
-			r.Events.Error.Trigger(errors.Errorf("failed to submit to rate setter: %w", err))
+			// r.Events.Error.Trigger(errors.Errorf("failed to submit to rate setter: %w", err))
+			r.Events.MessageIssued.Trigger(msg)
 		}
 	}))
 	// update own rate setting
@@ -174,7 +175,7 @@ loop:
 		select {
 		// a new message can be submitted to the scheduler
 		case <-issueTimer.C:
-			r.Events.Ticked.Trigger(EmptyMessageID)
+			//r.Events.Ticked.Trigger(EmptyMessageID)
 			timerStopped = true
 			if r.issuingQueue.Front() == nil {
 				continue

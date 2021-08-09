@@ -4,7 +4,6 @@ import (
 	"encoding/csv"
 	"fmt"
 	"net/http"
-	"time"
 
 	"github.com/labstack/echo"
 	"github.com/pkg/errors"
@@ -45,8 +44,7 @@ func sendCSVResults(c echo.Context) error {
 	}
 
 	for messageID, timestamp := range messageTimeMap {
-
-		row := toCSVRow(messageID, timestamp.Size, timestamp.SubmittedAt, timestamp.IssuedAt, timestamp.DiscardedAt)
+		row := toCSVRow(messageID, timestamp.Size, timestamp.SubmittedAt, timestamp.IssuedAt, timestamp.DiscardedAt, timestamp.Rate)
 		if err := csvWriter.Write(row); err != nil {
 			log.Errorf("failed to write message diagnostic info row: %w", err)
 		}
@@ -65,14 +63,16 @@ var tableDes = []string{
 	"IssuedAt",
 	"DiscardedAt",
 	"Size",
+	"Rate",
 }
 
-func toCSVRow(messageID tangle.MessageID, size int, submittedAt, issuedAt, discardedAt time.Time) []string {
+func toCSVRow(messageID tangle.MessageID, size int, submittedAt, issuedAt, discardedAt int64, rate float64) []string {
 	return []string{
 		messageID.Base58(),
-		fmt.Sprint(submittedAt.Unix()),
-		fmt.Sprint(issuedAt.Unix()),
-		fmt.Sprint(discardedAt.Unix()),
+		fmt.Sprint(submittedAt),
+		fmt.Sprint(issuedAt),
+		fmt.Sprint(discardedAt),
 		fmt.Sprint(size),
+		fmt.Sprint(rate),
 	}
 }
