@@ -13,8 +13,10 @@ import (
 	"github.com/iotaledger/hive.go/bitmask"
 	"github.com/iotaledger/hive.go/byteutils"
 	"github.com/iotaledger/hive.go/cerrors"
+	"github.com/iotaledger/hive.go/datastructure/orderedmap"
 	"github.com/iotaledger/hive.go/marshalutil"
 	"github.com/iotaledger/hive.go/objectstorage"
+	"github.com/iotaledger/hive.go/serializer"
 	"github.com/iotaledger/hive.go/stringify"
 	"github.com/iotaledger/hive.go/types"
 	"github.com/iotaledger/hive.go/typeutils"
@@ -193,6 +195,8 @@ func (o OutputID) String() string {
 
 // Output is a generic interface for the different types of Outputs (with different unlock behaviors).
 type Output interface {
+	serializer.Serializable
+
 	// ID returns the identifier of the Output that is used to address the Output in the UTXODAG.
 	ID() OutputID
 
@@ -289,6 +293,22 @@ func OutputFromMarshalUtil(marshalUtil *marshalutil.MarshalUtil) (output Output,
 	return
 }
 
+func OutputTypeSelector(ty uint32) (serializer.Serializable, error) {
+	switch OutputType(ty) {
+	case SigLockedSingleOutputType:
+		return &SigLockedSingleOutput{}, nil
+	case SigLockedColoredOutputType:
+		return &SigLockedColoredOutput{}, nil
+	case AliasOutputType:
+		return &AliasOutput{}, nil
+	case ExtendedLockedOutputType:
+		return &ExtendedLockedOutput{}, nil
+
+	default:
+		return nil, errors.Errorf("unsupported OutputType (%X): %w", ty, cerrors.ErrParseBytesFailed)
+	}
+}
+
 // OutputFromObjectStorage restores an Output that was stored in the ObjectStorage.
 func OutputFromObjectStorage(key []byte, data []byte) (output objectstorage.StorableObject, err error) {
 	if output, _, err = OutputFromBytes(data); err != nil {
@@ -357,6 +377,14 @@ func NewOutputs(optionalOutputs ...Output) (outputs Outputs) {
 	}
 
 	return
+}
+
+// OutputsSelector returns the object that will be used for deserialization
+func OutputsSelector(ty uint32) (serializer.Serializable, error) {
+	if ty < 0 {
+		return nil, errors.Errorf("incorrect object type information")
+	}
+	return make(Outputs, ty), nil
 }
 
 // OutputsFromBytes unmarshals a collection of Outputs from a sequence of bytes.
@@ -447,6 +475,63 @@ func (o Outputs) Filter(condition func(output Output) bool) (filteredOutputs Out
 	}
 
 	return
+}
+
+func (o Outputs) MarshalJSON() ([]byte, error) {
+	panic("implement me")
+}
+
+func (o Outputs) UnmarshalJSON(i []byte) error {
+	panic("implement me")
+}
+
+func (o Outputs) Deserialize(data []byte, deSeriMode serializer.DeSerializationMode) (int, error) {
+	var sliceLen uint16
+	deserializer := serializer.NewDeserializer(data).ReadNum(&sliceLen, func(err error) error {
+		return errors.Errorf("failed to serialize Outputs (%v): %w", err, cerrors.ErrParseBytesFailed)
+	}).AbortIf(func(err error) error {
+		if deSeriMode.HasMode(serializer.DeSeriModePerformValidation) {
+			if sliceLen < MinOutputCount {
+				return errors.Errorf("amount of Outputs (%d) failed to reach MinOutputCount (%d): %w", sliceLen, MinOutputCount, cerrors.ErrParseBytesFailed)
+			}
+			if sliceLen > MaxOutputCount {
+				return errors.Errorf("amount of Outputs (%d) exceeds MaxOutputCount (%d): %w", sliceLen, MaxOutputCount, cerrors.ErrParseBytesFailed)
+			}
+		}
+		return nil
+	})
+
+	var previousOutput Output
+	for i := uint16(0); i < sliceLen; i++ {
+		deserializer.ReadObject(func(seri serializer.Serializable) {
+			o[i] = seri.(Output)
+		}, deSeriMode, serializer.TypeDenotationByte, OutputTypeSelector, func(err error) error {
+			return errors.Errorf("failed to parse Output from MarshalUtil: %w", err)
+		}).AbortIf(func(err error) error {
+			if deSeriMode.HasMode(serializer.DeSeriModePerformLexicalOrdering) {
+				if previousOutput != nil && previousOutput.Compare(o[i]) != -1 {
+					return errors.Errorf("order of Outputs is invalid: %w", cerrors.ErrParseBytesFailed)
+				}
+			}
+			return nil
+		})
+		previousOutput = o[i]
+	}
+
+	return deserializer.Done()
+}
+
+func (o Outputs) Serialize(deSeriMode serializer.DeSerializationMode) ([]byte, error) {
+	buffer := serializer.NewSerializer().WriteNum(uint16(len(o)), func(err error) error {
+		return errors.Errorf("failed to serialize Outputs (%v): %w", err, cerrors.ErrParseBytesFailed)
+	})
+
+	for _, output := range o {
+		buffer.WriteObject(output, deSeriMode, func(err error) error {
+			return errors.Errorf("failed to serialize Outputs (%v): %w", err, cerrors.ErrParseBytesFailed)
+		})
+	}
+	return buffer.Serialize()
 }
 
 // Bytes returns a marshaled version of the Outputs.
@@ -714,6 +799,45 @@ func (s *SigLockedSingleOutput) ObjectStorageKey() []byte {
 	return s.ID().Bytes()
 }
 
+func (s *SigLockedSingleOutput) MarshalJSON() ([]byte, error) {
+	panic("implement me")
+}
+
+func (s *SigLockedSingleOutput) UnmarshalJSON(i []byte) error {
+	panic("implement me")
+}
+
+func (s *SigLockedSingleOutput) Deserialize(data []byte, deSeriMode serializer.DeSerializationMode) (int, error) {
+	var outputType uint8
+	return serializer.NewDeserializer(data).ReadNum(&outputType, func(err error) error {
+		return errors.Errorf("SigLockedSingleOutput: failed to parse OutputType (%v): %w", err, cerrors.ErrParseBytesFailed)
+	}).AbortIf(func(err error) error {
+		if OutputType(outputType) != SigLockedSingleOutputType {
+			return errors.Errorf("SigLockedSingleOutput: invalid OutputType (%X): %w", outputType, cerrors.ErrParseBytesFailed)
+		}
+		return nil
+	}).ReadNum(&s.balance, func(err error) error {
+		return errors.Errorf("SigLockedColoredOutput: failed to parse balances (%v): %w", err, cerrors.ErrParseBytesFailed)
+	}).ReadObject(func(seri serializer.Serializable) {
+		s.address = seri.(Address)
+	}, deSeriMode, serializer.TypeDenotationByte, AddressTypeSelector, func(err error) error {
+		return errors.Errorf("SigLockedColoredOutput: failed to parse address (%v): %w", err, cerrors.ErrParseBytesFailed)
+	}).Done()
+}
+
+func (s *SigLockedSingleOutput) Serialize(deSeriMode serializer.DeSerializationMode) ([]byte, error) {
+	return serializer.NewSerializer().
+		WriteNum(SigLockedSingleOutputType, func(err error) error {
+			return fmt.Errorf("%w: unable to serialize transaction's essence", err)
+		}).
+		WriteNum(s.balance, func(err error) error {
+			return fmt.Errorf("%w: unable to serialize balance", err)
+		}).
+		WriteObject(s.address, deSeriMode, func(err error) error {
+			return fmt.Errorf("%w: unable to serialize address", err)
+		}).Serialize()
+}
+
 // ObjectStorageValue marshals the Output into a sequence of bytes. The ID is not serialized here as it is only used as
 // a key in the ObjectStorage.
 func (s *SigLockedSingleOutput) ObjectStorageValue() []byte {
@@ -908,6 +1032,49 @@ func (s *SigLockedColoredOutput) Bytes() []byte {
 // Update is disabled and panics if it ever gets called - it is required to match the StorableObject interface.
 func (s *SigLockedColoredOutput) Update(objectstorage.StorableObject) {
 	panic("updates disabled")
+}
+
+func (s *SigLockedColoredOutput) MarshalJSON() ([]byte, error) {
+	panic("implement me")
+}
+
+func (s *SigLockedColoredOutput) UnmarshalJSON(i []byte) error {
+	panic("implement me")
+}
+
+func (s *SigLockedColoredOutput) Deserialize(data []byte, deSeriMode serializer.DeSerializationMode) (int, error) {
+	var outputType uint8
+	return serializer.NewDeserializer(data).ReadNum(&outputType, func(err error) error {
+		return errors.Errorf("SigLockedColoredOutput: failed to parse OutputType (%v): %w", err, cerrors.ErrParseBytesFailed)
+	}).AbortIf(func(err error) error {
+		if OutputType(outputType) != SigLockedColoredOutputType {
+			return errors.Errorf("SigLockedColoredOutput: invalid OutputType (%X): %w", outputType, cerrors.ErrParseBytesFailed)
+		}
+		return nil
+	}).ReadObject(func(seri serializer.Serializable) {
+		s.balances = seri.(*ColoredBalances)
+	}, deSeriMode, serializer.TypeDenotationNone, func(ty uint32) (serializer.Serializable, error) {
+		return &ColoredBalances{balances: orderedmap.New()}, nil
+	}, func(err error) error {
+		return errors.Errorf("SigLockedColoredOutput: failed to parse balances (%v): %w", err, cerrors.ErrParseBytesFailed)
+	}).ReadObject(func(seri serializer.Serializable) {
+		s.address = seri.(Address)
+	}, deSeriMode, serializer.TypeDenotationByte, AddressTypeSelector, func(err error) error {
+		return errors.Errorf("SigLockedColoredOutput: failed to parse alias address (%v): %w", err, cerrors.ErrParseBytesFailed)
+	}).Done()
+}
+
+func (s *SigLockedColoredOutput) Serialize(deSeriMode serializer.DeSerializationMode) ([]byte, error) {
+	return serializer.NewSerializer().
+		WriteNum(SigLockedColoredOutputType, func(err error) error {
+			return fmt.Errorf("%w: unable to serialize transaction's essence", err)
+		}).
+		WriteObject(s.balances, deSeriMode, func(err error) error {
+			return fmt.Errorf("%w: unable to serialize balances", err)
+		}).
+		WriteObject(s.address, deSeriMode, func(err error) error {
+			return fmt.Errorf("%w: unable to serialize alias address", err)
+		}).Serialize()
 }
 
 // ObjectStorageKey returns the key that is used to store the object in the database. It is required to match the
@@ -1414,6 +1581,135 @@ func (a *AliasOutput) Compare(other Output) int {
 // Update is disabled
 func (a *AliasOutput) Update(other objectstorage.StorableObject) {
 	panic("AliasOutput: storage object updates disabled")
+}
+
+func (a *AliasOutput) MarshalJSON() ([]byte, error) {
+	panic("implement me")
+}
+
+func (a *AliasOutput) UnmarshalJSON(i []byte) error {
+	panic("implement me")
+}
+
+func (a *AliasOutput) Deserialize(data []byte, deSeriMode serializer.DeSerializationMode) (int, error) {
+	var outputType uint8
+	var flagsByte byte
+	var flags bitmask.BitMask
+	deserializer := serializer.NewDeserializer(data).ReadNum(&outputType, func(err error) error {
+		return errors.Errorf("AliasOutput: failed to parse OutputType (%v): %w, err, cerrors.ErrParseBytesFailed)")
+	}).AbortIf(func(err error) error {
+		if OutputType(outputType) != AliasOutputType {
+			return errors.Errorf("AliasOutput: invalid OutputType (%X): %w", outputType, cerrors.ErrParseBytesFailed)
+		}
+		return nil
+	}).ReadByte(&flagsByte, func(err error) error {
+		return errors.Errorf("AliasOutput: failed to parse AliasOutput flags (%v): %w", err, cerrors.ErrParseBytesFailed)
+	}).Do(func() {
+		flags = bitmask.BitMask(flagsByte)
+		a.isOrigin = flags.HasBit(flagAliasOutputIsOrigin)
+		a.isGovernanceUpdate = flags.HasBit(flagAliasOutputGovernanceUpdate)
+		a.isDelegated = flags.HasBit(flagAliasOutputDelegationConstraint)
+	}).ReadObject(func(seri serializer.Serializable) {
+		a.aliasAddress = *seri.(*AliasAddress)
+	}, deSeriMode, serializer.TypeDenotationNone, func(ty uint32) (serializer.Serializable, error) {
+		return &AliasAddress{}, nil
+	}, func(err error) error {
+		return errors.Errorf("AliasOutput: failed to parse alias address (%v): %w", err, cerrors.ErrParseBytesFailed)
+	}).ReadObject(func(seri serializer.Serializable) {
+		a.balances = seri.(*ColoredBalances)
+	}, deSeriMode, serializer.TypeDenotationNone, func(ty uint32) (serializer.Serializable, error) {
+		return &ColoredBalances{balances: orderedmap.New()}, nil
+	}, func(err error) error {
+		return errors.Errorf("AliasOutput: failed to parse state address (%v): %w", err, cerrors.ErrParseBytesFailed)
+	}).ReadObject(func(seri serializer.Serializable) {
+		a.stateAddress = seri.(Address)
+	}, deSeriMode, serializer.TypeDenotationByte, AddressTypeSelector, func(err error) error {
+		return errors.Errorf("AliasOutput: failed to parse state address (%v): %w", err, cerrors.ErrParseBytesFailed)
+	}).ReadNum(&a.stateIndex, func(err error) error {
+		return errors.Errorf("AliasOutput: failed to parse state index (%v): %w", err, cerrors.ErrParseBytesFailed)
+	})
+
+	if flags.HasBit(flagAliasOutputStateDataPresent) {
+		deserializer.ReadVariableByteSlice(&a.stateData, serializer.SeriSliceLengthAsUint16, func(err error) error {
+			return errors.Errorf("AliasOutput: failed to parse state data: %w", err)
+		})
+	}
+	if flags.HasBit(flagAliasOutputGovernanceMetadataPresent) {
+		deserializer.ReadVariableByteSlice(&a.governanceMetadata, serializer.SeriSliceLengthAsUint16, func(err error) error {
+			return errors.Errorf("AliasOutput: failed to parse governance metadata: %w", err)
+		})
+	}
+	if flags.HasBit(flagAliasOutputImmutableDataPresent) {
+		deserializer.ReadVariableByteSlice(&a.immutableData, serializer.SeriSliceLengthAsUint16, func(err error) error {
+			return errors.Errorf("AliasOutput: failed to parse immutable data: %w", err)
+		})
+	}
+	if flags.HasBit(flagAliasOutputGovernanceSet) {
+		deserializer.ReadObject(func(seri serializer.Serializable) {
+			a.governingAddress = seri.(Address)
+		}, deSeriMode, serializer.TypeDenotationByte, AddressTypeSelector, func(err error) error {
+			return errors.Errorf("AliasOutput: failed to parse governing address (%v): %w", err, cerrors.ErrParseBytesFailed)
+		})
+	}
+
+	if flags.HasBit(flagAliasOutputDelegationTimelockPresent) {
+		deserializer.ReadTime(&a.delegationTimelock, func(err error) error {
+			return errors.Errorf("AliasOutput: failed to parse immutable data: %w", err)
+		})
+	}
+	return deserializer.AbortIf(func(err error) error {
+		return a.checkBasicValidity()
+	}).Done()
+}
+
+// Serialize to binary form
+func (a *AliasOutput) Serialize(deSeriMode serializer.DeSerializationMode) ([]byte, error) {
+	flags := a.mustFlags()
+	buffer := serializer.NewSerializer().
+		WriteNum(AliasOutputType, func(err error) error {
+			return fmt.Errorf("%w: unable to serialize transaction's essence", err)
+		}).
+		WriteByte(byte(flags), func(err error) error {
+			return fmt.Errorf("%w: unable to serialize transaction's essence", err)
+		}).
+		WriteObject(&a.aliasAddress, deSeriMode, func(err error) error {
+			return fmt.Errorf("%w: unable to serialize alias address", err)
+		}).
+		WriteObject(a.balances, deSeriMode, func(err error) error {
+			return fmt.Errorf("%w: unable to serialize balances", err)
+		}).
+		WriteObject(a.stateAddress, deSeriMode, func(err error) error {
+			return fmt.Errorf("%w: unable to serialize state address", err)
+		}).
+		WriteNum(a.stateIndex, func(err error) error {
+			return fmt.Errorf("%w: unable to serialize state index", err)
+		})
+	if flags.HasBit(flagAliasOutputStateDataPresent) {
+		buffer.WriteVariableByteSlice(a.stateData, serializer.SeriSliceLengthAsUint16, func(err error) error {
+			return fmt.Errorf("%w: unable to serialize state data", err)
+		})
+	}
+	if flags.HasBit(flagAliasOutputGovernanceMetadataPresent) {
+		buffer.WriteVariableByteSlice(a.governanceMetadata, serializer.SeriSliceLengthAsUint16, func(err error) error {
+			return fmt.Errorf("%w: unable to serialize governance data", err)
+		})
+	}
+	if flags.HasBit(flagAliasOutputImmutableDataPresent) {
+		buffer.WriteVariableByteSlice(a.immutableData, serializer.SeriSliceLengthAsUint16, func(err error) error {
+			return fmt.Errorf("%w: unable to serialize immutable data", err)
+		})
+	}
+	if flags.HasBit(flagAliasOutputGovernanceSet) {
+		buffer.WriteObject(a.governingAddress, deSeriMode, func(err error) error {
+			return fmt.Errorf("%w: unable to serialize governing address", err)
+		})
+	}
+	if flags.HasBit(flagAliasOutputDelegationTimelockPresent) {
+		buffer.WriteTime(a.delegationTimelock, func(err error) error {
+			return fmt.Errorf("%w: unable to serialize delegation timelock", err)
+		})
+	}
+	return buffer.Serialize()
 }
 
 // ObjectStorageKey a key
@@ -2132,6 +2428,99 @@ func (o *ExtendedLockedOutput) Bytes() []byte {
 // Update is disabled and panics if it ever gets called - it is required to match the StorableObject interface.
 func (o *ExtendedLockedOutput) Update(objectstorage.StorableObject) {
 	panic("ExtendedLockedOutput: updates disabled")
+}
+
+func (o *ExtendedLockedOutput) MarshalJSON() ([]byte, error) {
+	panic("implement me")
+}
+
+func (o *ExtendedLockedOutput) UnmarshalJSON(i []byte) error {
+	panic("implement me")
+}
+
+func (o *ExtendedLockedOutput) Deserialize(data []byte, deSeriMode serializer.DeSerializationMode) (int, error) {
+	var outputType uint8
+	var flagsByte byte
+	var flags bitmask.BitMask
+	deserializer := serializer.NewDeserializer(data).ReadNum(&outputType, func(err error) error {
+		return errors.Errorf("ExtendedLockedOutput: failed to parse OutputType (%v): %w", err, cerrors.ErrParseBytesFailed)
+	}).AbortIf(func(err error) error {
+		if OutputType(outputType) != ExtendedLockedOutputType {
+			return errors.Errorf("ExtendedLockedOutput: invalid OutputType (%X): %w", outputType, cerrors.ErrParseBytesFailed)
+		}
+		return nil
+	}).ReadObject(func(seri serializer.Serializable) {
+		o.balances = seri.(*ColoredBalances)
+	}, deSeriMode, serializer.TypeDenotationNone, func(ty uint32) (serializer.Serializable, error) {
+		return &ColoredBalances{balances: orderedmap.New()}, nil
+	}, func(err error) error {
+		return errors.Errorf("ExtendedLockedOutput: failed to parse balances (%v): %w", err, cerrors.ErrParseBytesFailed)
+	}).ReadObject(func(seri serializer.Serializable) {
+		o.address = seri.(Address)
+	}, deSeriMode, serializer.TypeDenotationNone, AddressTypeSelector, func(err error) error {
+		return errors.Errorf("ExtendedLockedOutput: failed to parse address (%v): %w", err, cerrors.ErrParseBytesFailed)
+	}).ReadByte(&flagsByte, func(err error) error {
+		return errors.Errorf("ExtendedLockedOutput: failed to parse ExtendedLockedOutput flags (%v): %w", err, cerrors.ErrParseBytesFailed)
+	}).Do(func() {
+		flags = bitmask.BitMask(flagsByte)
+	})
+
+	if flags.HasBit(flagExtendedLockedOutputFallbackPresent) {
+		deserializer.ReadObject(func(seri serializer.Serializable) {
+			o.fallbackAddress = seri.(Address)
+		}, deSeriMode, serializer.TypeDenotationNone, AddressTypeSelector, func(err error) error {
+			return errors.Errorf("ExtendedLockedOutput: failed to parse fallback address (%v): %w", err, cerrors.ErrParseBytesFailed)
+		}).ReadTime(&o.fallbackDeadline, func(err error) error {
+			return errors.Errorf("ExtendedLockedOutput: failed to parse fallback deadline (%v): %w", err, cerrors.ErrParseBytesFailed)
+		})
+	}
+	if flags.HasBit(flagExtendedLockedOutputTimeLockPresent) {
+		deserializer.ReadTime(&o.timelock, func(err error) error {
+			return errors.Errorf("ExtendedLockedOutput: failed to parse timelock (%v): %w", err, cerrors.ErrParseBytesFailed)
+		})
+	}
+	if flags.HasBit(flagExtendedLockedOutputPayloadPresent) {
+		deserializer.ReadVariableByteSlice(&o.payload, serializer.SeriSliceLengthAsUint16, func(err error) error {
+			return errors.Errorf("ExtendedLockedOutput: failed to parse payload: %w", err)
+		})
+	}
+	return deserializer.Done()
+}
+
+func (o *ExtendedLockedOutput) Serialize(deSeriMode serializer.DeSerializationMode) ([]byte, error) {
+	flags := o.compressFlags()
+	buffer := serializer.NewSerializer().
+		WriteNum(ExtendedLockedOutputType, func(err error) error {
+			return fmt.Errorf("%w: unable to serialize ExtendedLockedOutputType", err)
+		}).
+		WriteObject(o.balances, deSeriMode, func(err error) error {
+			return fmt.Errorf("%w: unable to serialize balances", err)
+		}).
+		WriteObject(o.address, deSeriMode, func(err error) error {
+			return fmt.Errorf("%w: unable to serialize alias address", err)
+		}).
+		WriteByte(byte(flags), func(err error) error {
+			return fmt.Errorf("%w: unable to serialize transaction's essence", err)
+		})
+	if flags.HasBit(flagExtendedLockedOutputFallbackPresent) {
+		buffer.WriteObject(o.fallbackAddress, deSeriMode, func(err error) error {
+			return fmt.Errorf("%w: unable to serialize fallback address", err)
+		}).
+			WriteTime(o.fallbackDeadline, func(err error) error {
+				return fmt.Errorf("%w: unable to serialize fallback deadline", err)
+			})
+	}
+	if flags.HasBit(flagExtendedLockedOutputTimeLockPresent) {
+		buffer.WriteTime(o.timelock, func(err error) error {
+			return fmt.Errorf("%w: unable to serialize output timelock", err)
+		})
+	}
+	if flags.HasBit(flagExtendedLockedOutputPayloadPresent) {
+		buffer.WriteVariableByteSlice(o.payload, serializer.SeriSliceLengthAsUint16, func(err error) error {
+			return fmt.Errorf("%w: unable to serialize payload", err)
+		})
+	}
+	return buffer.Serialize()
 }
 
 // ObjectStorageKey returns the key that is used to store the object in the database. It is required to match the

@@ -8,6 +8,7 @@ import (
 	"github.com/iotaledger/hive.go/cerrors"
 	"github.com/iotaledger/hive.go/datastructure/orderedmap"
 	"github.com/iotaledger/hive.go/marshalutil"
+	"github.com/iotaledger/hive.go/serializer"
 	"github.com/iotaledger/hive.go/stringify"
 	"github.com/mr-tron/base58"
 )
@@ -25,6 +26,22 @@ const ColorLength = 32
 
 // Color represents a marker that is associated to a token balance and that can give tokens a certain "meaning".
 type Color [ColorLength]byte
+
+func (c Color) MarshalJSON() ([]byte, error) {
+	panic("implement me")
+}
+
+func (c Color) UnmarshalJSON(i []byte) error {
+	panic("implement me")
+}
+
+func (c Color) Deserialize(data []byte, deSeriMode serializer.DeSerializationMode) (int, error) {
+	return copy(c[:], data), nil
+}
+
+func (c Color) Serialize(deSeriMode serializer.DeSerializationMode) ([]byte, error) {
+	return c[:], nil
+}
 
 // ColorFromBytes unmarshals a Color from a sequence of bytes.
 func ColorFromBytes(colorBytes []byte) (color Color, consumedBytes int, err error) {
@@ -227,6 +244,84 @@ func (c *ColoredBalances) Bytes() []byte {
 		return true
 	})
 	return marshalUtil.Bytes()
+}
+
+func (c *ColoredBalances) MarshalJSON() ([]byte, error) {
+	panic("implement me")
+}
+
+func (c *ColoredBalances) UnmarshalJSON(i []byte) error {
+	panic("implement me")
+}
+
+func (c *ColoredBalances) Deserialize(data []byte, deSeriMode serializer.DeSerializationMode) (int, error) {
+	var balancesCount uint32
+	buffer := serializer.NewDeserializer(data).
+		ReadNum(&balancesCount, func(err error) error {
+			return errors.Errorf("%w: unable to deserialize ColoredBalances", err)
+		}).
+		AbortIf(func(err error) error {
+			if deSeriMode.HasMode(serializer.DeSeriModePerformValidation) {
+				if balancesCount == 0 {
+					return errors.Errorf("empty balances in output")
+				}
+			}
+			return nil
+		})
+
+	var previousColor *Color
+	for i := uint32(0); i < balancesCount; i++ {
+		var color Color
+		var balance uint64
+		buffer.ReadObject(func(deserialized serializer.Serializable) {
+			color = deserialized.(Color)
+			return
+		}, deSeriMode, serializer.TypeDenotationNone, func(ty uint32) (serializer.Serializable, error) {
+			return Color{}, nil
+		}, func(err error) error {
+			return errors.Errorf("%w: unable to deserialize ColoredBalances", err)
+		}).AbortIf(func(err error) error {
+			if deSeriMode.HasMode(serializer.DeSeriModePerformLexicalOrdering) {
+				if previousColor != nil && previousColor.Compare(color) != -1 {
+					return errors.Errorf("parsed Colors are not in correct order: %w", cerrors.ErrParseBytesFailed)
+				}
+			}
+			return nil
+		}).ReadNum(&balance, func(err error) error {
+			return errors.Errorf("%w: unable to deserialize ColoredBalances", err)
+		}).AbortIf(func(err error) error {
+			if deSeriMode.HasMode(serializer.DeSeriModePerformValidation) {
+				if balance == 0 {
+					return errors.Errorf("zero balance found for color %s", color.String())
+				}
+			}
+			return nil
+		})
+
+		c.balances.Set(color, balance)
+
+		previousColor = &color
+	}
+
+	return buffer.Done()
+}
+
+func (c *ColoredBalances) Serialize(deSeriMode serializer.DeSerializationMode) ([]byte, error) {
+	buffer := serializer.NewSerializer().WriteNum(uint32(c.balances.Size()), func(err error) error {
+		return errors.Errorf("%w: unable to serialize ColoredBalances", err)
+	})
+
+	c.ForEach(func(color Color, balance uint64) bool {
+		buffer.WriteObject(color, deSeriMode, func(err error) error {
+			return errors.Errorf("%w: unable to serialize ColoredBalances", err)
+		})
+		buffer.WriteNum(balance, func(err error) error {
+			return errors.Errorf("%w: unable to serialize ColoredBalances", err)
+		})
+
+		return true
+	})
+	return buffer.Serialize()
 }
 
 // Map returns a vanilla golang map (unordered) containing the existing balances. Since the ColoredBalances are

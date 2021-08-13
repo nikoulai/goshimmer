@@ -3,6 +3,7 @@ package ledgerstate
 import (
 	"bytes"
 	"encoding/binary"
+	"fmt"
 	"math/rand"
 	"sync"
 	"testing"
@@ -13,6 +14,7 @@ import (
 	"github.com/iotaledger/hive.go/identity"
 	"github.com/iotaledger/hive.go/marshalutil"
 	"github.com/iotaledger/hive.go/objectstorage"
+	"github.com/iotaledger/hive.go/serializer"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"golang.org/x/crypto/blake2b"
@@ -148,6 +150,245 @@ func TestAliasOutput_NewAliasOutputNext(t *testing.T) {
 	})
 }
 
+func TestAliasOutput_Deserialize(t *testing.T) {
+	t.Run("CASE: Happy path", func(t *testing.T) {
+		originAlias := dummyAliasOutput().WithDelegationAndTimelock(time.Now())
+		bytesSerialized, err := originAlias.Serialize(serializer.DeSeriModePerformValidation)
+		assert.NoError(t, err)
+
+		bytesLength := len(bytesSerialized)
+		deserializedAlias := &AliasOutput{}
+		consumed, err := deserializedAlias.Deserialize(bytesSerialized, serializer.DeSeriModePerformValidation)
+		assert.NoError(t, err)
+		assert.Equal(t, bytesLength, consumed)
+		deserializedAliasSerialized, err := deserializedAlias.Serialize(serializer.DeSeriModePerformValidation)
+		assert.NoError(t, err)
+		assert.Equal(t, deserializedAliasSerialized, bytesSerialized)
+	})
+
+	t.Run("CASE: Wrong type", func(t *testing.T) {
+		originAlias := dummyAliasOutput()
+		originBytes, err := originAlias.Serialize(serializer.DeSeriModePerformValidation)
+		assert.NoError(t, err)
+
+		// manually change output type byte
+		originBytes[0] = 1
+		deserializedAlias := &AliasOutput{}
+		_, err1 := deserializedAlias.Deserialize(originBytes, serializer.DeSeriModePerformValidation)
+		assert.Error(t, err1)
+	})
+
+	t.Run("CASE: Wrong flag for state data", func(t *testing.T) {
+		originAlias := dummyAliasOutput()
+		originBytes, err := originAlias.Serialize(serializer.DeSeriModePerformValidation)
+		assert.NoError(t, err)
+
+		flags := originAlias.mustFlags()
+		flags = flags.ClearBit(flagAliasOutputStateDataPresent)
+		// manually change flags
+		originBytes[1] = byte(flags)
+		deserializedAlias := &AliasOutput{}
+		_, err1 := deserializedAlias.Deserialize(originBytes, serializer.DeSeriModePerformValidation)
+		assert.Error(t, err1)
+	})
+
+	t.Run("CASE: Wrong flag for governance metadata", func(t *testing.T) {
+		originAlias := dummyAliasOutput()
+		originBytes, err := originAlias.Serialize(serializer.DeSeriModePerformValidation)
+		assert.NoError(t, err)
+
+		flags := originAlias.mustFlags()
+		flags = flags.ClearBit(flagAliasOutputGovernanceMetadataPresent)
+		// manually change flags
+		originBytes[1] = byte(flags)
+		deserializedAlias := &AliasOutput{}
+		_, err1 := deserializedAlias.Deserialize(originBytes, serializer.DeSeriModePerformValidation)
+		t.Log(err)
+
+		assert.Error(t, err1)
+	})
+
+	t.Run("CASE: Wrong flag for immutable data", func(t *testing.T) {
+		originAlias := dummyAliasOutput()
+		originBytes, err := originAlias.Serialize(serializer.DeSeriModePerformValidation)
+		assert.NoError(t, err)
+
+		flags := originAlias.mustFlags()
+		flags = flags.ClearBit(flagAliasOutputImmutableDataPresent)
+		// manually change flags
+		originBytes[1] = byte(flags)
+		deserializedAlias := &AliasOutput{}
+		_, err1 := deserializedAlias.Deserialize(originBytes, serializer.DeSeriModePerformValidation)
+		assert.Error(t, err1)
+	})
+
+	t.Run("CASE: Wrong flag for governance address", func(t *testing.T) {
+		originAlias := dummyAliasOutput()
+		originBytes, err := originAlias.Serialize(serializer.DeSeriModePerformValidation)
+		assert.NoError(t, err)
+
+		flags := originAlias.mustFlags()
+		flags = flags.ClearBit(flagAliasOutputGovernanceSet)
+		// manually change flags
+		originBytes[1] = byte(flags)
+		deserializedAlias := &AliasOutput{}
+		consumedBytes, err := deserializedAlias.Deserialize(originBytes, serializer.DeSeriModePerformValidation)
+		assert.NoError(t, err)
+		assert.NotEqual(t, len(originBytes), consumedBytes)
+	})
+
+	t.Run("CASE: Flags provided, state data missing", func(t *testing.T) {
+		originAlias := dummyAliasOutput()
+		// remove the data
+		_ = originAlias.SetStateData(nil)
+		originBytes, err := originAlias.Serialize(serializer.DeSeriModePerformValidation)
+		assert.NoError(t, err)
+
+		flags := originAlias.mustFlags()
+		flags = flags.SetBit(flagAliasOutputStateDataPresent)
+		// manually change flags
+		originBytes[1] = byte(flags)
+		deserializedAlias := &AliasOutput{}
+		_, err = deserializedAlias.Deserialize(originBytes, serializer.DeSeriModePerformValidation)
+		t.Log(err)
+		assert.Error(t, err)
+	})
+
+	t.Run("CASE: Flags provided, governance metadata missing", func(t *testing.T) {
+		originAlias := dummyAliasOutput()
+		// remove the data
+		_ = originAlias.SetGovernanceMetadata(nil)
+		originBytes, err := originAlias.Serialize(serializer.DeSeriModePerformValidation)
+		assert.NoError(t, err)
+
+		flags := originAlias.mustFlags()
+		flags = flags.SetBit(flagAliasOutputGovernanceMetadataPresent)
+		// manually change flags
+		originBytes[1] = byte(flags)
+		deserializedAlias := &AliasOutput{}
+		_, err = deserializedAlias.Deserialize(originBytes, serializer.DeSeriModePerformValidation)
+		t.Log(err)
+		assert.Error(t, err)
+	})
+
+	t.Run("CASE: Flags provided, immutable data missing", func(t *testing.T) {
+		originAlias := dummyAliasOutput()
+		// remove the data
+		err := originAlias.SetImmutableData(nil)
+		assert.NoError(t, err)
+		originBytes, err := originAlias.Serialize(serializer.DeSeriModePerformValidation)
+		assert.NoError(t, err)
+		flags := originAlias.mustFlags()
+		flags = flags.SetBit(flagAliasOutputImmutableDataPresent)
+		// manually change flags
+		originBytes[1] = byte(flags)
+		deserializedAlias := &AliasOutput{}
+		_, err = deserializedAlias.Deserialize(originBytes, serializer.DeSeriModePerformValidation)
+		t.Log(err)
+		assert.Error(t, err)
+	})
+
+	t.Run("CASE: Flags provided, governing address missing", func(t *testing.T) {
+		originAlias := dummyAliasOutput()
+		// remove the data
+		originAlias.SetGoverningAddress(originAlias.stateAddress)
+		originBytes, err := originAlias.Serialize(serializer.DeSeriModePerformValidation)
+		assert.NoError(t, err)
+		flags := originAlias.mustFlags()
+		flags = flags.SetBit(flagAliasOutputGovernanceSet)
+		// manually change flags
+		originBytes[1] = byte(flags)
+		deserializedAlias := &AliasOutput{}
+		_, err = deserializedAlias.Deserialize(originBytes, serializer.DeSeriModePerformValidation)
+		t.Log(err)
+		assert.Error(t, err)
+	})
+
+	t.Run("CASE: Invalid balances", func(t *testing.T) {
+		originAlias := dummyAliasOutput()
+		// remove the data
+		invalidBalancesBytes := NewColoredBalances(map[Color]uint64{ColorIOTA: 99}).Bytes()
+		originBytes, err := originAlias.Serialize(serializer.DeSeriModePerformValidation)
+		assert.NoError(t, err)
+		// serialized balances start at : output type (1 byte) + flags (1 byte) + AliasAddressLength bytes
+		copy(originBytes[1+1+AddressLength:], invalidBalancesBytes)
+		deserializedAlias := &AliasOutput{}
+		_, err = deserializedAlias.Deserialize(originBytes, serializer.DeSeriModePerformValidation)
+		t.Log(err)
+		assert.Error(t, err)
+	})
+
+	t.Run("CASE: Invalid state index for chain starting output", func(t *testing.T) {
+		originAlias, err := NewAliasOutputMint(map[Color]uint64{ColorIOTA: DustThresholdAliasOutputIOTA}, randEd25119Address())
+		assert.NoError(t, err)
+		originBytes, err := originAlias.Serialize(serializer.DeSeriModePerformValidation)
+		assert.NoError(t, err)
+		stateIndexStartIndex := 1 + 1 + AddressLength + len(originAlias.balances.Bytes()) + AddressLength
+		binary.LittleEndian.PutUint32(originBytes[stateIndexStartIndex:], 5)
+		deserializedAlias := &AliasOutput{}
+		_, err = deserializedAlias.Deserialize(originBytes, serializer.DeSeriModePerformValidation)
+		t.Log(err)
+		assert.Error(t, err)
+	})
+
+	t.Run("CASE: Too much state data", func(t *testing.T) {
+		originAlias := dummyAliasOutput()
+		originAlias.governanceMetadata = nil
+		originAlias.immutableData = nil
+		originAlias.governingAddress = nil
+		originAlias.stateData = []byte{1}
+		originBytes, err := originAlias.Serialize(serializer.DeSeriModePerformValidation)
+		assert.NoError(t, err)
+		stateDataSizeIndex := 1 + 1 + AddressLength + len(originAlias.balances.Bytes()) + AddressLength + 4
+		binary.LittleEndian.PutUint16(originBytes[stateDataSizeIndex:], MaxOutputPayloadSize+1)
+		fakeStateData := make([]byte, MaxOutputPayloadSize)
+		// original one byte state data is left untouched
+		modBytes := byteutils.ConcatBytes(originBytes, fakeStateData)
+		deserializedAlias := &AliasOutput{}
+		_, err = deserializedAlias.Deserialize(modBytes, serializer.DeSeriModePerformValidation)
+		t.Log(err)
+		assert.Error(t, err)
+	})
+
+	t.Run("CASE: Too much governance metadata", func(t *testing.T) {
+		originAlias := dummyAliasOutput()
+		originAlias.governanceMetadata = []byte{1}
+		originAlias.immutableData = nil
+		originAlias.governingAddress = nil
+		originAlias.stateData = nil
+		originBytes, err := originAlias.Serialize(serializer.DeSeriModePerformValidation)
+		assert.NoError(t, err)
+		governanceMetadataSizeIndex := 1 + 1 + AddressLength + len(originAlias.balances.Bytes()) + AddressLength + 4
+		binary.LittleEndian.PutUint16(originBytes[governanceMetadataSizeIndex:], MaxOutputPayloadSize+1)
+		fakeGovernanceMetadata := make([]byte, MaxOutputPayloadSize)
+		// original one byte governance metadata is left untouched
+		modBytes := byteutils.ConcatBytes(originBytes, fakeGovernanceMetadata)
+		deserializedAlias := &AliasOutput{}
+		_, err = deserializedAlias.Deserialize(modBytes, serializer.DeSeriModePerformValidation)
+		t.Log(err)
+		assert.Error(t, err)
+	})
+
+	t.Run("CASE: Too much immutable data", func(t *testing.T) {
+		originAlias := dummyAliasOutput()
+		originAlias.governanceMetadata = nil
+		originAlias.immutableData = []byte{1}
+		originAlias.governingAddress = nil
+		originAlias.stateData = nil
+		originBytes, err := originAlias.Serialize(serializer.DeSeriModePerformValidation)
+		assert.NoError(t, err)
+		immutableDataSizeIndex := 1 + 1 + AddressLength + len(originAlias.balances.Bytes()) + AddressLength + 4
+		binary.LittleEndian.PutUint16(originBytes[immutableDataSizeIndex:], MaxOutputPayloadSize+1)
+		fakeImmutableData := make([]byte, MaxOutputPayloadSize)
+		// original one byte state data is left untouched
+		modBytes := byteutils.ConcatBytes(originBytes, fakeImmutableData)
+		deserializedAlias := &AliasOutput{}
+		_, err = deserializedAlias.Deserialize(modBytes, serializer.DeSeriModePerformValidation)
+		t.Log(err)
+		assert.Error(t, err)
+	})
+}
+
 func TestAliasOutputFromMarshalUtil(t *testing.T) {
 	t.Run("CASE: Happy path", func(t *testing.T) {
 		originAlias := dummyAliasOutput().WithDelegationAndTimelock(time.Now())
@@ -156,6 +397,7 @@ func TestAliasOutputFromMarshalUtil(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Equal(t, bytesLength, consumed)
 		assert.Equal(t, marshaledAlias.Bytes(), originAlias.Bytes())
+
 	})
 
 	t.Run("CASE: Wrong type", func(t *testing.T) {
@@ -375,6 +617,25 @@ func TestAliasOutput_Balances(t *testing.T) {
 	t.Run("CASE: Happy path", func(t *testing.T) {
 		alias := dummyAliasOutput()
 		assert.Equal(t, NewColoredBalances(map[Color]uint64{ColorIOTA: DustThresholdAliasOutputIOTA}).Bytes(), alias.Balances().Bytes())
+	})
+}
+
+func TestAliasOutput_Serialize(t *testing.T) {
+	t.Run("Happy path", func(t *testing.T) {
+		alias := dummyAliasOutput()
+		aBytes, err := alias.Serialize(serializer.DeSeriModePerformValidation)
+		restoredAlias := AliasOutput{}
+		_, err = restoredAlias.Deserialize(aBytes, serializer.DeSeriModePerformValidation)
+		assert.NoError(t, err)
+		assert.True(t, alias.GetAliasAddress().Equals(restoredAlias.GetAliasAddress()))
+		assert.True(t, alias.GetStateAddress().Equals(restoredAlias.GetStateAddress()))
+		assert.True(t, alias.GetGoverningAddress().Equals(restoredAlias.GetGoverningAddress()))
+		assert.Equal(t, alias.Balances().Bytes(), restoredAlias.Balances().Bytes())
+		assert.Equal(t, alias.GetStateIndex(), restoredAlias.GetStateIndex())
+		assert.Equal(t, alias.GetStateData(), restoredAlias.GetStateData())
+		assert.Equal(t, alias.GetGovernanceMetadata(), restoredAlias.GetGovernanceMetadata())
+		assert.Equal(t, alias.GetImmutableData(), restoredAlias.GetImmutableData())
+		assert.Equal(t, alias.GetIsGovernanceUpdated(), restoredAlias.GetIsGovernanceUpdated())
 	})
 }
 
@@ -1676,6 +1937,120 @@ func TestExtendedLockedOutput_Balances(t *testing.T) {
 	})
 }
 
+func TestExtendedLockedOutput_Serialize(t *testing.T) {
+	t.Run("CASE: Happy path, all optional fields", func(t *testing.T) {
+		o := NewExtendedLockedOutput(map[Color]uint64{ColorIOTA: DustThresholdAliasOutputIOTA}, randEd25119Address()).
+			WithFallbackOptions(randEd25119Address(), time.Now().Add(2*time.Hour)).
+			WithTimeLock(time.Now().Add(1 * time.Hour))
+		err := o.SetPayload([]byte("some metadata"))
+		assert.NoError(t, err)
+		oBytes, err := o.Serialize(serializer.DeSeriModePerformValidation)
+		assert.NoError(t, err)
+		var restored Output
+		restored = &ExtendedLockedOutput{}
+		_, err = restored.Deserialize(oBytes, serializer.DeSeriModePerformValidation)
+		assert.NoError(t, err)
+
+		castedRestored, ok := restored.(*ExtendedLockedOutput)
+		assert.True(t, ok)
+		assert.Equal(t, o.balances.Bytes(), castedRestored.balances.Bytes())
+		assert.True(t, o.address.Equals(castedRestored.address))
+		assert.Equal(t, o.id.Bytes(), castedRestored.id.Bytes())
+		assert.True(t, o.fallbackDeadline.Equal(castedRestored.fallbackDeadline))
+		assert.True(t, o.fallbackAddress.Equals(castedRestored.fallbackAddress))
+		assert.True(t, o.timelock.Equal(castedRestored.timelock))
+		assert.Equal(t, o.payload, castedRestored.payload)
+	})
+
+	t.Run("CASE: Happy path, no optional fields", func(t *testing.T) {
+		o := NewExtendedLockedOutput(map[Color]uint64{ColorIOTA: DustThresholdAliasOutputIOTA}, randEd25119Address())
+		oBytes, err := o.Serialize(serializer.DeSeriModePerformValidation)
+		assert.NoError(t, err)
+
+		var restored Output
+		restored = &ExtendedLockedOutput{}
+		_, err = restored.Deserialize(oBytes, serializer.DeSeriModePerformValidation)
+		assert.NoError(t, err)
+		castedRestored, ok := restored.(*ExtendedLockedOutput)
+		assert.True(t, ok)
+		assert.Equal(t, o.balances.Bytes(), castedRestored.balances.Bytes())
+		assert.True(t, o.address.Equals(castedRestored.address))
+		assert.Equal(t, o.id.Bytes(), castedRestored.id.Bytes())
+		assert.True(t, o.fallbackDeadline.Equal(castedRestored.fallbackDeadline))
+		assert.Nil(t, o.fallbackAddress)
+		assert.Nil(t, castedRestored.fallbackAddress)
+		assert.True(t, o.timelock.Equal(castedRestored.timelock))
+		assert.Equal(t, o.payload, castedRestored.payload)
+	})
+
+	t.Run("CASE: Happy path, optional timelock", func(t *testing.T) {
+		o := NewExtendedLockedOutput(map[Color]uint64{ColorIOTA: DustThresholdAliasOutputIOTA}, randEd25119Address()).
+			WithTimeLock(time.Now().Add(1 * time.Hour))
+		oBytes, err := o.Serialize(serializer.DeSeriModePerformValidation)
+		assert.NoError(t, err)
+
+		var restored Output
+		restored = &ExtendedLockedOutput{}
+		_, err = restored.Deserialize(oBytes, serializer.DeSeriModePerformValidation)
+
+		assert.NoError(t, err)
+		castedRestored, ok := restored.(*ExtendedLockedOutput)
+		assert.True(t, ok)
+		assert.Equal(t, o.balances.Bytes(), castedRestored.balances.Bytes())
+		assert.True(t, o.address.Equals(castedRestored.address))
+		assert.Equal(t, o.id.Bytes(), castedRestored.id.Bytes())
+		assert.True(t, o.fallbackDeadline.Equal(castedRestored.fallbackDeadline))
+		assert.Nil(t, o.fallbackAddress)
+		assert.Nil(t, castedRestored.fallbackAddress)
+		assert.True(t, o.timelock.Equal(castedRestored.timelock))
+		assert.Equal(t, o.payload, castedRestored.payload)
+	})
+
+	t.Run("CASE: Happy path, optional fallback", func(t *testing.T) {
+		o := NewExtendedLockedOutput(map[Color]uint64{ColorIOTA: DustThresholdAliasOutputIOTA}, randEd25119Address()).
+			WithFallbackOptions(randEd25119Address(), time.Now().Add(2*time.Hour))
+		oBytes, err := o.Serialize(serializer.DeSeriModePerformValidation)
+		assert.NoError(t, err)
+
+		var restored Output
+		restored = &ExtendedLockedOutput{}
+		_, err = restored.Deserialize(oBytes, serializer.DeSeriModePerformValidation)
+		assert.NoError(t, err)
+		castedRestored, ok := restored.(*ExtendedLockedOutput)
+		assert.True(t, ok)
+		assert.Equal(t, o.balances.Bytes(), castedRestored.balances.Bytes())
+		assert.True(t, o.address.Equals(castedRestored.address))
+		assert.Equal(t, o.id.Bytes(), castedRestored.id.Bytes())
+		assert.True(t, o.fallbackDeadline.Equal(castedRestored.fallbackDeadline))
+		assert.True(t, o.fallbackAddress.Equals(castedRestored.fallbackAddress))
+		assert.True(t, o.timelock.Equal(castedRestored.timelock))
+		assert.Equal(t, o.payload, castedRestored.payload)
+	})
+
+	t.Run("CASE: Happy path, optional payload", func(t *testing.T) {
+		o := NewExtendedLockedOutput(map[Color]uint64{ColorIOTA: DustThresholdAliasOutputIOTA}, randEd25119Address())
+		err := o.SetPayload([]byte("some metadata"))
+		assert.NoError(t, err)
+		oBytes, err := o.Serialize(serializer.DeSeriModePerformValidation)
+		assert.NoError(t, err)
+
+		var restored Output
+		restored = &ExtendedLockedOutput{}
+		_, err = restored.Deserialize(oBytes, serializer.DeSeriModePerformValidation)
+		assert.NoError(t, err)
+		castedRestored, ok := restored.(*ExtendedLockedOutput)
+		assert.True(t, ok)
+		assert.Equal(t, o.balances.Bytes(), castedRestored.balances.Bytes())
+		assert.True(t, o.address.Equals(castedRestored.address))
+		assert.Equal(t, o.id.Bytes(), castedRestored.id.Bytes())
+		assert.True(t, o.fallbackDeadline.Equal(castedRestored.fallbackDeadline))
+		assert.Nil(t, o.fallbackAddress)
+		assert.Nil(t, castedRestored.fallbackAddress)
+		assert.True(t, o.timelock.Equal(castedRestored.timelock))
+		assert.Equal(t, o.payload, castedRestored.payload)
+	})
+}
+
 func TestExtendedLockedOutput_Bytes(t *testing.T) {
 	t.Run("CASE: Happy path, all optional fields", func(t *testing.T) {
 		o := NewExtendedLockedOutput(map[Color]uint64{ColorIOTA: DustThresholdAliasOutputIOTA}, randEd25119Address()).
@@ -2335,6 +2710,110 @@ func TestExtendedLockedOutput_Clone(t *testing.T) {
 	assert.True(t, out.address != outBackT.address)
 	assert.True(t, out.fallbackAddress != outBackT.fallbackAddress)
 	assert.EqualValues(t, out.Bytes(), outBack.Bytes())
+}
+
+// endregion
+
+// region SigLockedColoredOutput Tests
+func TestSigLockedColoredOutput_Serialize(t *testing.T) {
+	t.Run("Happy path", func(t *testing.T) {
+		output := NewSigLockedColoredOutput(NewColoredBalances(map[Color]uint64{ColorIOTA: 1}), randEd25119Address())
+		aBytes, err := output.Serialize(serializer.DeSeriModePerformValidation)
+		restored := &SigLockedColoredOutput{}
+		_, err = restored.Deserialize(aBytes, serializer.DeSeriModePerformValidation)
+		assert.NoError(t, err)
+		fmt.Println(restored.String())
+		assert.EqualValues(t, output, restored)
+		assert.Equal(t, output.Balances(), restored.Balances())
+		assert.Equal(t, output.Address(), restored.Address())
+	})
+}
+
+// endregion
+
+// region SigLockedSingleOutput Tests
+
+func TestSigLockedSingleOutput_Serialize(t *testing.T) {
+	t.Run("Happy path", func(t *testing.T) {
+		singleOutput := NewSigLockedSingleOutput(DustThresholdAliasOutputIOTA, randEd25119Address())
+		coloredOutput := NewSigLockedColoredOutput(NewColoredBalances(map[Color]uint64{ColorIOTA: 1}), randEd25119Address())
+		aliasOutput := dummyAliasOutput()
+		lockedOutput := NewExtendedLockedOutput(map[Color]uint64{ColorIOTA: DustThresholdAliasOutputIOTA}, randEd25119Address()).
+			WithFallbackOptions(randEd25119Address(), time.Now().Add(2*time.Hour)).
+			WithTimeLock(time.Now().Add(1 * time.Hour))
+		err := lockedOutput.SetPayload([]byte("some metadata"))
+		assert.NoError(t, err)
+
+		outputs := NewOutputs(singleOutput, coloredOutput, aliasOutput, lockedOutput)
+
+		serialized, err := outputs.Serialize(serializer.DeSeriModePerformValidation)
+		assert.NoError(t, err)
+
+		restored, err := OutputsSelector(uint32(len(outputs)))
+		assert.NoError(t, err)
+
+		_, err = restored.Deserialize(serialized, serializer.DeSeriModePerformValidation)
+		assert.NoError(t, err)
+		assert.Equal(t, len(outputs), len(restored.(Outputs)))
+		for i := 0; i < len(outputs); i++ {
+			original, _ := outputs[i].Serialize(serializer.DeSeriModeNoValidation)
+			restoredElem, _ := restored.(Outputs)[i].Serialize(serializer.DeSeriModeNoValidation)
+			assert.Equal(t, original, restoredElem)
+		}
+	})
+
+	t.Run("incorrect ordering", func(t *testing.T) {
+		singleOutput := NewSigLockedSingleOutput(DustThresholdAliasOutputIOTA, randEd25119Address())
+		coloredOutput := NewSigLockedColoredOutput(NewColoredBalances(map[Color]uint64{ColorIOTA: 1}), randEd25119Address())
+		aliasOutput := dummyAliasOutput()
+		lockedOutput := NewExtendedLockedOutput(map[Color]uint64{ColorIOTA: DustThresholdAliasOutputIOTA}, randEd25119Address()).
+			WithFallbackOptions(randEd25119Address(), time.Now().Add(2*time.Hour)).
+			WithTimeLock(time.Now().Add(1 * time.Hour))
+		err := lockedOutput.SetPayload([]byte("some metadata"))
+		assert.NoError(t, err)
+
+		outputs := Outputs{singleOutput, coloredOutput, lockedOutput, aliasOutput}
+
+		serialized, err := outputs.Serialize(serializer.DeSeriModePerformValidation)
+		assert.NoError(t, err)
+
+		restored, err := OutputsSelector(uint32(len(outputs)))
+		assert.NoError(t, err)
+
+		_, err = restored.Deserialize(serialized, serializer.DeSeriModePerformLexicalOrdering)
+		assert.Error(t, err)
+	})
+
+	t.Run("incorrect ordering", func(t *testing.T) {
+		outputs := Outputs{}
+
+		serialized, err := outputs.Serialize(serializer.DeSeriModePerformValidation)
+		assert.NoError(t, err)
+
+		restored, err := OutputsSelector(uint32(len(outputs)))
+		assert.NoError(t, err)
+
+		_, err = restored.Deserialize(serialized, serializer.DeSeriModePerformValidation)
+		assert.Error(t, err)
+	})
+}
+
+// endregion
+
+// region SigLockedSingleOutput Tests
+
+func TestOutputs_Serialize(t *testing.T) {
+	t.Run("Happy path", func(t *testing.T) {
+		output := NewSigLockedSingleOutput(DustThresholdAliasOutputIOTA, randEd25119Address())
+
+		aBytes, err := output.Serialize(serializer.DeSeriModePerformValidation)
+		restored := &SigLockedSingleOutput{}
+		_, err = restored.Deserialize(aBytes, serializer.DeSeriModePerformValidation)
+		assert.NoError(t, err)
+		assert.EqualValues(t, output, restored)
+		assert.Equal(t, output.Balances(), restored.Balances())
+		assert.Equal(t, output.Address(), restored.Address())
+	})
 }
 
 // endregion

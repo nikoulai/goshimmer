@@ -8,6 +8,7 @@ import (
 	"github.com/iotaledger/hive.go/cerrors"
 	"github.com/iotaledger/hive.go/crypto/ed25519"
 	"github.com/iotaledger/hive.go/marshalutil"
+	"github.com/iotaledger/hive.go/serializer"
 	"github.com/iotaledger/hive.go/stringify"
 	"github.com/mr-tron/base58"
 	"golang.org/x/crypto/blake2b"
@@ -47,6 +48,8 @@ func (a AddressType) String() string {
 
 // Address is an interface for the different kind of Addresses that are supported by the ledger state.
 type Address interface {
+	serializer.Serializable
+
 	// Type returns the AddressType of the Address.
 	Type() AddressType
 
@@ -130,6 +133,20 @@ func AddressFromSignature(sig Signature) (Address, error) {
 		return NewBLSAddress(s.Signature.PublicKey.Bytes()), nil
 	}
 	return nil, errors.New("signature has no corresponding address")
+}
+
+func AddressTypeSelector(ty uint32) (ser serializer.Serializable, err error) {
+	switch AddressType(ty) {
+	case ED25519AddressType:
+		return &ED25519Address{}, nil
+	case BLSAddressType:
+		return &BLSAddress{}, nil
+	case AliasAddressType:
+		return &AliasAddress{}, nil
+	default:
+		err = errors.Errorf("unsupported address type (%X): %w", ty, cerrors.ErrParseBytesFailed)
+		return
+	}
 }
 
 // endregion ///////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -227,6 +244,49 @@ func (e *ED25519Address) Equals(other Address) bool {
 // Bytes returns a marshaled version of the Address.
 func (e *ED25519Address) Bytes() []byte {
 	return byteutils.ConcatBytes([]byte{byte(ED25519AddressType)}, e.digest)
+}
+
+func (e *ED25519Address) MarshalJSON() ([]byte, error) {
+	panic("implement me")
+}
+
+func (e *ED25519Address) UnmarshalJSON(i []byte) error {
+	panic("implement me")
+}
+
+func (b *ED25519Address) Deserialize(data []byte, deSeriMode serializer.DeSerializationMode) (int, error) {
+	var addressType byte
+	return serializer.NewDeserializer(data).ReadByte(&addressType, func(err error) error {
+		return errors.Errorf("error parsing AddressType (%v): %w", err, cerrors.ErrParseBytesFailed)
+	}).AbortIf(func(err error) error {
+		if deSeriMode.HasMode(serializer.DeSeriModePerformValidation) {
+			if AddressType(addressType) != ED25519AddressType {
+				return errors.Errorf("invalid AddressType (%X): %w", addressType, cerrors.ErrParseBytesFailed)
+			}
+		}
+		return nil
+	}).ReadBytes(&b.digest, 32, func(err error) error {
+		return errors.Errorf("error parsing digest (%v): %w", err, cerrors.ErrParseBytesFailed)
+	}).Done()
+}
+
+func (b *ED25519Address) Serialize(deSeriMode serializer.DeSerializationMode) ([]byte, error) {
+	return serializer.NewSerializer().
+		AbortIf(func(err error) error {
+			if deSeriMode.HasMode(serializer.DeSeriModePerformValidation) {
+				if len(b.digest) != 32 {
+					return errors.Errorf("BLSAddress digest should have 32 bytes instead of %d", len(b.digest))
+				}
+			}
+			return nil
+		}).
+		WriteByte(byte(ED25519AddressType), func(err error) error {
+			return errors.Errorf("error serializing address type (%v): %w", err)
+		}).
+		WriteBytes(b.digest, func(err error) error {
+			return errors.Errorf("error serializing digest (%v): %w", err)
+		}).
+		Serialize()
 }
 
 // Array returns an array of bytes that contains the marshaled version of the Address.
@@ -349,6 +409,49 @@ func (b *BLSAddress) Bytes() []byte {
 	return byteutils.ConcatBytes([]byte{byte(BLSAddressType)}, b.digest)
 }
 
+func (b *BLSAddress) MarshalJSON() ([]byte, error) {
+	panic("implement me")
+}
+
+func (b *BLSAddress) UnmarshalJSON(i []byte) error {
+	panic("implement me")
+}
+
+func (b *BLSAddress) Deserialize(data []byte, deSeriMode serializer.DeSerializationMode) (int, error) {
+	var addressType byte
+	return serializer.NewDeserializer(data).ReadByte(&addressType, func(err error) error {
+		return errors.Errorf("error parsing AddressType (%v): %w", err, cerrors.ErrParseBytesFailed)
+	}).AbortIf(func(err error) error {
+		if deSeriMode.HasMode(serializer.DeSeriModePerformValidation) {
+			if AddressType(addressType) != BLSAddressType {
+				return errors.Errorf("invalid AddressType (%X): %w", addressType, cerrors.ErrParseBytesFailed)
+			}
+		}
+		return nil
+	}).ReadBytes(&b.digest, 32, func(err error) error {
+		return errors.Errorf("error parsing digest (%v): %w", err, cerrors.ErrParseBytesFailed)
+	}).Done()
+}
+
+func (b *BLSAddress) Serialize(deSeriMode serializer.DeSerializationMode) ([]byte, error) {
+	return serializer.NewSerializer().
+		AbortIf(func(err error) error {
+			if deSeriMode.HasMode(serializer.DeSeriModePerformValidation) {
+				if len(b.digest) != 32 {
+					return errors.Errorf("BLSAddress digest should have 32 bytes instead of %d", len(b.digest))
+				}
+			}
+			return nil
+		}).
+		WriteByte(byte(BLSAddressType), func(err error) error {
+			return errors.Errorf("error serializing address type (%v): %w", err)
+		}).
+		WriteBytes(b.digest, func(err error) error {
+			return errors.Errorf("error serializing digest (%v): %w", err)
+		}).
+		Serialize()
+}
+
 // Array returns an array of bytes that contains the marshaled version of the Address.
 func (b *BLSAddress) Array() (array [AddressLength]byte) {
 	copy(array[:], b.Bytes())
@@ -461,6 +564,42 @@ func (a *AliasAddress) Clone() Address {
 // Bytes returns a marshaled version of the Address.
 func (a *AliasAddress) Bytes() []byte {
 	return byteutils.ConcatBytes([]byte{byte(AliasAddressType)}, a.digest[:])
+}
+
+func (a *AliasAddress) MarshalJSON() ([]byte, error) {
+	panic("implement me")
+}
+
+func (a *AliasAddress) UnmarshalJSON(i []byte) error {
+	panic("implement me")
+}
+
+func (a *AliasAddress) Deserialize(data []byte, deSeriMode serializer.DeSerializationMode) (int, error) {
+	var addressType byte
+	return serializer.NewDeserializer(data).ReadByte(&addressType, func(err error) error {
+		return errors.Errorf("error parsing AddressType (%v): %w", err, cerrors.ErrParseBytesFailed)
+	}).AbortIf(func(err error) error {
+		if deSeriMode.HasMode(serializer.DeSeriModePerformValidation) {
+			if AddressType(addressType) != AliasAddressType {
+				return errors.Errorf("invalid AddressType (%X): %w", addressType, cerrors.ErrParseBytesFailed)
+			}
+		}
+		return nil
+	}).ReadArrayOf32Bytes(&a.digest, func(err error) error {
+		return errors.Errorf("error parsing digest (%v): %w", err, cerrors.ErrParseBytesFailed)
+	}).Done()
+}
+
+func (a *AliasAddress) Serialize(deSeriMode serializer.DeSerializationMode) ([]byte, error) {
+	return serializer.NewSerializer().
+		WriteByte(byte(AliasAddressType), func(err error) error {
+			return errors.Errorf("error serializing address type (%v): %w", err)
+		}).
+		WriteBytes(a.digest[:], func(err error) error {
+			return errors.Errorf("error serializing digest (%v): %w", err)
+		}).
+		Serialize()
+
 }
 
 // Array returns an array of bytes that contains the marshaled version of the Address.
