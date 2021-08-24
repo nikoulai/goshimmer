@@ -86,7 +86,7 @@ func (u UnlockBlocks) String() string {
 // SignatureUnlockBlock represents an UnlockBlock that contains a Signature for an Address.
 
 type SignatureUnlockBlock struct {
-	signatureUnlockBlockInner `serialize:"true"`
+	signatureUnlockBlockInner `serialize:"unpack"`
 }
 
 type signatureUnlockBlockInner struct {
@@ -138,7 +138,7 @@ var _ UnlockBlock = &SignatureUnlockBlock{}
 // ReferenceUnlockBlock defines an UnlockBlock which references a previous UnlockBlock (which must not be another
 // ReferenceUnlockBlock).
 type ReferenceUnlockBlock struct {
-	referenceUnlockBlockInner `serialize:"true"`
+	referenceUnlockBlockInner `serialize:"unpack"`
 }
 type referenceUnlockBlockInner struct {
 	ReferencedIndex uint16 `serialize:"true"`
@@ -187,7 +187,7 @@ var _ UnlockBlock = &ReferenceUnlockBlock{}
 
 // AliasUnlockBlock defines an UnlockBlock which contains an index of corresponding AliasOutput
 type AliasUnlockBlock struct {
-	aliasUnlockBlockInner `serialize:"true"`
+	aliasUnlockBlockInner `serialize:"unpack"`
 }
 
 type aliasUnlockBlockInner struct {

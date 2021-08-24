@@ -1,19 +1,22 @@
 package txwrapped
 
 import (
-	"golang.org/x/crypto/blake2b"
 	"strconv"
 	"strings"
 	"sync"
 	"time"
 
-	"github.com/iotaledger/goshimmer/packages/tangle/payload"
+	"golang.org/x/crypto/blake2b"
+
 	"github.com/iotaledger/hive.go/identity"
 	"github.com/iotaledger/hive.go/marshalutil"
 	"github.com/iotaledger/hive.go/objectstorage"
 	"github.com/iotaledger/hive.go/types"
 	"github.com/iotaledger/hive.go/typeutils"
 	"github.com/mr-tron/base58"
+
+	"github.com/iotaledger/goshimmer/packages/registry"
+	"github.com/iotaledger/goshimmer/packages/tangle/payload"
 )
 
 // region TransactionType //////////////////////////////////////////////////////////////////////////////////////////////
@@ -77,7 +80,7 @@ func (t TransactionIDs) Base58s() (transactionIDs []string) {
 
 // Transaction represents a Payload that executes a value transfer in the ledger state.
 type Transaction struct {
-	transactionInner `serialize:"true"`
+	transactionInner `serialize:"unpack"`
 	objectstorage.StorableObjectFlags
 }
 
@@ -117,14 +120,18 @@ func (t *Transaction) ID() TransactionID {
 		return *t.transactionInner.Id
 	}
 
-	idBytes := blake2b.Sum256(t.Bytes())
-	id, _, err := TransactionIDFromBytes(idBytes[:])
+	txBytes, err := registry.Manager.Serialize(t)
 	if err != nil {
 		panic(err)
 	}
-	t.id = &id
 
-	return id
+	idBytes := blake2b.Sum256(txBytes)
+	txID := TransactionID{}
+	if err := registry.Manager.Deserialize(&txID, idBytes[:]); err != nil {
+		panic(err)
+	}
+
+	return txID
 }
 
 // Type returns the Type of the Payload.
@@ -148,7 +155,7 @@ func (t *Transaction) UnlockBlocks() UnlockBlocks {
 
 // TransactionEssence contains the transfer related information of the Transaction (without the unlocking details).
 type TransactionEssence struct {
-	transactionEssenceInner `serialize:"true"`
+	transactionEssenceInner `serialize:"unpack"`
 }
 type transactionEssenceInner struct {
 	Version TransactionEssenceVersion `serialize:"true"`

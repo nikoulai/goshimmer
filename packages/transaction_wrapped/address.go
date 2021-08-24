@@ -87,7 +87,7 @@ func AddressFromSignature(sig Signature) (Address, error) {
 
 // ED25519Address represents an Address that is secured by the ED25519 signature scheme.
 type ED25519Address struct {
-	eD25519AddressInner `serialize:"true"`
+	eD25519AddressInner `serialize:"unpack"`
 }
 type eD25519AddressInner struct {
 	Digest []byte `serialize:"true"`
@@ -164,7 +164,7 @@ var _ Address = &ED25519Address{}
 
 // BLSAddress represents an Address that is secured by the BLS signature scheme.
 type BLSAddress struct {
-	bLSAddressInner `serialize:"true"`
+	bLSAddressInner `serialize:"unpack"`
 }
 type bLSAddressInner struct {
 	Digest []byte `serialize:"true"`
@@ -245,7 +245,7 @@ const AliasAddressDigestSize = 32
 // AliasAddress represents a special type of Address which is not backed by a private key directly,
 // but is indirectly backed by a private key defined by corresponding AliasOutput parameters
 type AliasAddress struct {
-	aliasAddressInner `serialize:"true"`
+	aliasAddressInner `serialize:"unpack"`
 }
 
 type aliasAddressInner struct {

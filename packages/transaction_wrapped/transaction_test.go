@@ -1,33 +1,55 @@
-package txwrapped
+package txwrapped_test
 
 import (
-	"github.com/iotaledger/hive.go/autoserializer"
+	"testing"
+
 	"github.com/iotaledger/hive.go/crypto/ed25519"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"testing"
+
+	_ "github.com/iotaledger/goshimmer/packages/registry/registrations"
+	. "github.com/iotaledger/goshimmer/packages/transaction_wrapped"
+
+	"github.com/iotaledger/goshimmer/packages/registry"
 )
 
 var sampleColor = Color{2}
+
+type A struct {
+	Inputs  Inputs  `serialize:"true"`
+	Outputs Outputs `serialize:"true"`
+}
+
+func TestWhatever(t *testing.T) {
+	wallets := createWallets(2)
+	input := generateOutput(wallets[0].address, 0)
+	a := &A{
+		Inputs: Inputs{
+			NewUTXOInput(input.ID()),
+		},
+		Outputs: Outputs{
+			generateOutput(wallets[0].address, 0),
+		},
+	}
+
+	serializedBytes, err := registry.Manager.Serialize(a)
+	assert.NoError(t, err)
+
+	otherA := &A{}
+	require.NoError(t, registry.Manager.Deserialize(otherA, serializedBytes))
+}
 
 func TestTransaction_Bytes(t *testing.T) {
 	wallets := createWallets(2)
 	input := generateOutput(wallets[0].address, 0)
 	tx, _ := singleInputTransaction(wallets[0], wallets[1], input)
 
-	manager := autoserializer.NewSerializationManager()
-	manager.RegisterType(&UTXOInput{})
-	manager.RegisterType(&SigLockedSingleOutput{})
-	manager.RegisterType(&ED25519Address{})
-	manager.RegisterType(&SignatureUnlockBlock{})
-	manager.RegisterType(&ED25519Signature{})
-
-	_, err := manager.Serialize(tx)
-
-	//bytes := tx.Bytes()
-	//_tx, _, err := TransactionFromBytes(bytes)
+	serializedBytes, err := registry.Manager.Serialize(tx)
 	assert.NoError(t, err)
-	assert.Equal(t, tx.ID(), tx.ID())
+	//assert.Equal(t, tx.ID(), tx.ID())
+
+	otherTx := &Transaction{}
+	require.NoError(t, registry.Manager.Deserialize(otherTx, serializedBytes))
 }
 
 //

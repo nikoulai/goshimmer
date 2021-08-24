@@ -59,7 +59,7 @@ func (c Color) Compare(otherColor Color) int {
 // ColoredBalances represents a collection of Balances associated to their respective Color that maintains a
 // deterministic order of the present Colors.
 type ColoredBalances struct {
-	coloredBalancesInner `serialize:"true"`
+	coloredBalancesInner `serialize:"unpack"`
 }
 type coloredBalancesInner struct {
 	Balances *orderedmap.OrderedMap `serialize:"true"`

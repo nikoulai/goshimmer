@@ -158,7 +158,7 @@ func (i Inputs) Strings() (result []string) {
 
 // UTXOInput represents a reference to an Output in the UTXODAG.
 type UTXOInput struct {
-	uTXOInputInner `serialize:"true"`
+	uTXOInputInner `serialize:"unpack"`
 }
 
 type uTXOInputInner struct {

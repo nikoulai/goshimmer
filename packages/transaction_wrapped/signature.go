@@ -63,8 +63,9 @@ type Signature interface {
 
 // ED25519Signature represents a Signature created with the ed25519 signature scheme.
 type ED25519Signature struct {
-	eD25519SignatureInner `serialize:"true"`
+	eD25519SignatureInner `serialize:"unpack"`
 }
+
 type eD25519SignatureInner struct {
 	PublicKey ed25519.PublicKey `serialize:"true"`
 	Signature ed25519.Signature `serialize:"true"`
@@ -131,7 +132,7 @@ var _ Signature = &ED25519Signature{}
 
 // BLSSignature represents a Signature created with the BLS signature scheme.
 type BLSSignature struct {
-	bLSSignatureInner `serialize:"true"`
+	bLSSignatureInner `serialize:"unpack"`
 }
 type bLSSignatureInner struct {
 	Signature bls.SignatureWithPublicKey `serialize:"true"`

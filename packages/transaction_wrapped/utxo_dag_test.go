@@ -1,10 +1,12 @@
-package txwrapped
+package txwrapped_test
 
 import (
 	"time"
 
 	"github.com/iotaledger/hive.go/crypto/ed25519"
 	"github.com/iotaledger/hive.go/identity"
+
+	. "github.com/iotaledger/goshimmer/packages/transaction_wrapped"
 )
 
 var (

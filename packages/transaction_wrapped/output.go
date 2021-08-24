@@ -380,7 +380,7 @@ func (o OutputsByID) String() string {
 // SigLockedSingleOutput is an Output that holds exactly one uncolored balance and that can be unlocked by providing a
 // signature for an Address.
 type SigLockedSingleOutput struct {
-	sigLockedSingleOutputInner `serialize:"true"`
+	sigLockedSingleOutputInner `serialize:"unpack"`
 	objectstorage.StorableObjectFlags
 }
 
@@ -547,7 +547,7 @@ var _ Output = &SigLockedSingleOutput{}
 // SigLockedColoredOutput is an Output that holds colored Balances and that can be unlocked by providing a signature for
 // an Address.
 type SigLockedColoredOutput struct {
-	sigLockedColoredOutputInner `serialize:"true"`
+	sigLockedColoredOutputInner `serialize:"unpack"`
 	objectstorage.StorableObjectFlags
 }
 
@@ -738,7 +738,7 @@ const (
 // AliasOutput represents output which defines as AliasAddress.
 // It can only be used in a chained manner
 type AliasOutput struct {
-	aliasOutputInner `serialize:"true"`
+	aliasOutputInner `serialize:"unpack"`
 	objectstorage.StorableObjectFlags
 }
 
@@ -1533,7 +1533,7 @@ var _ Output = &AliasOutput{}
 // - can be time locked until deadline
 // - data Payload for arbitrary metadata (size limits apply)
 type ExtendedLockedOutput struct {
-	extendedLockedOutputInner `serialize:"true"`
+	extendedLockedOutputInner `serialize:"unpack"`
 
 	objectstorage.StorableObjectFlags
 }
