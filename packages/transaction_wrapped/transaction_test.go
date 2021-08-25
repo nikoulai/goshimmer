@@ -1,7 +1,12 @@
 package txwrapped_test
 
 import (
+	"fmt"
+	"github.com/iotaledger/goshimmer/packages/database"
+	"github.com/iotaledger/hive.go/kvstore/mapdb"
+	"github.com/iotaledger/hive.go/objectstorage"
 	"testing"
+	"time"
 
 	"github.com/iotaledger/hive.go/crypto/ed25519"
 	"github.com/stretchr/testify/assert"
@@ -10,7 +15,7 @@ import (
 	_ "github.com/iotaledger/goshimmer/packages/registry/registrations"
 	. "github.com/iotaledger/goshimmer/packages/transaction_wrapped"
 
-	"github.com/iotaledger/goshimmer/packages/registry"
+	registry "github.com/iotaledger/goshimmer/packages/registry"
 )
 
 var sampleColor = Color{2}
@@ -46,10 +51,71 @@ func TestTransaction_Bytes(t *testing.T) {
 
 	serializedBytes, err := registry.Manager.Serialize(tx)
 	assert.NoError(t, err)
-	//assert.Equal(t, tx.ID(), tx.ID())
 
 	otherTx := &Transaction{}
 	require.NoError(t, registry.Manager.Deserialize(otherTx, serializedBytes))
+	assert.Equal(t, tx.ID(), otherTx.ID())
+
+	//assert.Equal(t, tx, otherTx)
+}
+
+func TestTransaction_TransactionStorage(t *testing.T) {
+	store := mapdb.NewMapDB()
+	cacheTimeProvider := database.NewCacheTimeProvider(0)
+	options := []objectstorage.Option{
+		cacheTimeProvider.CacheTime(10 * time.Second),
+		objectstorage.LeakDetectionEnabled(false),
+		objectstorage.StoreOnCreation(true),
+	}
+
+	osFactory := objectstorage.NewFactory(store, database.PrefixLedgerState)
+
+	txStorage := osFactory.New(byte(0), TransactionFromObjectStorage, options...)
+	//outputStorage := osFactory.New(byte(1), OutputFromObjectStorage, options...)
+
+	wallets := createWallets(2)
+	input := generateOutput(wallets[0].address, 0)
+	tx, _ := singleInputTransaction(wallets[0], wallets[1], input)
+	fmt.Println(tx)
+	txStorage.Store(tx)
+	idBytes, _ := registry.Manager.Serialize(tx.ID())
+
+	ct := &CachedTransaction{CachedObject: txStorage.Load(idBytes)}
+	ct.Consume(func(transaction *Transaction) {
+		fmt.Println(transaction)
+		assert.Equal(t, transaction.ID(), tx.ID())
+	})
+
+	//outputStorage.Store(nil)
+}
+
+func TestTransaction_OutputStorage(t *testing.T) {
+	store := mapdb.NewMapDB()
+	cacheTimeProvider := database.NewCacheTimeProvider(0)
+	options := []objectstorage.Option{
+		cacheTimeProvider.CacheTime(10 * time.Second),
+		objectstorage.LeakDetectionEnabled(false),
+		objectstorage.StoreOnCreation(true),
+	}
+
+	osFactory := objectstorage.NewFactory(store, database.PrefixLedgerState)
+
+	outputStorage := osFactory.New(byte(1), OutputFromObjectStorage, options...)
+
+	wallets := createWallets(2)
+	output := generateOutput(wallets[0].address, 0)
+
+	outputStorage.StoreIfAbsent(output)
+
+	inputIDBytes, _ := registry.Manager.Serialize(output.ID())
+
+	ct := &CachedOutput{CachedObject: outputStorage.Load(inputIDBytes)}
+	assert.True(t, ct.Exists())
+	ct.Consume(func(outputRecovered Output) {
+		fmt.Println(output.ID())
+		fmt.Println(outputRecovered.ID())
+		assert.Equal(t, output.ID(), outputRecovered.ID())
+	})
 }
 
 //

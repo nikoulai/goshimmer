@@ -1,6 +1,8 @@
 package txwrapped
 
 import (
+	"github.com/cockroachdb/errors"
+	"github.com/iotaledger/hive.go/stringify"
 	"strconv"
 	"strings"
 	"sync"
@@ -102,6 +104,24 @@ func NewTransaction(essence *TransactionEssence, unlockBlocks UnlockBlocks) (tra
 	return
 }
 
+// TransactionFromObjectStorage restores a Transaction that was stored in the ObjectStorage.
+func TransactionFromObjectStorage(key []byte, data []byte) (transaction objectstorage.StorableObject, err error) {
+	transactionRestored := &Transaction{}
+	if err = registry.Manager.Deserialize(transactionRestored, data); err != nil {
+		err = errors.Errorf("failed to parse Transaction from bytes: %w", err)
+		return
+	}
+
+	transactionID := TransactionID{}
+	if err = registry.Manager.Deserialize(transactionID, key); err != nil {
+		err = errors.Errorf("failed to parse TransactionID from bytes: %w", err)
+		return
+	}
+	transactionRestored.transactionInner.Id = &transactionID
+	transaction = transactionRestored
+	return
+}
+
 // ID returns the identifier of the Transaction. Since calculating the TransactionID is a resource intensive operation
 // we calculate this value lazy and use double checked locking.
 func (t *Transaction) ID() TransactionID {
@@ -147,6 +167,82 @@ func (t *Transaction) Essence() *TransactionEssence {
 // UnlockBlocks returns the UnlockBlocks of the Transaction.
 func (t *Transaction) UnlockBlocks() UnlockBlocks {
 	return t.transactionInner.UnlockBlocks
+}
+
+// String returns a human readable version of the Transaction.
+func (t *Transaction) String() string {
+	return stringify.Struct("Transaction",
+		stringify.StructField("id", t.ID()),
+		stringify.StructField("essence", t.Essence()),
+		stringify.StructField("unlockBlocks", t.UnlockBlocks()),
+	)
+}
+
+// Update is disabled and panics if it ever gets called - it is required to match the StorableObject interface.
+func (t *Transaction) Update(objectstorage.StorableObject) {
+	panic("updates disabled")
+}
+
+// ObjectStorageKey returns the key that is used to store the object in the database. It is required to match the
+// StorableObject interface.
+func (t *Transaction) ObjectStorageKey() []byte {
+	txIDBytes, _ := registry.Manager.Serialize(t.ID())
+	return txIDBytes
+}
+
+// ObjectStorageValue marshals the Transaction into a sequence of bytes. The ID is not serialized here as it is only
+// used as a key in the ObjectStorage.
+func (t *Transaction) ObjectStorageValue() []byte {
+	txBytes, _ := registry.Manager.Serialize(t)
+	return txBytes
+}
+
+// code contract (make sure the struct implements all required methods)
+var _ objectstorage.StorableObject = &Transaction{}
+
+// endregion ///////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+// region CachedTransaction ////////////////////////////////////////////////////////////////////////////////////////////
+
+// CachedTransaction is a wrapper for the generic CachedObject returned by the object storage that overrides the
+// accessor methods with a type-casted one.
+type CachedTransaction struct {
+	objectstorage.CachedObject
+}
+
+// Retain marks the CachedObject to still be in use by the program.
+func (c *CachedTransaction) Retain() *CachedTransaction {
+	return &CachedTransaction{c.CachedObject.Retain()}
+}
+
+// Unwrap is the type-casted equivalent of Get. It returns nil if the object does not exist.
+func (c *CachedTransaction) Unwrap() *Transaction {
+	untypedObject := c.Get()
+	if untypedObject == nil {
+		return nil
+	}
+
+	typedObject := untypedObject.(*Transaction)
+	if typedObject == nil || typedObject.IsDeleted() {
+		return nil
+	}
+
+	return typedObject
+}
+
+// Consume unwraps the CachedObject and passes a type-casted version to the consumer (if the object is not empty - it
+// exists). It automatically releases the object when the consumer finishes.
+func (c *CachedTransaction) Consume(consumer func(transaction *Transaction), forceRelease ...bool) (consumed bool) {
+	return c.CachedObject.Consume(func(object objectstorage.StorableObject) {
+		consumer(object.(*Transaction))
+	}, forceRelease...)
+}
+
+// String returns a human readable version of the CachedTransaction.
+func (c *CachedTransaction) String() string {
+	return stringify.Struct("CachedTransaction",
+		stringify.StructField("CachedObject", c.Unwrap()),
+	)
 }
 
 // endregion ///////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -252,7 +348,15 @@ func (t *TransactionEssence) Bytes() []byte {
 
 // String returns a human readable version of the TransactionEssence.
 func (t *TransactionEssence) String() string {
-	return ""
+	return stringify.Struct("TransactionEssence",
+		stringify.StructField("version", t.Version()),
+		stringify.StructField("timestamp", t.Timestamp()),
+		stringify.StructField("accessPledgeID", t.AccessPledgeID()),
+		stringify.StructField("consensusPledgeID", t.ConsensusPledgeID()),
+		stringify.StructField("inputs", t.Inputs()),
+		stringify.StructField("outputs", t.Outputs()),
+		stringify.StructField("payload", t.Payload()),
+	)
 }
 
 // endregion ///////////////////////////////////////////////////////////////////////////////////////////////////////////

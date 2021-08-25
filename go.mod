@@ -43,4 +43,3 @@ require (
 	gopkg.in/src-d/go-git.v4 v4.13.1
 )
 
-replace github.com/iotaledger/hive.go => /home/luca/projects/hive.go

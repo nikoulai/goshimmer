@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/binary"
 	"fmt"
+	"github.com/iotaledger/goshimmer/packages/registry"
 	"sort"
 	"strconv"
 	"sync"
@@ -189,6 +190,35 @@ type Output interface {
 
 	// StorableObject makes Outputs storable in the ObjectStorage.
 	objectstorage.StorableObject
+}
+
+// OutputFromObjectStorage restores an Output that was stored in the ObjectStorage.
+func OutputFromObjectStorage(key []byte, data []byte) (output objectstorage.StorableObject, err error) {
+	outputRestored := Output(nil)
+	if err = registry.Manager.Deserialize(&outputRestored, data); err != nil {
+		err = errors.Errorf("failed to parse Output from bytes: %w", err)
+		return
+	}
+
+	outputID := OutputID{}
+	if err = registry.Manager.Deserialize(&outputID, key); err != nil {
+		err = errors.Errorf("failed to parse OutputID from bytes: %w", err)
+		return
+	}
+
+	outputRestored.(Output).SetID(outputID)
+	output = outputRestored
+	return
+}
+
+func OutputObjectStorageKey(o Output) []byte {
+	data, _ := registry.Manager.Serialize(o.ID())
+	return data
+}
+
+func OutputObjectStorageValue(o Output) []byte {
+	data, _ := registry.Manager.Serialize(o)
+	return data
 }
 
 // endregion ///////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -509,17 +539,13 @@ func (s *SigLockedSingleOutput) UpdateMintingColor() Output {
 // ObjectStorageKey returns the key that is used to store the object in the database. It is required to match the
 // StorableObject interface.
 func (s *SigLockedSingleOutput) ObjectStorageKey() []byte {
-	return s.ID().Bytes()
+	return OutputObjectStorageKey(s)
 }
 
 // ObjectStorageValue marshals the Output into a sequence of bytes. The ID is not serialized here as it is only used as
 // a key in the ObjectStorage.
 func (s *SigLockedSingleOutput) ObjectStorageValue() []byte {
-	return marshalutil.New().
-		WriteByte(byte(SigLockedSingleOutputType)).
-		WriteUint64(s.sigLockedSingleOutputInner.Balance).
-		WriteBytes(s.sigLockedSingleOutputInner.Address.Bytes()).
-		Bytes()
+	return OutputObjectStorageValue(s)
 }
 
 // Compare offers a comparator for Outputs which returns -1 if the other Output is bigger, 1 if it is smaller and 0 if
@@ -681,17 +707,13 @@ func (s *SigLockedColoredOutput) Update(objectstorage.StorableObject) {
 // ObjectStorageKey returns the key that is used to store the object in the database. It is required to match the
 // StorableObject interface.
 func (s *SigLockedColoredOutput) ObjectStorageKey() []byte {
-	return s.sigLockedColoredOutputInner.Id.Bytes()
+	return OutputObjectStorageKey(s)
 }
 
 // ObjectStorageValue marshals the Output into a sequence of bytes. The ID is not serialized here as it is only used as
 // a key in the ObjectStorage.
 func (s *SigLockedColoredOutput) ObjectStorageValue() []byte {
-	return marshalutil.New().
-		WriteByte(byte(SigLockedColoredOutputType)).
-		WriteBytes(s.sigLockedColoredOutputInner.Balances.Bytes()).
-		WriteBytes(s.sigLockedColoredOutputInner.Address.Bytes()).
-		Bytes()
+	return OutputObjectStorageValue(s)
 }
 
 // Compare offers a comparator for Outputs which returns -1 if the other Output is bigger, 1 if it is smaller and 0 if
@@ -1102,38 +1124,12 @@ func (a *AliasOutput) Update(other objectstorage.StorableObject) {
 
 // ObjectStorageKey a key
 func (a *AliasOutput) ObjectStorageKey() []byte {
-	return a.ID().Bytes()
+	return OutputObjectStorageKey(a)
 }
 
 // ObjectStorageValue binary form
 func (a *AliasOutput) ObjectStorageValue() []byte {
-	flags := a.mustFlags()
-	ret := marshalutil.New().
-		WriteByte(byte(AliasOutputType)).
-		WriteByte(byte(flags)).
-		WriteBytes(a.aliasOutputInner.AliasAddress.Bytes()).
-		WriteBytes(a.aliasOutputInner.Balances.Bytes()).
-		WriteBytes(a.aliasOutputInner.StateAddress.Bytes()).
-		WriteUint32(a.aliasOutputInner.StateIndex)
-	if flags.HasBit(flagAliasOutputStateDataPresent) {
-		ret.WriteUint16(uint16(len(a.aliasOutputInner.StateData))).
-			WriteBytes(a.aliasOutputInner.StateData)
-	}
-	if flags.HasBit(flagAliasOutputGovernanceMetadataPresent) {
-		ret.WriteUint16(uint16(len(a.aliasOutputInner.GovernanceMetadata))).
-			WriteBytes(a.aliasOutputInner.GovernanceMetadata)
-	}
-	if flags.HasBit(flagAliasOutputImmutableDataPresent) {
-		ret.WriteUint16(uint16(len(a.aliasOutputInner.ImmutableData))).
-			WriteBytes(a.aliasOutputInner.ImmutableData)
-	}
-	if flags.HasBit(flagAliasOutputGovernanceSet) {
-		ret.WriteBytes(a.aliasOutputInner.GoverningAddress.Bytes())
-	}
-	if flags.HasBit(flagAliasOutputDelegationTimelockPresent) {
-		ret.WriteTime(a.aliasOutputInner.DelegationTimelock)
-	}
-	return ret.Bytes()
+	return OutputObjectStorageValue(a)
 }
 
 // UnlockValid check unlock and validates chain
@@ -1757,30 +1753,13 @@ func (o *ExtendedLockedOutput) Update(objectstorage.StorableObject) {
 // ObjectStorageKey returns the key that is used to store the object in the database. It is required to match the
 // StorableObject interface.
 func (o *ExtendedLockedOutput) ObjectStorageKey() []byte {
-	return o.Id.Bytes()
+	return OutputObjectStorageKey(o)
 }
 
 // ObjectStorageValue marshals the Output into a sequence of bytes. The ID is not serialized here as it is only used as
 // a key in the ObjectStorage.
 func (o *ExtendedLockedOutput) ObjectStorageValue() []byte {
-	flags := o.compressFlags()
-	ret := marshalutil.New().
-		WriteByte(byte(ExtendedLockedOutputType)).
-		WriteBytes(o.extendedLockedOutputInner.Balances.Bytes()).
-		WriteBytes(o.extendedLockedOutputInner.Address.Bytes()).
-		WriteByte(byte(flags))
-	if flags.HasBit(flagExtendedLockedOutputFallbackPresent) {
-		ret.WriteBytes(o.extendedLockedOutputInner.FallbackAddress.Bytes()).
-			WriteTime(o.extendedLockedOutputInner.FallbackDeadline)
-	}
-	if flags.HasBit(flagExtendedLockedOutputTimeLockPresent) {
-		ret.WriteTime(o.extendedLockedOutputInner.Timelock)
-	}
-	if flags.HasBit(flagExtendedLockedOutputPayloadPresent) {
-		ret.WriteUint16(uint16(len(o.extendedLockedOutputInner.Payload))).
-			WriteBytes(o.extendedLockedOutputInner.Payload)
-	}
-	return ret.Bytes()
+	return OutputObjectStorageValue(o)
 }
 
 // Compare offers a comparator for Outputs which returns -1 if the other Output is bigger, 1 if it is smaller and 0 if
@@ -1834,5 +1813,106 @@ func (o *ExtendedLockedOutput) UnlockAddressNow(nowis time.Time) Address {
 
 // code contract (make sure the type implements all required methods)
 var _ Output = &ExtendedLockedOutput{}
+
+// endregion ///////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+// region CachedOutput /////////////////////////////////////////////////////////////////////////////////////////////////
+
+// CachedOutput is a wrapper for the generic CachedObject returned by the object storage that overrides the accessor
+// methods with a type-casted one.
+type CachedOutput struct {
+	objectstorage.CachedObject
+}
+
+// Retain marks the CachedObject to still be in use by the program.
+func (c *CachedOutput) Retain() *CachedOutput {
+	return &CachedOutput{c.CachedObject.Retain()}
+}
+
+// Unwrap is the type-casted equivalent of Get. It returns nil if the object does not exist.
+func (c *CachedOutput) Unwrap() Output {
+	untypedObject := c.Get()
+	if untypedObject == nil {
+		return nil
+	}
+
+	typedObject := untypedObject.(Output)
+	if typedObject == nil || typedObject.IsDeleted() {
+		return nil
+	}
+
+	return typedObject
+}
+
+// Consume unwraps the CachedObject and passes a type-casted version to the consumer (if the object is not empty - it
+// exists). It automatically releases the object when the consumer finishes.
+func (c *CachedOutput) Consume(consumer func(output Output), forceRelease ...bool) (consumed bool) {
+	return c.CachedObject.Consume(func(object objectstorage.StorableObject) {
+		consumer(object.(Output))
+	}, forceRelease...)
+}
+
+// String returns a human readable version of the CachedOutput.
+func (c *CachedOutput) String() string {
+	return stringify.Struct("CachedOutput",
+		stringify.StructField("CachedObject", c.Unwrap()),
+	)
+}
+
+// endregion ///////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+// region CachedOutputs ////////////////////////////////////////////////////////////////////////////////////////////////
+
+// CachedOutputs represents a collection of CachedOutput objects.
+type CachedOutputs []*CachedOutput
+
+// Unwrap is the type-casted equivalent of Get. It returns a slice of unwrapped objects with the object being nil if it
+// does not exist.
+func (c CachedOutputs) Unwrap() (unwrappedOutputs Outputs) {
+	unwrappedOutputs = make(Outputs, len(c))
+	for i, cachedOutput := range c {
+		untypedObject := cachedOutput.Get()
+		if untypedObject == nil {
+			continue
+		}
+
+		typedObject := untypedObject.(Output)
+		if typedObject == nil || typedObject.IsDeleted() {
+			continue
+		}
+
+		unwrappedOutputs[i] = typedObject
+	}
+
+	return
+}
+
+// Consume iterates over the CachedObjects, unwraps them and passes a type-casted version to the consumer (if the object
+// is not empty - it exists). It automatically releases the object when the consumer finishes. It returns true, if at
+// least one object was consumed.
+func (c CachedOutputs) Consume(consumer func(output Output), forceRelease ...bool) (consumed bool) {
+	for _, cachedOutput := range c {
+		consumed = cachedOutput.Consume(consumer, forceRelease...) || consumed
+	}
+
+	return
+}
+
+// Release is a utility function that allows us to release all CachedObjects in the collection.
+func (c CachedOutputs) Release(force ...bool) {
+	for _, cachedOutput := range c {
+		cachedOutput.Release(force...)
+	}
+}
+
+// String returns a human readable version of the CachedOutputs.
+func (c CachedOutputs) String() string {
+	structBuilder := stringify.StructBuilder("CachedOutputs")
+	for i, cachedOutput := range c {
+		structBuilder.AddField(stringify.StructField(strconv.Itoa(i), cachedOutput))
+	}
+
+	return structBuilder.String()
+}
 
 // endregion ///////////////////////////////////////////////////////////////////////////////////////////////////////////

@@ -119,7 +119,7 @@ func (s *SignatureUnlockBlock) Bytes() []byte {
 // String returns a human readable version of the UnlockBlock.
 func (s *SignatureUnlockBlock) String() string {
 	return stringify.Struct("SignatureUnlockBlock",
-		stringify.StructField("signature", s.Signature),
+		stringify.StructField("signature", s.Signature()),
 	)
 }
 
