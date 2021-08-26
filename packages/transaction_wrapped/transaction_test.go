@@ -57,13 +57,15 @@ func BenchmarkTransactionSerialization(b *testing.B) {
 		bytes, err = registry.Manager.Serialize(tx)
 	}
 
-	var t *Transaction
+	t := &Transaction{}
 	for n := 0; err == nil && n < b.N; n++ {
-		t = nil
-		err = registry.Manager.Deserialize(&t, bytes)
+		t = &Transaction{}
+		err = registry.Manager.Deserialize(t, bytes)
 	}
+	require.NoError(b, err)
 	result = bytes
 	resultDeser = t
+	assert.Equal(b, t.ID(), tx.ID())
 }
 
 func TestTransaction_Serialization(t *testing.T) {

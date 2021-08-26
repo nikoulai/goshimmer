@@ -45,10 +45,12 @@ func BenchmarkTransactionLegacySerialization(b *testing.B) {
 
 	var t *Transaction
 	for n := 0; err == nil && n < b.N; n++ {
-		t, _, _ = TransactionFromBytes(bytes)
+		t, _, err = TransactionFromBytes(bytes)
 	}
+	require.NoError(b, err)
 	result = bytes
 	resultDeser = t
+	assert.Equal(b, t.ID(), tx.ID())
 }
 
 func TestTransaction_Complex(t *testing.T) {
