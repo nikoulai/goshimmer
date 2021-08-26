@@ -25,6 +25,32 @@ func TestTransaction_Bytes(t *testing.T) {
 	assert.Equal(t, tx.ID(), _tx.ID())
 }
 
+var result []byte
+var resultDeser *Transaction
+
+func BenchmarkTransactionLegacySerialization(b *testing.B) {
+	wallets := createWallets(2)
+	outputToSpend := NewSigLockedSingleOutput(100, wallets[0].address)
+	outputToSpend.SetID(NewOutputID(GenesisTransactionID, 0))
+	input := NewUTXOInput(outputToSpend.ID())
+	output := NewSigLockedSingleOutput(100, wallets[1].address)
+	txEssence := NewTransactionEssence(0, time.Now(), identity.ID{}, identity.ID{}, NewInputs(input), NewOutputs(output))
+	tx := NewTransaction(txEssence, wallets[0].unlockBlocks(txEssence))
+
+	var bytes []byte
+	var err error
+	for n := 0; err == nil && n < b.N; n++ {
+		bytes = tx.Bytes()
+	}
+
+	var t *Transaction
+	for n := 0; err == nil && n < b.N; n++ {
+		t, _, _ = TransactionFromBytes(bytes)
+	}
+	result = bytes
+	resultDeser = t
+}
+
 func TestTransaction_Complex(t *testing.T) {
 	// setup variables representing keys and outputs for the two parties that wants to trade tokens
 	party1KeyChain, party1SrcAddress, party1DestAddress, party1RemainderAddress := setupKeyChainAndAddresses(t)

@@ -44,7 +44,29 @@ func TestWhatever(t *testing.T) {
 	require.NoError(t, registry.Manager.Deserialize(otherA, serializedBytes))
 }
 
-func TestTransaction_Bytes(t *testing.T) {
+var result []byte
+var resultDeser *Transaction
+
+func BenchmarkTransactionSerialization(b *testing.B) {
+	wallets := createWallets(2)
+	input := generateOutput(wallets[0].address, 0)
+	tx, _ := singleInputTransaction(wallets[0], wallets[1], input)
+	var bytes []byte
+	var err error
+	for n := 0; err == nil && n < b.N; n++ {
+		bytes, err = registry.Manager.Serialize(tx)
+	}
+
+	var t *Transaction
+	for n := 0; err == nil && n < b.N; n++ {
+		t = nil
+		err = registry.Manager.Deserialize(&t, bytes)
+	}
+	result = bytes
+	resultDeser = t
+}
+
+func TestTransaction_Serialization(t *testing.T) {
 	wallets := createWallets(2)
 	input := generateOutput(wallets[0].address, 0)
 	tx, _ := singleInputTransaction(wallets[0], wallets[1], input)
