@@ -58,6 +58,22 @@ func BenchmarkTransactionSerialization(b *testing.B) {
 	}
 
 	t := &Transaction{}
+	err = registry.Manager.Deserialize(t, bytes)
+	require.NoError(b, err)
+	result = bytes
+	resultDeser = t
+	assert.Equal(b, t.ID(), tx.ID())
+}
+
+func BenchmarkTransactionReflectionDeserialization(b *testing.B) {
+	wallets := createWallets(2)
+	input := generateOutput(wallets[0].address, 0)
+	tx, _ := singleInputTransaction(wallets[0], wallets[1], input)
+	var bytes []byte
+	var err error
+	bytes, err = registry.Manager.Serialize(tx)
+
+	t := &Transaction{}
 	for n := 0; err == nil && n < b.N; n++ {
 		t = &Transaction{}
 		err = registry.Manager.Deserialize(t, bytes)

@@ -44,6 +44,27 @@ func BenchmarkTransactionLegacySerialization(b *testing.B) {
 	}
 
 	var t *Transaction
+	t, _, err = TransactionFromBytes(bytes)
+	require.NoError(b, err)
+	result = bytes
+	resultDeser = t
+	assert.Equal(b, t.ID(), tx.ID())
+}
+
+func BenchmarkTransactionLegacyDeserialization(b *testing.B) {
+	wallets := createWallets(2)
+	outputToSpend := NewSigLockedSingleOutput(100, wallets[0].address)
+	outputToSpend.SetID(NewOutputID(GenesisTransactionID, 0))
+	input := NewUTXOInput(outputToSpend.ID())
+	output := NewSigLockedSingleOutput(100, wallets[1].address)
+	txEssence := NewTransactionEssence(0, time.Now(), identity.ID{}, identity.ID{}, NewInputs(input), NewOutputs(output))
+	tx := NewTransaction(txEssence, wallets[0].unlockBlocks(txEssence))
+
+	var bytes []byte
+	var err error
+	bytes = tx.Bytes()
+
+	var t *Transaction
 	for n := 0; err == nil && n < b.N; n++ {
 		t, _, err = TransactionFromBytes(bytes)
 	}
