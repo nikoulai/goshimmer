@@ -1,20 +1,19 @@
 package txwrapped
 
 import (
-	"github.com/cockroachdb/errors"
-	"github.com/iotaledger/hive.go/stringify"
 	"strconv"
 	"strings"
 	"sync"
 	"time"
 
+	"github.com/cockroachdb/errors"
+	"github.com/iotaledger/hive.go/stringify"
+
 	"golang.org/x/crypto/blake2b"
 
 	"github.com/iotaledger/hive.go/identity"
-	"github.com/iotaledger/hive.go/marshalutil"
 	"github.com/iotaledger/hive.go/objectstorage"
 	"github.com/iotaledger/hive.go/types"
-	"github.com/iotaledger/hive.go/typeutils"
 	"github.com/mr-tron/base58"
 
 	"github.com/iotaledger/goshimmer/packages/registry"
@@ -325,25 +324,6 @@ func (t *TransactionEssence) Outputs() Outputs {
 // Payload returns the optional Payload of the TransactionEssence.
 func (t *TransactionEssence) Payload() payload.Payload {
 	return t.transactionEssenceInner.Payload
-}
-
-// Bytes returns a marshaled version of the TransactionEssence.
-func (t *TransactionEssence) Bytes() []byte {
-	marshalUtil := marshalutil.New().
-		Write(t.transactionEssenceInner.Version).
-		WriteTime(t.transactionEssenceInner.Timestamp).
-		Write(t.transactionEssenceInner.AccessPledgeID).
-		Write(t.transactionEssenceInner.ConsensusPledgeID).
-		Write(t.transactionEssenceInner.Inputs).
-		Write(t.transactionEssenceInner.Outputs)
-
-	if !typeutils.IsInterfaceNil(t.transactionEssenceInner.Payload) {
-		marshalUtil.Write(t.transactionEssenceInner.Payload)
-	} else {
-		marshalUtil.WriteUint32(0)
-	}
-
-	return marshalUtil.Bytes()
 }
 
 // String returns a human readable version of the TransactionEssence.

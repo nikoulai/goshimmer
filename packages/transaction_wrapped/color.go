@@ -5,7 +5,6 @@ import (
 	"sort"
 
 	"github.com/iotaledger/hive.go/datastructure/orderedmap"
-	"github.com/iotaledger/hive.go/marshalutil"
 	"github.com/iotaledger/hive.go/stringify"
 	"github.com/mr-tron/base58"
 )
@@ -118,19 +117,6 @@ func (c *ColoredBalances) Clone() *ColoredBalances {
 	return &ColoredBalances{
 		coloredBalancesInner: coloredBalancesInner{Balances: copiedBalances},
 	}
-}
-
-// Bytes returns a marshaled version of the ColoredBalances.
-func (c *ColoredBalances) Bytes() []byte {
-	marshalUtil := marshalutil.New()
-	marshalUtil.WriteUint32(uint32(c.coloredBalancesInner.Balances.Size()))
-	c.ForEach(func(color Color, balance uint64) bool {
-		marshalUtil.WriteBytes(color.Bytes())
-		marshalUtil.WriteUint64(balance)
-
-		return true
-	})
-	return marshalUtil.Bytes()
 }
 
 // Map returns a vanilla golang map (unordered) containing the existing Balances. Since the ColoredBalances are

@@ -3,7 +3,7 @@ package txwrapped
 import (
 	"bytes"
 
-	"github.com/iotaledger/hive.go/byteutils"
+	"github.com/iotaledger/goshimmer/packages/registry"
 	"github.com/iotaledger/hive.go/crypto/bls"
 	"github.com/iotaledger/hive.go/crypto/ed25519"
 	"github.com/iotaledger/hive.go/stringify"
@@ -46,9 +46,6 @@ type Signature interface {
 
 	// AddressSignatureValid returns true if the Signature signs the given Address.
 	AddressSignatureValid(address Address, data []byte) bool
-
-	// Bytes returns a marshaled version of the Signature.
-	Bytes() []byte
 
 	// Base58 returns a base58 encoded version of the Signature.
 	Base58() string
@@ -105,14 +102,14 @@ func (e *ED25519Signature) AddressSignatureValid(address Address, data []byte) b
 	return e.SignatureValid(data)
 }
 
-// Bytes returns a marshaled version of the Signature.
-func (e *ED25519Signature) Bytes() []byte {
-	return byteutils.ConcatBytes([]byte{byte(ED25519SignatureType)}, e.PublicKey.Bytes(), e.Signature.Bytes())
-}
-
 // Base58 returns a base58 encoded version of the Signature.
 func (e *ED25519Signature) Base58() string {
-	return base58.Encode(e.Bytes())
+	var signature Signature = e
+	eBytes, err := registry.Manager.Serialize(signature)
+	if err != nil {
+		panic(err)
+	}
+	return base58.Encode(eBytes)
 }
 
 // String returns a human readable version of the Signature.
@@ -171,14 +168,14 @@ func (b *BLSSignature) AddressSignatureValid(address Address, data []byte) bool 
 	return b.SignatureValid(data)
 }
 
-// Bytes returns a marshaled version of the Signature.
-func (b *BLSSignature) Bytes() []byte {
-	return byteutils.ConcatBytes([]byte{byte(BLSSignatureType)}, b.Signature.Bytes())
-}
-
 // Base58 returns a base58 encoded version of the Signature.
 func (b *BLSSignature) Base58() string {
-	return base58.Encode(b.Bytes())
+	var signature Signature = b
+	bBytes, err := registry.Manager.Serialize(signature)
+	if err != nil {
+		panic(err)
+	}
+	return base58.Encode(bBytes)
 }
 
 // String returns a human readable version of the Signature.

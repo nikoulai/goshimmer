@@ -4,11 +4,12 @@ import (
 	"bytes"
 	"encoding/binary"
 	"fmt"
-	"github.com/iotaledger/goshimmer/packages/registry"
 	"sort"
 	"strconv"
 	"sync"
 	"time"
+
+	"github.com/iotaledger/goshimmer/packages/registry"
 
 	"github.com/cockroachdb/errors"
 	"github.com/iotaledger/hive.go/bitmask"
@@ -122,11 +123,6 @@ func (o OutputID) OutputIndex() uint16 {
 	return binary.LittleEndian.Uint16(o[TransactionIDLength:])
 }
 
-// Bytes marshals the OutputID into a sequence of bytes.
-func (o OutputID) Bytes() []byte {
-	return o[:]
-}
-
 // Base58 returns a base58 encoded version of the OutputID.
 func (o OutputID) Base58() string {
 	return base58.Encode(o[:])
@@ -177,9 +173,6 @@ type Output interface {
 
 	// Clone creates a copy of the Output.
 	Clone() Output
-
-	// Bytes returns a marshaled version of the Output.
-	Bytes() []byte
 
 	// String returns a human readable version of the Output for debug purposes.
 	String() string
@@ -239,7 +232,10 @@ func NewOutputs(optionalOutputs ...Output) (outputs Outputs) {
 
 	// filter duplicates (store marshaled version so we don't need to marshal a second time during sort)
 	for _, output := range optionalOutputs {
-		marshaledOutput := output.Bytes()
+		marshaledOutput, err := registry.Manager.Serialize(output)
+		if err != nil {
+			panic(err)
+		}
 		marshaledOutputAsString := typeutils.BytesToString(marshaledOutput)
 
 		if _, seenAlready := seenOutputs[marshaledOutputAsString]; seenAlready {
@@ -314,17 +310,6 @@ func (o Outputs) Filter(condition func(output Output) bool) (filteredOutputs Out
 	}
 
 	return
-}
-
-// Bytes returns a marshaled version of the Outputs.
-func (o Outputs) Bytes() []byte {
-	marshalUtil := marshalutil.New()
-	marshalUtil.WriteUint16(uint16(len(o)))
-	for _, output := range o {
-		marshalUtil.WriteBytes(output.Bytes())
-	}
-
-	return marshalUtil.Bytes()
 }
 
 // String returns a human readable version of the Outputs.
@@ -470,8 +455,12 @@ func (s *SigLockedSingleOutput) Balances() *ColoredBalances {
 func (s *SigLockedSingleOutput) UnlockValid(tx *Transaction, unlockBlock UnlockBlock, inputs []Output) (unlockValid bool, err error) {
 	switch blk := unlockBlock.(type) {
 	case *SignatureUnlockBlock:
+		essenceBytes, err := registry.Manager.Serialize(tx.Essence())
+		if err != nil {
+			panic(nil)
+		}
 		// unlocking by signature
-		unlockValid = blk.AddressSignatureValid(s.sigLockedSingleOutputInner.Address, tx.Essence().Bytes())
+		unlockValid = blk.AddressSignatureValid(s.sigLockedSingleOutputInner.Address, essenceBytes)
 
 	case *AliasUnlockBlock:
 		// unlocking by alias reference. The unlock is valid if:
@@ -551,7 +540,15 @@ func (s *SigLockedSingleOutput) ObjectStorageValue() []byte {
 // Compare offers a comparator for Outputs which returns -1 if the other Output is bigger, 1 if it is smaller and 0 if
 // they are the same.
 func (s *SigLockedSingleOutput) Compare(other Output) int {
-	return bytes.Compare(s.Bytes(), other.Bytes())
+	sBytes, err := registry.Manager.Serialize(s)
+	if err != nil {
+		panic(err)
+	}
+	otherBytes, err := registry.Manager.Serialize(other)
+	if err != nil {
+		panic(err)
+	}
+	return bytes.Compare(sBytes, otherBytes)
 }
 
 // String returns a human readable version of the Output.
@@ -629,8 +626,12 @@ func (s *SigLockedColoredOutput) Balances() *ColoredBalances {
 func (s *SigLockedColoredOutput) UnlockValid(tx *Transaction, unlockBlock UnlockBlock, inputs []Output) (unlockValid bool, err error) {
 	switch blk := unlockBlock.(type) {
 	case *SignatureUnlockBlock:
+		essenceBytes, err := registry.Manager.Serialize(tx.Essence())
+		if err != nil {
+			panic(nil)
+		}
 		// unlocking by signature
-		unlockValid = blk.AddressSignatureValid(s.sigLockedColoredOutputInner.Address, tx.Essence().Bytes())
+		unlockValid = blk.AddressSignatureValid(s.sigLockedColoredOutputInner.Address, essenceBytes)
 
 	case *AliasUnlockBlock:
 		// unlocking by alias reference. The unlock is valid if:
@@ -686,17 +687,16 @@ func (s *SigLockedColoredOutput) UpdateMintingColor() (updatedOutput Output) {
 	coloredBalances := s.Balances().Map()
 	if mintedCoins, mintedCoinsExist := coloredBalances[ColorMint]; mintedCoinsExist {
 		delete(coloredBalances, ColorMint)
-		coloredBalances[Color(blake2b.Sum256(s.ID().Bytes()))] = mintedCoins
+		idBytes, err := registry.Manager.Serialize(s.ID())
+		if err != nil {
+			panic(err)
+		}
+		coloredBalances[Color(blake2b.Sum256(idBytes))] = mintedCoins
 	}
 	updatedOutput = NewSigLockedColoredOutput(NewColoredBalances(coloredBalances), s.Address())
 	updatedOutput.SetID(s.ID())
 
 	return
-}
-
-// Bytes returns a marshaled version of the Output.
-func (s *SigLockedColoredOutput) Bytes() []byte {
-	return s.ObjectStorageValue()
 }
 
 // Update is disabled and panics if it ever gets called - it is required to match the StorableObject interface.
@@ -719,7 +719,15 @@ func (s *SigLockedColoredOutput) ObjectStorageValue() []byte {
 // Compare offers a comparator for Outputs which returns -1 if the other Output is bigger, 1 if it is smaller and 0 if
 // they are the same.
 func (s *SigLockedColoredOutput) Compare(other Output) int {
-	return bytes.Compare(s.Bytes(), other.Bytes())
+	sBytes, err := registry.Manager.Serialize(s)
+	if err != nil {
+		panic(err)
+	}
+	otherBytes, err := registry.Manager.Serialize(other)
+	if err != nil {
+		panic(err)
+	}
+	return bytes.Compare(sBytes, otherBytes)
 }
 
 // String returns a human readable version of the Output.
@@ -865,7 +873,11 @@ func (a *AliasOutput) SetBalances(balances map[Color]uint64) error {
 // GetAliasAddress calculates new ID if it is a minting output. Otherwise it takes stored value
 func (a *AliasOutput) GetAliasAddress() *AliasAddress {
 	if a.aliasOutputInner.AliasAddress.IsNil() {
-		return NewAliasAddress(a.ID().Bytes())
+		idBytes, err := registry.Manager.Serialize(a.ID())
+		if err != nil {
+			panic(err)
+		}
+		return NewAliasAddress(idBytes)
 	}
 	return &a.aliasOutputInner.AliasAddress
 }
@@ -1114,7 +1126,15 @@ func (a *AliasOutput) String() string {
 
 // Compare the two outputs
 func (a *AliasOutput) Compare(other Output) int {
-	return bytes.Compare(a.Bytes(), other.Bytes())
+	aBytes, err := registry.Manager.Serialize(a)
+	if err != nil {
+		panic(err)
+	}
+	otherBytes, err := registry.Manager.Serialize(other)
+	if err != nil {
+		panic(err)
+	}
+	return bytes.Compare(aBytes, otherBytes)
 }
 
 // Update is disabled
@@ -1136,22 +1156,27 @@ func (a *AliasOutput) ObjectStorageValue() []byte {
 func (a *AliasOutput) UnlockValid(tx *Transaction, unlockBlock UnlockBlock, inputs []Output) (bool, error) {
 	// find the chained output in the tx
 	chained, err := a.findChainedOutputAndCheckFork(tx)
+
 	if err != nil {
 		return false, err
 	}
 	switch blk := unlockBlock.(type) {
 	case *SignatureUnlockBlock:
+		essenceBytes, err := registry.Manager.Serialize(tx.Essence())
+		if err != nil {
+			panic(nil)
+		}
 		// check signatures and validate transition
 		if chained != nil {
 			// chained output is present
 			if chained.aliasOutputInner.IsGovernanceUpdate {
 				// check if signature is valid against governing Address
-				if !blk.AddressSignatureValid(a.GetGoverningAddress(), tx.Essence().Bytes()) {
+				if !blk.AddressSignatureValid(a.GetGoverningAddress(), essenceBytes) {
 					return false, errors.New("signature is invalid for governance unlock")
 				}
 			} else {
 				// check if signature is valid against state Address
-				if !blk.AddressSignatureValid(a.GetStateAddress(), tx.Essence().Bytes()) {
+				if !blk.AddressSignatureValid(a.GetStateAddress(), essenceBytes) {
 					return false, errors.New("signature is invalid for state unlock")
 				}
 			}
@@ -1160,9 +1185,10 @@ func (a *AliasOutput) UnlockValid(tx *Transaction, unlockBlock UnlockBlock, inpu
 				return false, err
 			}
 		} else {
+
 			// no chained output found. Alias is being destroyed?
 			// check if governance is unlocked
-			if !blk.AddressSignatureValid(a.GetGoverningAddress(), tx.Essence().Bytes()) {
+			if !blk.AddressSignatureValid(a.GetGoverningAddress(), essenceBytes) {
 				return false, errors.New("signature is invalid for chain output deletion")
 			}
 			// validate deletion constraint
@@ -1215,14 +1241,22 @@ func (a *AliasOutput) UpdateMintingColor() Output {
 	coloredBalances := a.Balances().Map()
 	if mintedCoins, mintedCoinsExist := coloredBalances[ColorMint]; mintedCoinsExist {
 		delete(coloredBalances, ColorMint)
-		coloredBalances[Color(blake2b.Sum256(a.ID().Bytes()))] = mintedCoins
+		idBytes, err := registry.Manager.Serialize(a.ID())
+		if err != nil {
+			panic(err)
+		}
+		coloredBalances[Color(blake2b.Sum256(idBytes))] = mintedCoins
 	}
 	updatedOutput := a.clone()
 	_ = updatedOutput.SetBalances(coloredBalances)
 	updatedOutput.SetID(a.ID())
 
 	if a.IsOrigin() {
-		updatedOutput.SetAliasAddress(NewAliasAddress(a.ID().Bytes()))
+		idBytes, err := registry.Manager.Serialize(a.ID())
+		if err != nil {
+			panic(err)
+		}
+		updatedOutput.SetAliasAddress(NewAliasAddress(idBytes))
 	}
 
 	return updatedOutput
@@ -1649,8 +1683,12 @@ func (o *ExtendedLockedOutput) UnlockValid(tx *Transaction, unlockBlock UnlockBl
 
 	switch blk := unlockBlock.(type) {
 	case *SignatureUnlockBlock:
+		essenceBytes, err := registry.Manager.Serialize(tx.Essence())
+		if err != nil {
+			panic(nil)
+		}
 		// unlocking by signature
-		unlockValid = blk.AddressSignatureValid(addr, tx.Essence().Bytes())
+		unlockValid = blk.AddressSignatureValid(addr, essenceBytes)
 
 	case *AliasUnlockBlock:
 		// unlocking by alias reference. The unlock is valid if:
@@ -1727,7 +1765,11 @@ func (o *ExtendedLockedOutput) UpdateMintingColor() Output {
 	coloredBalances := o.Balances().Map()
 	if mintedCoins, mintedCoinsExist := coloredBalances[ColorMint]; mintedCoinsExist {
 		delete(coloredBalances, ColorMint)
-		coloredBalances[Color(blake2b.Sum256(o.ID().Bytes()))] = mintedCoins
+		idBytes, err := registry.Manager.Serialize(o.ID())
+		if err != nil {
+			panic(err)
+		}
+		coloredBalances[Color(blake2b.Sum256(idBytes))] = mintedCoins
 	}
 	updatedOutput := NewExtendedLockedOutput(coloredBalances, o.Address()).
 		WithFallbackOptions(o.extendedLockedOutputInner.FallbackAddress, o.extendedLockedOutputInner.FallbackDeadline).
@@ -1765,7 +1807,15 @@ func (o *ExtendedLockedOutput) ObjectStorageValue() []byte {
 // Compare offers a comparator for Outputs which returns -1 if the other Output is bigger, 1 if it is smaller and 0 if
 // they are the same.
 func (o *ExtendedLockedOutput) Compare(other Output) int {
-	return bytes.Compare(o.Bytes(), other.Bytes())
+	oBytes, err := registry.Manager.Serialize(o)
+	if err != nil {
+		panic(err)
+	}
+	otherBytes, err := registry.Manager.Serialize(other)
+	if err != nil {
+		panic(err)
+	}
+	return bytes.Compare(oBytes, otherBytes)
 }
 
 // String returns a human readable version of the Output.

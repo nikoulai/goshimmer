@@ -2,11 +2,12 @@ package txwrapped_test
 
 import (
 	"fmt"
+	"testing"
+	"time"
+
 	"github.com/iotaledger/goshimmer/packages/database"
 	"github.com/iotaledger/hive.go/kvstore/mapdb"
 	"github.com/iotaledger/hive.go/objectstorage"
-	"testing"
-	"time"
 
 	"github.com/iotaledger/hive.go/crypto/ed25519"
 	"github.com/stretchr/testify/assert"
@@ -116,13 +117,11 @@ func TestTransaction_TransactionStorage(t *testing.T) {
 	wallets := createWallets(2)
 	input := generateOutput(wallets[0].address, 0)
 	tx, _ := singleInputTransaction(wallets[0], wallets[1], input)
-	fmt.Println(tx)
 	txStorage.Store(tx)
 	idBytes, _ := registry.Manager.Serialize(tx.ID())
 
 	ct := &CachedTransaction{CachedObject: txStorage.Load(idBytes)}
 	ct.Consume(func(transaction *Transaction) {
-		fmt.Println(transaction)
 		assert.Equal(t, transaction.ID(), tx.ID())
 	})
 
@@ -297,7 +296,11 @@ func addressFromInput(input Input, outputsByID OutputsByID) Address {
 // signTransaction is a utility function that iterates through a transactions inputs and signs the addresses that are
 // part of the signers key chain.
 func signTransaction(transaction *Transaction, unspentOutputsDB OutputsByID, keyChain map[Address]ed25519.KeyPair) {
-	essenceBytesToSign := transaction.Essence().Bytes()
+	essenceBytes, err := registry.Manager.Serialize(transaction.Essence())
+	if err != nil {
+		panic(nil)
+	}
+	essenceBytesToSign := essenceBytes
 
 	for i, input := range transaction.Essence().Inputs() {
 		if keyPair, keyPairExists := keyChain[addressFromInput(input, unspentOutputsDB)]; keyPairExists {

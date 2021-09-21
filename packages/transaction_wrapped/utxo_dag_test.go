@@ -3,6 +3,7 @@ package txwrapped_test
 import (
 	"time"
 
+	"github.com/iotaledger/goshimmer/packages/registry"
 	"github.com/iotaledger/hive.go/crypto/ed25519"
 	"github.com/iotaledger/hive.go/identity"
 
@@ -40,7 +41,11 @@ func createWallets(n int) []wallet {
 }
 
 func (w wallet) sign(txEssence *TransactionEssence) *ED25519Signature {
-	return NewED25519Signature(w.publicKey(), w.privateKey().Sign(txEssence.Bytes()))
+	essenceBytes, err := registry.Manager.Serialize(txEssence)
+	if err != nil {
+		panic(nil)
+	}
+	return NewED25519Signature(w.publicKey(), w.privateKey().Sign(essenceBytes))
 }
 
 func (w wallet) unlockBlocks(txEssence *TransactionEssence) []UnlockBlock {

@@ -4,7 +4,7 @@ import (
 	"bytes"
 
 	"github.com/cockroachdb/errors"
-	"github.com/iotaledger/hive.go/byteutils"
+	"github.com/iotaledger/goshimmer/packages/registry"
 	"github.com/iotaledger/hive.go/crypto/ed25519"
 	"github.com/iotaledger/hive.go/stringify"
 	"github.com/mr-tron/base58"
@@ -56,9 +56,6 @@ type Address interface {
 
 	// Equals returns true if the two Addresses are equal.
 	Equals(other Address) bool
-
-	// Bytes returns a marshaled version of the Address.
-	Bytes() []byte
 
 	// Array returns an array of bytes that contains the marshaled version of the Address.
 	Array() [AddressLength]byte
@@ -130,21 +127,26 @@ func (e *ED25519Address) Equals(other Address) bool {
 	return e.Type() == other.Type() && bytes.Equal(e.eD25519AddressInner.Digest, other.Digest())
 }
 
-// Bytes returns a marshaled version of the Address.
-func (e *ED25519Address) Bytes() []byte {
-	return byteutils.ConcatBytes([]byte{byte(ED25519AddressType)}, e.eD25519AddressInner.Digest)
-}
-
 // Array returns an array of bytes that contains the marshaled version of the Address.
 func (e *ED25519Address) Array() (array [AddressLength]byte) {
-	copy(array[:], e.Bytes())
+	var eAddress Address = e
+	eBytes, err := registry.Manager.Serialize(eAddress)
+	if err != nil {
+		panic(err)
+	}
+	copy(array[:], eBytes)
 
 	return
 }
 
 // Base58 returns a base58 encoded version of the Address.
 func (e *ED25519Address) Base58() string {
-	return base58.Encode(e.Bytes())
+	var eAddress Address = e
+	eBytes, err := registry.Manager.Serialize(eAddress)
+	if err != nil {
+		panic(err)
+	}
+	return base58.Encode(eBytes)
 }
 
 // String returns a human readable version of the addresses for debug purposes.
@@ -207,21 +209,26 @@ func (b *BLSAddress) Equals(other Address) bool {
 	return b.Type() == other.Type() && bytes.Equal(b.bLSAddressInner.Digest, other.Digest())
 }
 
-// Bytes returns a marshaled version of the Address.
-func (b *BLSAddress) Bytes() []byte {
-	return byteutils.ConcatBytes([]byte{byte(BLSAddressType)}, b.bLSAddressInner.Digest)
-}
-
 // Array returns an array of bytes that contains the marshaled version of the Address.
 func (b *BLSAddress) Array() (array [AddressLength]byte) {
-	copy(array[:], b.Bytes())
+	var bAddress Address = b
+	bBytes, err := registry.Manager.Serialize(bAddress)
+	if err != nil {
+		panic(err)
+	}
+	copy(array[:], bBytes)
 
 	return
 }
 
 // Base58 returns a base58 encoded version of the Address.
 func (b *BLSAddress) Base58() string {
-	return base58.Encode(b.Bytes())
+	var bAddress Address = b
+	bBytes, err := registry.Manager.Serialize(bAddress)
+	if err != nil {
+		panic(err)
+	}
+	return base58.Encode(bBytes)
 }
 
 // String returns a human readable version of the addresses for debug purposes.
@@ -277,14 +284,14 @@ func (a *AliasAddress) Clone() Address {
 	return &AliasAddress{aliasAddressInner: aliasAddressInner{Digest: a.aliasAddressInner.Digest}}
 }
 
-// Bytes returns a marshaled version of the Address.
-func (a *AliasAddress) Bytes() []byte {
-	return byteutils.ConcatBytes([]byte{byte(AliasAddressType)}, a.aliasAddressInner.Digest[:])
-}
-
 // Array returns an array of bytes that contains the marshaled version of the Address.
 func (a *AliasAddress) Array() (array [AddressLength]byte) {
-	copy(array[:], a.Bytes())
+	var aAddress Address = a
+	aBytes, err := registry.Manager.Serialize(aAddress)
+	if err != nil {
+		panic(err)
+	}
+	copy(array[:], aBytes)
 
 	return
 }
@@ -296,7 +303,12 @@ func (a *AliasAddress) Equals(other Address) bool {
 
 // Base58 returns a base58 encoded version of the Address.
 func (a *AliasAddress) Base58() string {
-	return base58.Encode(a.Bytes())
+	var aAddress Address = a
+	aBytes, err := registry.Manager.Serialize(aAddress)
+	if err != nil {
+		panic(err)
+	}
+	return base58.Encode(aBytes)
 }
 
 // String returns a human readable version of the addresses for debug purposes.

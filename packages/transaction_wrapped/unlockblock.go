@@ -3,8 +3,6 @@ package txwrapped
 import (
 	"strconv"
 
-	"github.com/iotaledger/hive.go/byteutils"
-	"github.com/iotaledger/hive.go/marshalutil"
 	"github.com/iotaledger/hive.go/stringify"
 )
 
@@ -44,9 +42,6 @@ type UnlockBlock interface {
 	// Type returns the UnlockBlockType of the UnlockBlock.
 	Type() UnlockBlockType
 
-	// Bytes returns a marshaled version of the UnlockBlock.
-	Bytes() []byte
-
 	// String returns a human readable version of the UnlockBlock.
 	String() string
 }
@@ -57,17 +52,6 @@ type UnlockBlock interface {
 
 // UnlockBlocks is slice of UnlockBlocks that offers additional methods for easier marshaling and unmarshaling.
 type UnlockBlocks []UnlockBlock
-
-// Bytes returns a marshaled version of the UnlockBlocks.
-func (u UnlockBlocks) Bytes() []byte {
-	marshalUtil := marshalutil.New()
-	marshalUtil.WriteUint16(uint16(len(u)))
-	for _, unlockBlock := range u {
-		marshalUtil.WriteBytes(unlockBlock.Bytes())
-	}
-
-	return marshalUtil.Bytes()
-}
 
 // String returns a human readable version of the UnlockBlocks.
 func (u UnlockBlocks) String() string {
@@ -109,11 +93,6 @@ func (s *SignatureUnlockBlock) AddressSignatureValid(address Address, signedData
 // Type returns the UnlockBlockType of the UnlockBlock.
 func (s *SignatureUnlockBlock) Type() UnlockBlockType {
 	return SignatureUnlockBlockType
-}
-
-// Bytes returns a marshaled version of the UnlockBlock.
-func (s *SignatureUnlockBlock) Bytes() []byte {
-	return byteutils.ConcatBytes([]byte{byte(SignatureUnlockBlockType)}, s.Bytes())
 }
 
 // String returns a human readable version of the UnlockBlock.
@@ -163,14 +142,6 @@ func (r *ReferenceUnlockBlock) Type() UnlockBlockType {
 	return ReferenceUnlockBlockType
 }
 
-// Bytes returns a marshaled version of the UnlockBlock.
-func (r *ReferenceUnlockBlock) Bytes() []byte {
-	return marshalutil.New(1 + marshalutil.Uint16Size).
-		WriteByte(byte(ReferenceUnlockBlockType)).
-		WriteUint16(r.referenceUnlockBlockInner.ReferencedIndex).
-		Bytes()
-}
-
 // String returns a human readable version of the UnlockBlock.
 func (r *ReferenceUnlockBlock) String() string {
 	return stringify.Struct("ReferenceUnlockBlock",
@@ -211,14 +182,6 @@ func (r *AliasUnlockBlock) AliasInputIndex() uint16 {
 // Type returns the UnlockBlockType of the UnlockBlock.
 func (r *AliasUnlockBlock) Type() UnlockBlockType {
 	return AliasUnlockBlockType
-}
-
-// Bytes returns a marshaled version of the UnlockBlock.
-func (r *AliasUnlockBlock) Bytes() []byte {
-	return marshalutil.New(1 + marshalutil.Uint16Size).
-		WriteByte(byte(AliasUnlockBlockType)).
-		WriteUint16(r.aliasUnlockBlockInner.ReferencedIndex).
-		Bytes()
 }
 
 // String returns a human readable version of the UnlockBlock.

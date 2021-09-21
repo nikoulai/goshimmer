@@ -6,8 +6,7 @@ import (
 	"sort"
 	"strconv"
 
-	"github.com/iotaledger/hive.go/byteutils"
-	"github.com/iotaledger/hive.go/marshalutil"
+	"github.com/iotaledger/goshimmer/packages/registry"
 	"github.com/iotaledger/hive.go/stringify"
 	"github.com/iotaledger/hive.go/types"
 	"github.com/iotaledger/hive.go/typeutils"
@@ -52,9 +51,6 @@ type Input interface {
 	// Type returns the type of the Input.
 	Type() InputType
 
-	// Bytes returns a marshaled version of the Input.
-	Bytes() []byte
-
 	// String returns a human readable version of the Input.
 	String() string
 
@@ -83,7 +79,10 @@ func NewInputs(optionalInputs ...Input) (inputs Inputs) {
 
 	// filter duplicates (store marshaled version so we don't need to marshal a second time during sort)
 	for _, input := range optionalInputs {
-		marshaledInput := input.Bytes()
+		marshaledInput, err := registry.Manager.Serialize(input)
+		if err != nil {
+			panic(err)
+		}
 		marshaledInputAsString := typeutils.BytesToString(marshaledInput)
 
 		if _, seenAlready := seenInputs[marshaledInputAsString]; seenAlready {
@@ -117,17 +116,6 @@ func (i Inputs) Clone() (clonedInputs Inputs) {
 	copy(clonedInputs[:], i)
 
 	return
-}
-
-// Bytes returns a marshaled version of the Inputs.
-func (i Inputs) Bytes() []byte {
-	marshalUtil := marshalutil.New()
-	marshalUtil.WriteUint16(uint16(len(i)))
-	for _, input := range i {
-		marshalUtil.WriteBytes(input.Bytes())
-	}
-
-	return marshalUtil.Bytes()
 }
 
 // String returns a human readable version of the Inputs.
@@ -184,11 +172,6 @@ func (u *UTXOInput) ReferencedOutputID() OutputID {
 	return u.uTXOInputInner.ReferencedOutputID
 }
 
-// Bytes returns a marshaled version of the Input.
-func (u *UTXOInput) Bytes() []byte {
-	return byteutils.ConcatBytes([]byte{byte(UTXOInputType)}, u.uTXOInputInner.ReferencedOutputID.Bytes())
-}
-
 // Base58 returns the base58 encoded referenced output ID of this input.
 func (u *UTXOInput) Base58() string {
 	return u.uTXOInputInner.ReferencedOutputID.Base58()
@@ -197,7 +180,15 @@ func (u *UTXOInput) Base58() string {
 // Compare offers a comparator for Inputs which returns -1 if other Input is bigger, 1 if it is smaller and 0 if they
 // are the same.
 func (u *UTXOInput) Compare(other Input) int {
-	return bytes.Compare(u.Bytes(), other.Bytes())
+	uBytes, err := registry.Manager.Serialize(u)
+	if err != nil {
+		panic(err)
+	}
+	otherBytes, err := registry.Manager.Serialize(other)
+	if err != nil {
+		panic(err)
+	}
+	return bytes.Compare(uBytes, otherBytes)
 }
 
 // String returns a human readable version of the Input.
