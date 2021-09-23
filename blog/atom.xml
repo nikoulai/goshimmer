@@ -2,11 +2,18 @@
 <feed xmlns="http://www.w3.org/2005/Atom">
     <id>https://goshimmer.docs.iota.org/blog</id>
     <title>GoShimmer Blog</title>
-    <updated>2021-07-14T00:00:00.000Z</updated>
+    <updated>2021-09-23T00:00:00.000Z</updated>
     <generator>https://github.com/jpmonette/feed</generator>
     <link rel="alternate" href="https://goshimmer.docs.iota.org/blog"/>
     <subtitle>GoShimmer Blog</subtitle>
     <icon>https://goshimmer.docs.iota.org/img/logo/favicon.ico</icon>
+    <entry>
+        <title type="html"><![CDATA[New Release v0.7.6]]></title>
+        <id>new-release-v0.7.6</id>
+        <link href="https://goshimmer.docs.iota.org/blog/new-release-v0.7.6"/>
+        <updated>2021-09-23T00:00:00.000Z</updated>
+        <summary type="html"><![CDATA[This release does not include changes to the consensus mechanism and still uses FPC+FCoB.]]></summary>
+    </entry>
     <entry>
         <title type="html"><![CDATA[Welcome 👋]]></title>
         <id>welcome</id>

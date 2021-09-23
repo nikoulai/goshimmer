@@ -4,9 +4,16 @@
         <title>GoShimmer Blog</title>
         <link>https://goshimmer.docs.iota.org/blog</link>
         <description>GoShimmer Blog</description>
-        <lastBuildDate>Wed, 14 Jul 2021 00:00:00 GMT</lastBuildDate>
+        <lastBuildDate>Thu, 23 Sep 2021 00:00:00 GMT</lastBuildDate>
         <docs>https://validator.w3.org/feed/docs/rss2.html</docs>
         <generator>https://github.com/jpmonette/feed</generator>
+        <item>
+            <title><![CDATA[New Release v0.7.6]]></title>
+            <link>https://goshimmer.docs.iota.org/blog/new-release-v0.7.6</link>
+            <guid>new-release-v0.7.6</guid>
+            <pubDate>Thu, 23 Sep 2021 00:00:00 GMT</pubDate>
+            <description><![CDATA[This release does not include changes to the consensus mechanism and still uses FPC+FCoB.]]></description>
+        </item>
         <item>
             <title><![CDATA[Welcome 👋]]></title>
             <link>https://goshimmer.docs.iota.org/blog/welcome</link>
