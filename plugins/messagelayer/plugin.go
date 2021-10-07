@@ -181,8 +181,9 @@ func newTangle(deps tangledeps) *tangle.Tangle {
 		tangle.Consensus(deps.ConsensusMechanism),
 		tangle.GenesisNode(Parameters.Snapshot.GenesisNode),
 		tangle.SchedulerConfig(tangle.SchedulerParams{
-			MaxBufferSize: SchedulerParameters.MaxBufferSize,
-			Rate:          schedulerRate(SchedulerParameters.Rate),
+			MaxBufferSize:               SchedulerParameters.MaxBufferSize,
+			Rate:                        schedulerRate(SchedulerParameters.Rate),
+			AccessManaMapRetrieverFunc:  accessManaMapRetriever,
 			AccessManaRetrieveFunc:      accessManaRetriever,
 			TotalAccessManaRetrieveFunc: totalAccessManaRetriever,
 		}),
@@ -213,6 +214,14 @@ func schedulerRate(durationString string) time.Duration {
 		return 0
 	}
 	return duration
+}
+
+func accessManaMapRetriever() map[identity.ID]float64 {
+	nodeMap, _, err := GetManaMap(mana.AccessMana)
+	if err != nil {
+		return mana.NodeMap{}
+	}
+	return nodeMap
 }
 
 func accessManaRetriever(nodeID identity.ID) float64 {
