@@ -221,7 +221,7 @@ func TestTangle_MissingMessages(t *testing.T) {
 	require.NoError(t, err)
 
 	// create the tangle
-	tangle := newTestTangle(Store(rocksdb))
+	tangle := newTestTangle(Store(rocksdb), Identity(selfLocalIdentity))
 	defer tangle.Shutdown()
 	require.NoError(t, tangle.Prune())
 
@@ -373,7 +373,7 @@ func TestTangle_Flow(t *testing.T) {
 	tips.Set(EmptyMessageID, EmptyMessageID)
 
 	// create the tangle
-	tangle := newTestTangle(Store(rocksdb))
+	tangle := newTestTangle(Store(rocksdb), Identity(selfLocalIdentity))
 	defer tangle.Shutdown()
 
 	// create local peer
