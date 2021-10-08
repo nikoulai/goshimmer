@@ -21,12 +21,17 @@ import (
 	"github.com/iotaledger/goshimmer/packages/vote/opinion"
 )
 
-var schedulerParams = tangle.SchedulerParams{
-	MaxBufferSize:               100000000,
-	Rate:                        100 * time.Millisecond,
-	AccessManaRetrieveFunc:      getAccessMana,
-	TotalAccessManaRetrieveFunc: getTotalAccessMana,
-}
+var (
+	selfLocalIdentity = identity.GenerateLocalIdentity()
+	selfNode          = identity.New(selfLocalIdentity.PublicKey())
+	schedulerParams   = tangle.SchedulerParams{
+		MaxBufferSize:               100000000,
+		Rate:                        100 * time.Millisecond,
+		AccessManaMapRetrieverFunc:  getAccessManaMap,
+		AccessManaRetrieveFunc:      getAccessMana,
+		TotalAccessManaRetrieveFunc: getTotalAccessMana,
+	}
+)
 
 func getAccessMana(_ identity.ID) float64 {
 	return 800
@@ -36,15 +41,20 @@ func getTotalAccessMana() float64 {
 	return 2000
 }
 
+func getAccessManaMap() map[identity.ID]float64 {
+	return map[identity.ID]float64{
+		selfNode.ID(): 800,
+	}
+}
+
 func TestOpinionFormer_Scenario2(t *testing.T) {
 	LikedThreshold = 2 * time.Second
 	LocallyFinalizedThreshold = 2 * time.Second
 
 	consensusProvider := NewConsensusMechanism().(*ConsensusMechanism)
 	cacheTimeProvider := database.NewCacheTimeProvider(0)
-
 	testTangle := tangle.New(tangle.Consensus(consensusProvider), tangle.SchedulerConfig(schedulerParams),
-		tangle.CacheTimeProvider(cacheTimeProvider))
+		tangle.CacheTimeProvider(cacheTimeProvider), tangle.Identity(selfLocalIdentity))
 	defer testTangle.Shutdown()
 	testTangle.Setup()
 
