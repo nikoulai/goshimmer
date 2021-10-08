@@ -23,8 +23,7 @@ services:
     entrypoint: /run/goshimmer
     command: >
       --skip-config=true
-      --node.overwriteStoredSeed=true
-      --autoPeering.entryNodes=2PV5487xMw5rasGBXXWeqSi4hLz7r19YBt8Y1TGAsQbj@{{ entryNodeHost }}:15626{% if communityEntryNode|default(None) %},{{ communityEntryNode }}{% endif %}
+      --autopeering.entryNodes=e3m6WPQXLyuUqEfSHmGVEs6qpyhWNJqtbquX65kFoJQ@{{ entryNodeHost }}:15626{% if communityEntryNode|default(None) %},{{ communityEntryNode }}{% endif %}
       {% if networkVersion|default(None) %}
       --autoPeering.networkVersion={{ networkVersion }}
       {% endif %}
@@ -34,17 +33,18 @@ services:
       --messageLayer.snapshot.file=/snapshot.bin
      {% if faucet|default(false) %}
       --faucet.seed={{ faucetSeed }}
-      --faucet.tokensPerRequest=1000000
+      --faucet.maxTransactionBookedAwaitTimeSeconds=30
      {% endif %}
-      --faucet.powDifficulty=22
-      --pow.difficulty=22
+      --faucet.powDifficulty=5
+      --pow.difficulty=5
       --pow.numThreads=8
       --pow.timeout=60s
       --logger.level={{ logLevel }}
       --logger.disableEvents=false
       --logger.remotelog.serverAddress={{ remoteLoggerHost }}:5213
       --messageLayer.startSynced=true
-      --drng.pollen.instanceID=1
+      --messageLayer.snapshot.genesisNode=EGgbUaAnfXG2mBtGQwSPPVxLa8uC1hnNsxtnLYbHkm8B
+      --drng.pollen.instanceId=1
       --drng.pollen.threshold=3
       --drng.pollen.committeeMembers=AheLpbhRs1XZsRF8t8VBwuyQh9mqPHXQvthV5rsHytDG,FZ28bSTidszUBn8TTCAT9X1nVMwFNnoYBmZ1xfafez2z,GT3UxryW4rA9RN9ojnMGmZgE2wP7psagQxgVdA4B9L1P,4pB5boPvvk2o5MbMySDhqsmC2CtUdXyotPPEpb7YQPD7,64wCsTZpmKjRVHtBKXiFojw7uw3GszumfvC4kHdWsHga
       {% if xteamDRNG|default(false) %}

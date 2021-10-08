@@ -35,9 +35,8 @@ services:
     entrypoint: /run/goshimmer
     command: >
       --skip-config=true
-      --node.overwriteStoredSeed=true
-      --autoPeering.entryNodes=2PV5487xMw5rasGBXXWeqSi4hLz7r19YBt8Y1TGAsQbj@{{ entryNodeHost }}:15626{% if communityEntryNode|default(None) %},{{ communityEntryNode }}{% endif %}
-      {% if networkVersion|default(None) %}
+      --autopeering.entryNodes=e3m6WPQXLyuUqEfSHmGVEs6qpyhWNJqtbquX65kFoJQ@{{ entryNodeHost }}:15626{% if communityEntryNode|default(None) %},{{ communityEntryNode }}{% endif %}
+      {% if networkVersion|default(NOne) %}
       --autopeering.networkVersion={{ networkVersion }}
       {% endif %}
       --node.disablePlugins=portcheck
@@ -45,10 +44,10 @@ services:
       --prometheus.bindAddress=0.0.0.0:9312
       {% if faucet|default(false) %}
       --faucet.seed={{ faucetSeed }}
-      --faucet.tokensPerRequest=1000000
+      --faucet.maxTransactionBookedAwaitTimeSeconds=30
       {% endif %}
-      --faucet.powDifficulty=22
-      --pow.difficulty=22
+      --faucet.powDifficulty=5
+      --pow.difficulty=5
       --pow.numThreads=7
       --pow.timeout=60s
       --logger.level={{ logLevel }}
