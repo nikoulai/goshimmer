@@ -2,6 +2,7 @@ package tangle
 
 import (
 	"fmt"
+	"os"
 	"sort"
 	"strconv"
 	"sync"
@@ -259,6 +260,8 @@ func (b *Booker) strongParentsBranchIDs(message *Message) (branchIDs ledgerstate
 
 			structureDetailsOfMessage := messageMetadata.StructureDetails()
 			if structureDetailsOfMessage == nil {
+				fmt.Println(fmt.Errorf("tried to retrieve BranchID from unbooked Message with %s: %v", messageID, cerrors.ErrFatal))
+				os.Exit(1)
 				panic(fmt.Errorf("tried to retrieve BranchID from unbooked Message with %s: %v", messageID, cerrors.ErrFatal))
 			}
 			if structureDetailsOfMessage.PastMarkers.Size() > 1 {
