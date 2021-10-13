@@ -93,7 +93,7 @@ var nodesToPledge = map[string]Pledge{
 		seedBase58 := "D29LzzhHYGPjxtnx3LXFicmLhDVXyhW6379MugJHzSoH"
 		seedBytes, err := base58.Decode(seedBase58)
 		must(err)
-    address := seed.NewSeed(seedBytes).Address(1).Address()
+    address := seed.NewSeed(seedBytes).Address(0).Address()
     fmt.Printf("Faucet addr %s", address)
 		return Pledge{
 			Address: address,

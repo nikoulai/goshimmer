@@ -44,7 +44,7 @@ services:
       --prometheus.bindAddress=0.0.0.0:9312
       {% if faucet|default(false) %}
       --faucet.seed={{ faucetSeed }}
-      --faucet.maxTransactionBookedAwaitTimeSeconds=30
+      --faucet.maxTransactionBookedAwaitTime=30s
       {% endif %}
       --faucet.powDifficulty=5
       --pow.difficulty=5

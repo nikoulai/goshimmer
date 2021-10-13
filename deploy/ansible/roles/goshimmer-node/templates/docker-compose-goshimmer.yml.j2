@@ -33,7 +33,8 @@ services:
       --messageLayer.snapshot.file=/snapshot.bin
      {% if faucet|default(false) %}
       --faucet.seed={{ faucetSeed }}
-      --faucet.maxTransactionBookedAwaitTimeSeconds=30
+      --faucet.maxTransactionBookedAwaitTime=30s
+      --faucet.tokensPerRequest=1000000
      {% endif %}
       --faucet.powDifficulty=5
       --pow.difficulty=5
