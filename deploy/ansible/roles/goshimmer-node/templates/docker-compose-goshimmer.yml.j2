@@ -23,7 +23,7 @@ services:
     entrypoint: /run/goshimmer
     command: >
       --skip-config=true
-      --autopeering.entryNodes=e3m6WPQXLyuUqEfSHmGVEs6qpyhWNJqtbquX65kFoJQ@{{ entryNodeHost }}:15626{% if communityEntryNode|default(None) %},{{ communityEntryNode }}{% endif %}
+      --autoPeering.entryNodes=e3m6WPQXLyuUqEfSHmGVEs6qpyhWNJqtbquX65kFoJQ@{{ entryNodeHost }}:15626{% if communityEntryNode|default(None) %},{{ communityEntryNode }}{% endif %}
       {% if networkVersion|default(None) %}
       --autoPeering.networkVersion={{ networkVersion }}
       {% endif %}
@@ -44,7 +44,7 @@ services:
       --logger.remotelog.serverAddress={{ remoteLoggerHost }}:5213
       --messageLayer.startSynced=true
       --messageLayer.snapshot.genesisNode=EGgbUaAnfXG2mBtGQwSPPVxLa8uC1hnNsxtnLYbHkm8B
-      --drng.pollen.instanceId=1
+      --drng.pollen.instanceID=1
       --drng.pollen.threshold=3
       --drng.pollen.committeeMembers=AheLpbhRs1XZsRF8t8VBwuyQh9mqPHXQvthV5rsHytDG,FZ28bSTidszUBn8TTCAT9X1nVMwFNnoYBmZ1xfafez2z,GT3UxryW4rA9RN9ojnMGmZgE2wP7psagQxgVdA4B9L1P,4pB5boPvvk2o5MbMySDhqsmC2CtUdXyotPPEpb7YQPD7,64wCsTZpmKjRVHtBKXiFojw7uw3GszumfvC4kHdWsHga
       {% if xteamDRNG|default(false) %}

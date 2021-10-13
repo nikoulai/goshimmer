@@ -35,9 +35,9 @@ services:
     entrypoint: /run/goshimmer
     command: >
       --skip-config=true
-      --autopeering.entryNodes=e3m6WPQXLyuUqEfSHmGVEs6qpyhWNJqtbquX65kFoJQ@{{ entryNodeHost }}:15626{% if communityEntryNode|default(None) %},{{ communityEntryNode }}{% endif %}
+      --autoPeering.entryNodes=e3m6WPQXLyuUqEfSHmGVEs6qpyhWNJqtbquX65kFoJQ@{{ entryNodeHost }}:15626{% if communityEntryNode|default(None) %},{{ communityEntryNode }}{% endif %}
       {% if networkVersion|default(NOne) %}
-      --autopeering.networkVersion={{ networkVersion }}
+      --autoPeering.networkVersion={{ networkVersion }}
       {% endif %}
       --node.disablePlugins=portcheck
       --node.enablePlugins=dashboard,remotelog,networkdelay,prometheus{% if faucet|default(false) %},faucet{% endif %}

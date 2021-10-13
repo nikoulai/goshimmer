@@ -38,6 +38,7 @@ goshimmers:
     entryNodeHost: "analysisentry-01.feature.shimmer.iota.cafe"
     remoteLoggerHost: "metrics-01.feature.shimmer.iota.cafe"
     xteamDRNG: true
+    logLevel: "debug"
 
 drands:
   hosts:
