@@ -71,33 +71,22 @@ var nodesToPledge = map[string]Pledge{
 		}(),
 	*/
 	// Equally distributed
-	"e3m6WPQXLyuUqEfSHmGVEs6qpyhWNJqtbquX65kFoJQ":  Pledge{}, // entrynode
-	"EGgbUaAnfXG2mBtGQwSPPVxLa8uC1hnNsxtnLYbHkm8B": Pledge{}, // bootstrap_01
-	"7PS8tJSjhyFMbUqbVE2pUideT6DQc2ovNv5hBDTkvUtm": Pledge{}, // vanilla_01
-	"3HqasBLjyqiYWeavLZoi1k1nrMVvGZDGj3EPkKHxzxdZ": Pledge{}, // drng_01
-	"85LVFFjYZj8JNwmD5BJFux3gVGsw9uT2frFrnQ8gm7dX": Pledge{}, // drng_02
-	"7Hk4Airu42Gcqm3JZDAL69DSdaksF9qfahppez9LZTJr": Pledge{}, // drng_03
-	"E3RmVjQHsisxxLY36AuRkV7Uceo1FReYWLMsCTEbDBeC": Pledge{}, // drng_04
-	"GRbfN6HDzFxWNwN6q4ixmTjDR5oS8XQc5zWbxxFFkBmw": func() Pledge { // drng_05
-		seedBase58 := "D29LzzhHYGPjxtnx3LXFicmLhDVXyhW6379MugJHzSoH"
-		seedBytes, err := base58.Decode(seedBase58)
-		must(err)
-    address := seed.NewSeed(seedBytes).Address(0).Address()
-    fmt.Printf("Faucet addr %s", address)
-		return Pledge{
-			Address: address,
-      Amount: 100000000000000,
-		}
-  }(),
+	"e3m6WPQXLyuUqEfSHmGVEs6qpyhWNJqtbquX65kFoJQ":  {}, // entrynode
+	"EGgbUaAnfXG2mBtGQwSPPVxLa8uC1hnNsxtnLYbHkm8B": {}, // bootstrap_01
+	"7PS8tJSjhyFMbUqbVE2pUideT6DQc2ovNv5hBDTkvUtm": {}, // vanilla_01
+	"3HqasBLjyqiYWeavLZoi1k1nrMVvGZDGj3EPkKHxzxdZ": {}, // drng_01
+	"85LVFFjYZj8JNwmD5BJFux3gVGsw9uT2frFrnQ8gm7dX": {}, // drng_02
+	"7Hk4Airu42Gcqm3JZDAL69DSdaksF9qfahppez9LZTJr": {}, // drng_03
+	"E3RmVjQHsisxxLY36AuRkV7Uceo1FReYWLMsCTEbDBeC": {}, // drng_04
+	"GRbfN6HDzFxWNwN6q4ixmTjDR5oS8XQc5zWbxxFFkBmw": {}, // drng_05
 	"12rLUHyF67rzqHgYR6Jxbi3GD5CTU7DaxwDQfmVYcwnV": func() Pledge { // faucet_01
-		seedBase58 := "D29LzzhHYGPjxtnx3LXFicmLhDVXyhW6379MugJHzSoH"
+		seedBase58 := "D29LzzhHYGPjxtnx3LXFicmLhDVXyhW6379MugJHzSoH" // faucet seed
 		seedBytes, err := base58.Decode(seedBase58)
 		must(err)
-    address := seed.NewSeed(seedBytes).Address(0).Address()
-    fmt.Printf("Faucet addr %s", address)
+		address := seed.NewSeed(seedBytes).Address(0).Address()
+		fmt.Printf("Faucet addr %s", address)
 		return Pledge{
 			Address: address,
-      Amount: 100000000000000,
 		}
 	}(),
 }
@@ -115,7 +104,7 @@ type TransactionMap map[ledgerstate.TransactionID]ledgerstate.Record
 type AccessManaMap map[identity.ID]ledgerstate.AccessMana
 
 func init() {
-	flag.Uint64(cfgGenesisTokenAmount, 800000, "the amount of tokens to add to the genesis output") // we pledge this amount to peer master
+	flag.Uint64(cfgGenesisTokenAmount, 10000000000000000, "the amount of tokens to add to the genesis output") // we pledge this amount to peer master
 	flag.String(cfgSnapshotFileName, defaultSnapshotFileName, "the name of the generated snapshot file")
 	// Most recent seed when checking ../integration-tests/assets :
 	flag.String(cfgSnapshotGenesisSeed, "7R1itJx5hVuo9w9hjg5cwKFmek4HMSoBDgJZN8hKGxih", "the genesis seed")
