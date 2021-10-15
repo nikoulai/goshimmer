@@ -532,7 +532,7 @@ func makeTimeStampStatement(id string, v *vote.Context) (statement.Timestamp, er
 
 // broadcastStatement broadcasts a statement via communication layer.
 func broadcastStatement(conflicts statement.Conflicts, timestamps statement.Timestamps) {
-	msg, err := deps.Tangle.IssuePayload(statement.New(conflicts, timestamps))
+	msg, err := deps.Tangle.IssuePayload(statement.New(conflicts, timestamps), deps.Tangle.Options.Identity)
 	if err != nil {
 		Plugin.LogWarnf("error issuing statement: %s", err)
 		return

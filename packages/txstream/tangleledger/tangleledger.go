@@ -109,7 +109,7 @@ func (t *TangleLedger) GetTxInclusionState(txid ledgerstate.TransactionID) (ledg
 
 // PostTransaction posts a transaction to the ledger
 func (t *TangleLedger) PostTransaction(tx *ledgerstate.Transaction) error {
-	_, err := t.tangleInstance.IssuePayload(tx)
+	_, err := t.tangleInstance.IssuePayload(tx, t.tangleInstance.Options.Identity)
 	if err != nil {
 		return fmt.Errorf("failed to issue transaction: %w", err)
 	}

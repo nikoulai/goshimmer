@@ -26,12 +26,14 @@ services:
       --metrics.local=true
       --metrics.manaResearch=false
       --node.disablePlugins=portcheck,clock
-      --node.enablePlugins=analysisServer,analysisDashboard,prometheus,spammer,WebAPIToolsMessageEndpoint,activity,snapshot
+      --node.enablePlugins=analysisServer,analysisDashboard,prometheus,spammer,WebAPIToolsMessageEndpoint,activity,snapshot,NodeQSizeTracker
       --prometheus.bindAddress=0.0.0.0:9311
       --prometheus.processMetrics=false
       --statement.writeManaThreshold=1.0
       --statement.writeStatement=true
       --webAPI.exportPath=/tmp/
+      --scheduler.rate=50ms
+      --pow.difficulty=0
     secrets:
       - goshimmer.config.json
       - goshimmer.message.snapshot.bin
@@ -53,7 +55,7 @@ services:
       --config=/run/secrets/goshimmer.config.json
       --database.directory=/tmp/mainnetdb
       --node.peerDBDirectory=/tmp/peerdb
-      --node.enablePlugins=bootstrap,"webAPIToolsEndpoint"
+      --node.enablePlugins=bootstrap,webAPIToolsEndpoint,spammer,WebAPIToolsMessageEndpoint,NodeQSizeTracker
       --messageLayer.snapshot.file=/run/secrets/goshimmer.message.snapshot.bin
       --messageLayer.snapshot.genesisNode=
       --node.disablePlugins=portcheck,clock
@@ -61,6 +63,8 @@ services:
       --statement.writeStatement=true
       --statement.writeManaThreshold=1.0
       --webAPI.exportPath=/tmp/
+      --scheduler.rate=50ms
+      --pow.difficulty=0
     deploy:
       replicas: ${SHIMMER_PEER_REPLICAS:-1}
       restart_policy:
@@ -82,7 +86,7 @@ services:
       --node.peerDBDirectory=/tmp/peerdb
       --node.seed=base58:3YX6e7AL28hHihZewKdq6CMkEYVsTJBLgRiprUNiNq5E
       --node.overwriteStoredSeed=true
-      --node.enablePlugins=bootstrap,"webAPIToolsEndpoint",faucet,activity
+      --node.enablePlugins=bootstrap,spammer,"webAPIToolsEndpoint",faucet,activity,WebAPIToolsMessageEndpoint,NodeQSizeTracker
       --messageLayer.snapshot.file=/run/secrets/goshimmer.message.snapshot.bin
       --messageLayer.startSynced=true
       --faucet.seed=7R1itJx5hVuo9w9hjg5cwKFmek4HMSoBDgJZN8hKGxih
@@ -92,6 +96,8 @@ services:
       --statement.writeStatement=true
       --statement.writeManaThreshold=1.0
       --webAPI.exportPath=/tmp/
+      --scheduler.rate=50ms
+      --pow.difficulty=0
     secrets:
       - goshimmer.config.json
       - goshimmer.message.snapshot.bin

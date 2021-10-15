@@ -710,7 +710,7 @@ func (s *StateManager) createOutput(addr ledgerstate.Address, balance uint64) le
 func (s *StateManager) issueTx(tx *ledgerstate.Transaction) (msg *tangle.Message, err error) {
 	// attach to message layer
 	issueTransaction := func() (*tangle.Message, error) {
-		message, e := deps.Tangle.IssuePayload(tx)
+		message, e := deps.Tangle.IssuePayload(tx, deps.Tangle.Options.Identity)
 		if e != nil {
 			return nil, e
 		}

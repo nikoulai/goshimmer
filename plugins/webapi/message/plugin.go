@@ -169,7 +169,7 @@ func PostPayload(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, jsonmodels.NewErrorResponse(err))
 	}
 
-	msg, err := deps.Tangle.IssuePayload(parsedPayload)
+	msg, err := deps.Tangle.IssuePayload(parsedPayload, deps.Tangle.Options.Identity)
 	if err != nil {
 		return c.JSON(http.StatusBadRequest, jsonmodels.NewErrorResponse(err))
 	}

@@ -72,7 +72,7 @@ func (f *MessageFactory) SetTimeout(timeout time.Duration) {
 // IssuePayload creates a new message including sequence number and tip selection and returns it.
 // It also triggers the MessageConstructed event once it's done, which is for example used by the plugins to listen for
 // messages that shall be attached to the tangle.
-func (f *MessageFactory) IssuePayload(p payload.Payload, parentsCount ...int) (*Message, error) {
+func (f *MessageFactory) IssuePayload(p payload.Payload, local *identity.LocalIdentity, parentsCount ...int) (*Message, error) {
 	payloadLen := len(p.Bytes())
 	if payloadLen > payload.MaxSize {
 		err := fmt.Errorf("maximum payload size of %d bytes exceeded", payloadLen)
@@ -103,7 +103,7 @@ func (f *MessageFactory) IssuePayload(p payload.Payload, parentsCount ...int) (*
 	}
 	issuingTime := f.getIssuingTime(strongParents, weakParents)
 
-	issuerPublicKey := f.localIdentity.PublicKey()
+	issuerPublicKey := local.PublicKey()
 
 	// do the PoW
 	startTime := time.Now()
@@ -133,7 +133,7 @@ func (f *MessageFactory) IssuePayload(p payload.Payload, parentsCount ...int) (*
 	f.issuanceMutex.Unlock()
 
 	// create the signature
-	signature := f.sign(strongParents, weakParents, issuingTime, issuerPublicKey, sequenceNumber, p, nonce)
+	signature := f.sign(strongParents, weakParents, issuingTime, issuerPublicKey, sequenceNumber, p, nonce, local)
 
 	msg := NewMessage(
 		strongParents,
@@ -187,13 +187,13 @@ func (f *MessageFactory) doPOW(strongParents []MessageID, weakParents []MessageI
 	return f.worker.DoPOW(dummy)
 }
 
-func (f *MessageFactory) sign(strongParents []MessageID, weakParents []MessageID, issuingTime time.Time, key ed25519.PublicKey, seq uint64, payload payload.Payload, nonce uint64) ed25519.Signature {
+func (f *MessageFactory) sign(strongParents []MessageID, weakParents []MessageID, issuingTime time.Time, key ed25519.PublicKey, seq uint64, payload payload.Payload, nonce uint64, local *identity.LocalIdentity) ed25519.Signature {
 	// create a dummy message to simplify marshaling
 	dummy := NewMessage(strongParents, weakParents, issuingTime, key, seq, payload, nonce, ed25519.EmptySignature)
 	dummyBytes := dummy.Bytes()
 
 	contentLength := len(dummyBytes) - len(dummy.Signature())
-	return f.localIdentity.Sign(dummyBytes[:contentLength])
+	return local.Sign(dummyBytes[:contentLength])
 }
 
 // endregion ///////////////////////////////////////////////////////////////////////////////////////////////////////////

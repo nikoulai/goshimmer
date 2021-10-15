@@ -550,7 +550,7 @@ func PostTransaction(c echo.Context) error {
 	}
 
 	issueTransaction := func() (*tangle.Message, error) {
-		return deps.Tangle.IssuePayload(tx)
+		return deps.Tangle.IssuePayload(tx, deps.Tangle.Options.Identity)
 	}
 
 	// add tx to double spend doubleSpendFilter

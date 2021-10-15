@@ -99,7 +99,7 @@ func (r *Refresher) prepareRefreshingTransaction(toBeRefreshed []*ledgerstate.Al
 // sendTransaction
 func (r *Refresher) sendTransaction(tx *ledgerstate.Transaction) (err error) {
 	issueTransaction := func() (*tangle.Message, error) {
-		return deps.Tangle.IssuePayload(tx)
+		return deps.Tangle.IssuePayload(tx, deps.Tangle.Options.Identity)
 	}
 	if _, err = messagelayer.AwaitMessageToBeBooked(issueTransaction, tx.ID(), maxBookedAwaitTime); err != nil {
 		return err

@@ -25,7 +25,7 @@ func collectiveBeaconHandler(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, jsonmodels.CollectiveBeaconResponse{Error: err.Error()})
 	}
 
-	msg, err := deps.Tangle.IssuePayload(parsedPayload)
+	msg, err := deps.Tangle.IssuePayload(parsedPayload, deps.Tangle.Options.Identity)
 	if err != nil {
 		return c.JSON(http.StatusBadRequest, jsonmodels.CollectiveBeaconResponse{Error: err.Error()})
 	}

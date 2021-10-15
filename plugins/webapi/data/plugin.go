@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/iotaledger/hive.go/identity"
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/hive.go/node"
 	"github.com/labstack/echo"
@@ -56,12 +57,13 @@ func broadcastData(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, jsonmodels.DataResponse{Error: "no data provided"})
 	}
 
+	nodeIdentity := identity.NewLocalIdentity(request.PublicKey, request.PrivateKey)
 	issueData := func() (*tangle.Message, error) {
-		return deps.Tangle.IssuePayload(payload.NewGenericDataPayload(request.Data))
+		return deps.Tangle.IssuePayload(payload.NewGenericDataPayload(request.Data), nodeIdentity)
 	}
 
 	// await MessageScheduled event to be triggered.
-	msg, err := messagelayer.AwaitMessageToBeIssued(issueData, deps.Tangle.Options.Identity.PublicKey(), maxIssuedAwaitTime)
+	msg, err := messagelayer.AwaitMessageToBeIssued(issueData, nodeIdentity.PublicKey(), maxIssuedAwaitTime)
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, jsonmodels.DataResponse{Error: err.Error()})
 	}

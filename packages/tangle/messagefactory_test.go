@@ -51,7 +51,7 @@ func TestMessageFactory_BuildMessage(t *testing.T) {
 
 	t.Run("CheckProperties", func(t *testing.T) {
 		p := payload.NewGenericDataPayload([]byte("TestCheckProperties"))
-		msg, err := tangle.MessageFactory.IssuePayload(p)
+		msg, err := tangle.MessageFactory.IssuePayload(p, selfLocalIdentity)
 		require.NoError(t, err)
 
 		// TODO: approval switch: make test case with weak parents
@@ -77,7 +77,7 @@ func TestMessageFactory_BuildMessage(t *testing.T) {
 				t.Parallel()
 
 				p := payload.NewGenericDataPayload([]byte("TestParallelCreation"))
-				msg, err := tangle.MessageFactory.IssuePayload(p)
+				msg, err := tangle.MessageFactory.IssuePayload(p, selfLocalIdentity)
 				require.NoError(t, err)
 
 				// TODO: approval switch: make test case with weak parents
@@ -136,7 +136,7 @@ func TestMessageFactory_POW(t *testing.T) {
 		return worker.Mine(context.Background(), content, targetPOW)
 	}))
 	msgFactory.SetTimeout(powTimeout)
-	msg, err := msgFactory.IssuePayload(payload.NewGenericDataPayload([]byte("test")))
+	msg, err := msgFactory.IssuePayload(payload.NewGenericDataPayload([]byte("test")), selfLocalIdentity)
 	require.NoError(t, err)
 
 	msgBytes := msg.Bytes()
@@ -169,13 +169,13 @@ func TestWorkerFunc_PayloadSize(t *testing.T) {
 	// issue message with max allowed payload size
 	// dataPayload headers: type|32bit + size|32bit
 	data := make([]byte, payload.MaxSize-4-4)
-	msg, err := msgFactory.IssuePayload(payload.NewGenericDataPayload(data))
+	msg, err := msgFactory.IssuePayload(payload.NewGenericDataPayload(data), selfLocalIdentity)
 	require.NoError(t, err)
 	assert.Truef(t, MaxMessageSize == len(msg.Bytes()), "message size should be exactly %d bytes but is %d", MaxMessageSize, len(msg.Bytes()))
 
 	// issue message bigger than max allowed payload size
 	data = make([]byte, payload.MaxSize)
-	msg, err = msgFactory.IssuePayload(payload.NewGenericDataPayload(data))
+	msg, err = msgFactory.IssuePayload(payload.NewGenericDataPayload(data), selfLocalIdentity)
 	require.Error(t, err)
 	assert.Nil(t, msg)
 }

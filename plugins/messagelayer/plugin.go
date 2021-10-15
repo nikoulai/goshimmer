@@ -13,13 +13,13 @@ import (
 	"github.com/iotaledger/hive.go/identity"
 	"github.com/iotaledger/hive.go/kvstore"
 	"github.com/iotaledger/hive.go/node"
+	"github.com/mr-tron/base58"
 	"go.uber.org/dig"
 
 	"github.com/iotaledger/goshimmer/plugins/remotelog"
 
 	"github.com/iotaledger/goshimmer/packages/consensus/fcob"
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
-	"github.com/iotaledger/goshimmer/packages/mana"
 	"github.com/iotaledger/goshimmer/packages/shutdown"
 	"github.com/iotaledger/goshimmer/packages/tangle"
 	"github.com/iotaledger/goshimmer/packages/vote"
@@ -216,28 +216,47 @@ func schedulerRate(durationString string) time.Duration {
 	return duration
 }
 
-func accessManaMapRetriever() map[identity.ID]float64 {
-	nodeMap, _, err := GetManaMap(mana.AccessMana)
-	if err != nil {
-		return mana.NodeMap{}
+var (
+	fixedAccessMana = map[string]float64{
+		"2GtxMQD94KvDH1SJPJV7icxofkyV1njuUZKtsqKmtux5": 700, // MasterPeer : (100 * 60) - 26 = 814
+		"FZ6xmPZXRs2M8z9m9ETTQok4PCga4X8FRHwQE6uYm4rV": 250, // Faucet  : (50 * 60) - 26 = 274
+		"8sHZAXrQFNVYnP5gR8bntmeZHJRd1FuFT733DwT1GRz3": 10,  // A   : (0.2 * 60) = 12
+		"AH6W5n5gPnaehC2bbKFkHh61vmgwBLMZqgYs36ggcPgd": 10,  // B  : (0.2 * 60) = 12
+		"G5ncpHZrgL1RQcVcfQZhyMkfFnk5XXyfrHGwZJwo8my4": 10,  // C  : (0.2 * 60) = 12
+		"7M4Fqj5nRRMX46uyiWBS8bh172RwQLpDLNcb62FXBtrk": 10,  // D  : (0.2 * 60) = 12
+		"3R62BC7SsXoJuKRibV3p2ywSCDZiCYMvkcy6quR3JSL4": 9,   // E  : (0.2 * 60) = 12
 	}
+	totalAMana = 1000.
+)
+
+func accessManaMapRetriever() map[identity.ID]float64 {
+	nodeMap := make(map[identity.ID]float64)
+	for rawNodeID, nodeMana := range fixedAccessMana {
+		id := identity.ID{}
+		idRaw, err := base58.Decode(rawNodeID)
+		if err != nil {
+			return nodeMap
+		}
+		copy(id[:], idRaw)
+		nodeMap[id] = nodeMana
+	}
+	//nodeMap, _, err := GetManaMap(mana.AccessMana)
+	//if err != nil {
+	//	return mana.NodeMap{}
+	//}
 	return nodeMap
 }
 
 func accessManaRetriever(nodeID identity.ID) float64 {
-	nodeMana, _, err := GetAccessMana(nodeID)
-	if err != nil {
+	aMana, exist := fixedAccessMana[base58.Encode(nodeID.Bytes())]
+	if !exist {
 		return 0
 	}
-	return nodeMana
+	return aMana
 }
 
 func totalAccessManaRetriever() float64 {
-	totalMana, _, err := GetTotalMana(mana.AccessMana)
-	if err != nil {
-		return 0
-	}
-	return totalMana
+	return totalAMana
 }
 
 // endregion ///////////////////////////////////////////////////////////////////////////////////////////////////////////

@@ -40,7 +40,7 @@ func BenchmarkVerifyDataMessages(b *testing.B) {
 
 	messages := make([][]byte, b.N)
 	for i := 0; i < b.N; i++ {
-		msg, err := factory.IssuePayload(payload.NewGenericDataPayload([]byte("some data")))
+		msg, err := factory.IssuePayload(payload.NewGenericDataPayload([]byte("some data")), tangle.Options.Identity)
 		require.NoError(b, err)
 		messages[i] = msg.Bytes()
 	}
@@ -72,7 +72,7 @@ func BenchmarkVerifySignature(b *testing.B) {
 
 	messages := make([]*Message, b.N)
 	for i := 0; i < b.N; i++ {
-		msg, err := factory.IssuePayload(payload.NewGenericDataPayload([]byte("some data")))
+		msg, err := factory.IssuePayload(payload.NewGenericDataPayload([]byte("some data")), tangle.Options.Identity)
 		require.NoError(b, err)
 		messages[i] = msg
 		messages[i].Bytes()
@@ -248,7 +248,7 @@ func TestTangle_MissingMessages(t *testing.T) {
 	// create a helper function that creates the messages
 	createNewMessage := func() *Message {
 		// issue the payload
-		msg, err := tangle.MessageFactory.IssuePayload(payload.NewGenericDataPayload([]byte("")))
+		msg, err := tangle.MessageFactory.IssuePayload(payload.NewGenericDataPayload([]byte("")), tangle.Options.Identity)
 		require.NoError(t, err)
 
 		// remove a tip if the width of the tangle is reached
@@ -413,7 +413,7 @@ func TestTangle_Flow(t *testing.T) {
 		if invalidTS {
 			msg, err = tangle.MessageFactory.issueInvalidTsPayload(payload.NewGenericDataPayload([]byte("")))
 		} else {
-			msg, err = tangle.MessageFactory.IssuePayload(payload.NewGenericDataPayload([]byte("")))
+			msg, err = tangle.MessageFactory.IssuePayload(payload.NewGenericDataPayload([]byte("")), tangle.Options.Identity)
 		}
 		require.NoError(t, err)
 
@@ -604,7 +604,7 @@ func (f *MessageFactory) issueInvalidTsPayload(p payload.Payload, _ ...*Tangle) 
 	}
 
 	// create the signature
-	signature := f.sign(strongParents, weakParents, issuingTime, issuerPublicKey, sequenceNumber, p, nonce)
+	signature := f.sign(strongParents, weakParents, issuingTime, issuerPublicKey, sequenceNumber, p, nonce, f.localIdentity)
 
 	msg := NewMessage(
 		strongParents,

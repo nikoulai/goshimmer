@@ -18,3 +18,8 @@ type MissingResponse struct {
 	IDs   []string `json:"ids,omitempty"`
 	Count int      `json:"count,omitempty"`
 }
+
+// NodeQTrackerRequest contains the parameters of a spammer request.
+type NodeQTrackerRequest struct {
+	Cmd string `json:"cmd"`
+}

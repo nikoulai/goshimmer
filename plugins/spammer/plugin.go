@@ -38,7 +38,7 @@ func init() {
 func configure(_ *node.Plugin) {
 	log = logger.NewLogger(PluginName)
 
-	messageSpammer = spammer.New(deps.Tangle.IssuePayload, log)
+	messageSpammer = spammer.New(deps.Tangle.IssuePayload, deps.Tangle.Options.Identity, log)
 	deps.Server.GET("spammer", handleRequest)
 }
 
