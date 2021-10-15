@@ -1,6 +1,7 @@
 package tangle
 
 import (
+	"fmt"
 	"math"
 	"sync"
 	"time"
@@ -26,7 +27,7 @@ const (
 	oldMessageThreshold = 5 * time.Minute
 )
 
-// ErrNotRunning is returned when a message is submitted when the scheduler has been stopped
+// ErrNotRunning is returned when a message is submitted when the scheduler has been stopped.
 var ErrNotRunning = errors.New("scheduler stopped")
 
 // SchedulerParams defines the scheduler config parameters.
@@ -58,8 +59,8 @@ type Scheduler struct {
 
 // NewScheduler returns a new Scheduler.
 func NewScheduler(tangle *Tangle) *Scheduler {
-	if tangle.Options.SchedulerParams.AccessManaRetrieveFunc == nil || tangle.Options.SchedulerParams.TotalAccessManaRetrieveFunc == nil {
-		panic("scheduler: the option AccessManaRetriever and TotalAccessManaRetriever must be defined so that AccessMana can be determined in scheduler")
+	if tangle.Options.SchedulerParams.AccessManaMapRetrieverFunc == nil || tangle.Options.SchedulerParams.AccessManaRetrieveFunc == nil || tangle.Options.SchedulerParams.TotalAccessManaRetrieveFunc == nil {
+		panic("scheduler: the option AccessManaMapRetrieverFunc and AccessManaRetriever and TotalAccessManaRetriever must be defined so that AccessMana can be determined in scheduler")
 	}
 
 	// maximum buffer size (in bytes)
@@ -72,6 +73,7 @@ func NewScheduler(tangle *Tangle) *Scheduler {
 			MessageScheduled: events.NewEvent(MessageIDCaller),
 			MessageDiscarded: events.NewEvent(MessageIDCaller),
 			NodeBlacklisted:  events.NewEvent(NodeIDCaller),
+			SchedulerTicked:  events.NewEvent(events.VoidCaller),
 			Error:            events.NewEvent(events.ErrorCaller),
 		},
 		tangle:         tangle,
@@ -291,6 +293,17 @@ func (s *Scheduler) schedule() *Message {
 		return nil
 	}
 
+	// cache the access mana retrieval
+	manas := make(map[identity.ID]float64, s.buffer.NumActiveNodes())
+	getCachedMana := func(id identity.ID) float64 {
+		if mana, ok := manas[id]; ok {
+			return mana
+		}
+		mana := math.Max(s.tangle.Options.SchedulerParams.AccessManaRetrieveFunc(id), MinMana)
+		manas[id] = mana
+		return mana
+	}
+
 	var schedulingNode *schedulerutils.NodeQueue
 	rounds := math.MaxInt32
 	now := clock.SyncedTime()
@@ -300,7 +313,7 @@ func (s *Scheduler) schedule() *Message {
 		if msg != nil && !now.Before(msg.IssuingTime()) {
 			// compute how often the deficit needs to be incremented until the message can be scheduled
 			remainingDeficit := math.Dim(float64(msg.Size()), s.getDeficit(q.NodeID()))
-			r := int(math.Ceil(remainingDeficit / manaCache[q.NodeID()]))
+			r := int(math.Ceil(remainingDeficit / getCachedMana(q.NodeID())))
 			// find the first node that will be allowed to schedule a message
 			if r < rounds {
 				rounds = r
@@ -322,7 +335,7 @@ func (s *Scheduler) schedule() *Message {
 	if rounds > 0 {
 		// increment every node's deficit for the required number of rounds
 		for q := start; ; {
-			s.updateDeficit(q.NodeID(), float64(rounds)*manaCache[q.NodeID()])
+			s.updateDeficit(q.NodeID(), float64(rounds)*getCachedMana(q.NodeID()))
 
 			q = s.buffer.Next()
 			if q == start {
@@ -333,7 +346,7 @@ func (s *Scheduler) schedule() *Message {
 
 	// increment the deficit for all nodes before schedulingNode one more time
 	for q := start; q != schedulingNode; q = s.buffer.Next() {
-		s.updateDeficit(q.NodeID(), manaCache[q.NodeID()])
+		s.updateDeficit(q.NodeID(), getCachedMana(q.NodeID()))
 	}
 
 	// remove the message from the buffer and adjust node's deficit
@@ -351,6 +364,7 @@ func (s *Scheduler) updateActiveNodesList(manaCache map[identity.ID]float64) {
 			continue
 		}
 		if _, exists := s.deficits[nodeID]; !exists {
+			fmt.Println("Add node buffer: ", nodeID.String())
 			s.deficits[nodeID] = 0
 			s.buffer.InsertNode(nodeID)
 		}
@@ -364,6 +378,7 @@ func (s *Scheduler) updateActiveNodesList(manaCache map[identity.ID]float64) {
 	for q := start; q != nil; {
 		// should messages added to the queue when node had mana be scheduled or simply removed? currently are removed
 		if nodeMana, exists := manaCache[q.NodeID()]; !exists || nodeMana < MinMana {
+			fmt.Println("Delete node from buffer: ", q.NodeID().String())
 			s.buffer.RemoveNode(q.NodeID())
 			delete(s.deficits, q.NodeID())
 			q = s.buffer.Current()
@@ -387,6 +402,7 @@ loop:
 		select {
 		// every rate time units
 		case <-s.ticker.C:
+			s.Events.SchedulerTicked.Trigger()
 			// TODO: pause the ticker, if there are no ready messages
 			if msg := s.schedule(); msg != nil {
 				s.tangle.Storage.MessageMetadata(msg.ID()).Consume(func(messageMetadata *MessageMetadata) {
@@ -429,6 +445,7 @@ type SchedulerEvents struct {
 	MessageScheduled *events.Event
 	MessageDiscarded *events.Event
 	NodeBlacklisted  *events.Event
+	SchedulerTicked  *events.Event
 	Error            *events.Event
 }
 
