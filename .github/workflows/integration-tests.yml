@@ -4,6 +4,9 @@ on:
   pull_request:
     paths-ignore:
       - 'docs/**'
+  push:
+    branches:
+      - debug-libp2p-tests
 env:
   DOCKER_BUILDKIT: 1
 
