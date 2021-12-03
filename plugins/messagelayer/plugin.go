@@ -9,6 +9,7 @@ import (
 	"github.com/iotaledger/hive.go/autopeering/peer"
 	"github.com/iotaledger/hive.go/crypto/ed25519"
 	"github.com/iotaledger/hive.go/daemon"
+	"github.com/iotaledger/hive.go/datastructure/walker"
 	"github.com/iotaledger/hive.go/events"
 	"github.com/iotaledger/hive.go/identity"
 	"github.com/iotaledger/hive.go/kvstore"
@@ -152,6 +153,20 @@ func configure(plugin *node.Plugin) {
 	fcob.LocallyFinalizedThreshold = 2 * Parameters.FCOB.QuarantineTime
 
 	configureApprovalWeight()
+
+	Tangle().TipManager.Set(retrieveTips()...)
+}
+
+func retrieveTips() (tips []tangle.MessageID) {
+	Tangle().Utils.WalkMessageID(func(messageID tangle.MessageID, walker *walker.Walker) {
+		if !Tangle().Storage.Approvers(messageID).Consume(func(approver *tangle.Approver) {
+			walker.Push(approver.ApproverMessageID())
+		}) {
+			tips = append(tips, messageID)
+		}
+	}, tangle.MessageIDs{tangle.EmptyMessageID})
+
+	return tips
 }
 
 func run(*node.Plugin) {
