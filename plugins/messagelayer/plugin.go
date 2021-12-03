@@ -154,12 +154,12 @@ func configure(plugin *node.Plugin) {
 
 	configureApprovalWeight()
 
-	Tangle().TipManager.Set(retrieveTips()...)
+	deps.Tangle.TipManager.Set(retrieveTips()...)
 }
 
 func retrieveTips() (tips []tangle.MessageID) {
-	Tangle().Utils.WalkMessageID(func(messageID tangle.MessageID, walker *walker.Walker) {
-		if !Tangle().Storage.Approvers(messageID).Consume(func(approver *tangle.Approver) {
+	deps.Tangle.Utils.WalkMessageID(func(messageID tangle.MessageID, walker *walker.Walker) {
+		if !deps.Tangle.Storage.Approvers(messageID).Consume(func(approver *tangle.Approver) {
 			walker.Push(approver.ApproverMessageID())
 		}) {
 			tips = append(tips, messageID)
