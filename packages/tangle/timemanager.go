@@ -27,8 +27,9 @@ const (
 type TimeManager struct {
 	Events *TimeManagerEvents
 
-	tangle      *Tangle
-	startSynced bool
+	tangle       *Tangle
+	startSynced  bool
+	alwaysSynced bool
 
 	lastConfirmedMutex   sync.RWMutex
 	lastConfirmedMessage LastConfirmedMessage
@@ -47,6 +48,7 @@ func NewTimeManager(tangle *Tangle) *TimeManager {
 		},
 		tangle:         tangle,
 		startSynced:    tangle.Options.StartSynced,
+		alwaysSynced:   tangle.Options.AlwaysSynced,
 		shutdownSignal: make(chan struct{}),
 	}
 
@@ -123,6 +125,9 @@ func (t *TimeManager) Synced() bool {
 }
 
 func (t *TimeManager) synced() bool {
+	if t.alwaysSynced {
+		return true
+	}
 	if t.startSynced && t.lastConfirmedMessage.Time.Unix() == DefaultGenesisTime {
 		return true
 	}

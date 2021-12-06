@@ -126,8 +126,6 @@ func (t *TimedTaskExecutor) Cancel(identifier interface{}) (canceled bool) {
 
 // region TipManager ///////////////////////////////////////////////////////////////////////////////////////////////////
 
-const tipLifeGracePeriod = maxParentsTimeDifference - 1*time.Minute
-
 // TipManager manages a map of tips and emits events for their removal and addition.
 type TipManager struct {
 	tangle      *Tangle
@@ -179,6 +177,7 @@ func (t *TipManager) Set(tips ...MessageID) {
 // a strong or weak tip depending on its branch status. Parents of a message that are currently tip lose the tip status
 // and are removed.
 func (t *TipManager) AddTip(message *Message) {
+	tipLifeGracePeriod := maxParentsTimeDifference - 1*time.Minute
 	messageID := message.ID()
 	cachedMessageMetadata := t.tangle.Storage.MessageMetadata(messageID)
 	messageMetadata := cachedMessageMetadata.Unwrap()

@@ -253,7 +253,9 @@ type Options struct {
 	RateSetterParams             RateSetterParams
 	WeightProvider               WeightProvider
 	SyncTimeWindow               time.Duration
+	MaxParentsTimeDifference     time.Duration
 	StartSynced                  bool
+	AlwaysSynced                 bool
 	CacheTimeProvider            *database.CacheTimeProvider
 }
 
@@ -337,10 +339,25 @@ func SyncTimeWindow(syncTimeWindow time.Duration) Option {
 	}
 }
 
+// MaxParentsTimeDifference is an Option for the Tangle that allows to define the biggest allowed time difference
+// between a child Message and its parents.
+func MaxParentsTimeDifference(maxParentsTimeDifference time.Duration) Option {
+	return func(options *Options) {
+		options.MaxParentsTimeDifference = maxParentsTimeDifference
+	}
+}
+
 // StartSynced is an Option for the Tangle that allows to define if the node starts as synced.
 func StartSynced(startSynced bool) Option {
 	return func(options *Options) {
 		options.StartSynced = startSynced
+	}
+}
+
+// AlwaysSynced is an Option for the Tangle that allows to define if the node should always be synced.
+func AlwaysSynced(alwaysSynced bool) Option {
+	return func(options *Options) {
+		options.AlwaysSynced = alwaysSynced
 	}
 }
 

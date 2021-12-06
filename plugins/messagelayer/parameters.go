@@ -28,8 +28,14 @@ type ParametersDefinition struct {
 	// TangleTimeWindow defines the time window in which the node considers itself as synced according to TangleTime.
 	TangleTimeWindow time.Duration `default:"2m" usage:"the time window in which the node considers itself as synced according to TangleTime"`
 
+	// MaxParentsTimeDifference defines the biggest allowed time difference between a child Message and its parents.
+	MaxParentsTimeDifference time.Duration `default:"30m" usage:"the biggest allowed time difference between a child Message and its parents"`
+
 	// StartSynced defines if the node should start as synced.
 	StartSynced bool `default:"false" usage:"start as synced"`
+
+	// AlwaysSynced defines if the node should always be synced.
+	AlwaysSynced bool `default:"false" usage:"always synced"`
 }
 
 // ManaParametersDefinition contains the definition of the parameters used by the mana plugin.

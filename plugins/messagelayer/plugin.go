@@ -154,7 +154,9 @@ func configure(plugin *node.Plugin) {
 
 	configureApprovalWeight()
 
-	deps.Tangle.TipManager.Set(retrieveTips()...)
+	if deps.Tangle.Options.AlwaysSynced {
+		deps.Tangle.TipManager.Set(retrieveTips()...)
+	}
 }
 
 func retrieveTips() (tips []tangle.MessageID) {
@@ -202,7 +204,9 @@ func newTangle(deps tangledeps) *tangle.Tangle {
 			Initial: &RateSetterParameters.Initial,
 		}),
 		tangle.SyncTimeWindow(Parameters.TangleTimeWindow),
+		tangle.MaxParentsTimeDifference(Parameters.MaxParentsTimeDifference),
 		tangle.StartSynced(Parameters.StartSynced),
+		tangle.AlwaysSynced(Parameters.AlwaysSynced),
 		tangle.CacheTimeProvider(database.CacheTimeProvider()),
 	)
 

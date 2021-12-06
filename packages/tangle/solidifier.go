@@ -12,7 +12,7 @@ import (
 const minParentsTimeDifference = 0 * time.Second
 
 // maxParentsTimeDifference defines the biggest allowed time difference between a child Message and its parents.
-const maxParentsTimeDifference = 30 * time.Minute
+var maxParentsTimeDifference = 30 * time.Minute
 
 // region Solidifier ///////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -35,6 +35,7 @@ func NewSolidifier(tangle *Tangle) (solidifier *Solidifier) {
 
 		tangle: tangle,
 	}
+	maxParentsTimeDifference = tangle.Options.MaxParentsTimeDifference
 
 	return
 }
