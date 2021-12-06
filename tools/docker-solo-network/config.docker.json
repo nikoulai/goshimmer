@@ -1,0 +1,70 @@
+{
+  "analysis": {
+    "client": {
+      "serverAddress": "peer_master:1888"
+    },
+    "server": {
+      "bindAddress": "0.0.0.0:1888"
+    },
+    "dashboard": {
+      "bindAddress": "0.0.0.0:9000",
+      "dev": false
+    }
+  },
+  "autoPeering": {
+    "enabled": false
+  },
+  "dashboard": {
+    "bindAddress": "0.0.0.0:8081",
+    "dev": false,
+    "basicAuth": {
+      "enabled": false,
+      "username": "goshimmer",
+      "password": "goshimmer"
+    }
+  },
+  "database": {
+    "directory": "mainnetdb"
+  },
+  "gossip": {
+    "port": 14666
+  },
+  "logger": {
+    "level": "info",
+    "disableCaller": false,
+    "disableStacktrace": false,
+    "encoding": "console",
+    "outputPaths": [
+      "stdout"
+    ],
+    "disableEvents": true
+  },
+  "metrics": {
+    "manaUpdateInterval": "5s"
+  },
+  "network": {
+    "bindAddress": "0.0.0.0",
+    "externalAddress": "auto"
+  },
+  "node": {
+    "disablePlugins": "portcheck,autopeering",
+    "enablePlugins": []
+  },
+  "pow": {
+    "difficulty": 2,
+    "numThreads": 1,
+    "timeout": "10s",
+    "parentsRefreshInterval": "300ms"
+  },
+  "webAPI": {
+    "basicAuth": {
+      "enabled": false,
+      "username": "goshimmer",
+      "password": "goshimmer"
+    },
+    "bindAddress": "0.0.0.0:8080"
+  },
+  "faucet": {
+    "powDifficulty": 12
+  }
+}

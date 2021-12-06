@@ -1,0 +1,64 @@
+version: "3.9"
+# Create a custom build that can be re-used within Docker network
+x-build-goshimmer: &goshimmer_build
+  context: ../../
+  args:
+    DOWNLOAD_SNAPSHOT: 0
+services:
+  goshimmer_node:
+    build: *goshimmer_build
+    stop_grace_period: 1m
+    command: >
+      --analysis.dashboard.bindAddress=0.0.0.0:9000
+      --analysis.dashboard.dev=false
+      --analysis.server.bindAddress=0.0.0.0:1888
+      --autoPeering.entryNodes=
+      --node.seed=base58:3YX6e7AL28hHihZewKdq6CMkEYVsTJBLgRiprUNiNq5E
+      --node.overwriteStoredSeed=true
+      --config=/run/secrets/goshimmer.config.json
+      --database.directory=/tmp/mainnetdb
+      --node.peerDBDirectory=/tmp/peerdb
+      --mana.enableResearchVectors=false
+      --mana.snapshotResetTime=true
+      --messageLayer.snapshot.file=/run/secrets/goshimmer.message.snapshot.bin
+      --messageLayer.snapshot.genesisNode=
+      --messageLayer.alwaysSynced=true
+      --messageLayer.maxParentsTimeDifference=1000000m
+      --metrics.global=true
+      --metrics.local=true
+      --metrics.manaResearch=false
+      --node.disablePlugins=portcheck,clock
+      --node.enablePlugins=analysisServer,analysisDashboard,webAPIToolsEndpoint,faucet,activity,spammer,WebAPIToolsMessageEndpoint,snapshot
+      --faucet.seed=7R1itJx5hVuo9w9hjg5cwKFmek4HMSoBDgJZN8hKGxih
+      --prometheus.bindAddress=0.0.0.0:9311
+      --prometheus.processMetrics=false
+      --webAPI.exportPath=/tmp/
+    secrets:
+      - goshimmer.config.json
+      - goshimmer.message.snapshot.bin
+    volumes:
+      - shimmerdb:/tmp/mainnetdb
+      - peerdb:/tmp/peerdb
+    ports:
+      - "8080:8080/tcp" # web API
+      - "8081:8081/tcp" # dashboard
+      - "9000:9000/tcp" # analysis dashboard
+    expose:
+      - 1888/tcp # analysis server
+    networks:
+      - shimmer
+# Create our own network
+networks:
+  shimmer:
+    driver: bridge
+# Named Docker volumes for data persistence
+# ./run.sh removes these on exit
+volumes:
+  shimmerdb:
+  peerdb:
+# read only files to load in the containers that may be shared across containers
+secrets:
+  goshimmer.message.snapshot.bin:
+    file: ${SNAPSHOT_FILE:-../integration-tests/assets/7R1itJx5hVuo9w9hjg5cwKFmek4HMSoBDgJZN8hKGxih.bin}
+  goshimmer.config.json:
+    file: ${GOSHIMMER_CONFIG:-./config.docker.json}
