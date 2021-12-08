@@ -99,7 +99,7 @@ func (t *TimedTaskExecutor) Cancel(identifier interface{}) (canceled bool) {
 
 // region TipManager ///////////////////////////////////////////////////////////////////////////////////////////////////
 
-const tipLifeGracePeriod = maxParentsTimeDifference - 1*time.Minute
+const tipLifeGracePeriodDiff = 1 * time.Minute
 
 // TipManager manages a map of tips and emits events for their removal and addition.
 type TipManager struct {
@@ -149,6 +149,8 @@ func (t *TipManager) Set(tips ...MessageID) {
 // AddTip adds the message to the tip pool if its issuing time is within the tipLifeGracePeriod.
 // Parents of a message that are currently tip lose the tip status and are removed.
 func (t *TipManager) AddTip(message *Message) {
+	tipLifeGracePeriod := t.tangle.Options.SolidifierParams.MaxParentsTimeDifference - tipLifeGracePeriodDiff
+
 	messageID := message.ID()
 	cachedMessageMetadata := t.tangle.Storage.MessageMetadata(messageID)
 	messageMetadata := cachedMessageMetadata.Unwrap()
@@ -241,7 +243,7 @@ func (t *TipManager) selectTips(p payload.Payload, count int) (parents MessageID
 					t.tangle.Storage.Message(attachmentMessageID).Consume(func(message *Message) {
 						// check if message is too old
 						timeDifference := clock.SyncedTime().Sub(message.IssuingTime())
-						if timeDifference <= maxParentsTimeDifference {
+						if timeDifference <= t.tangle.Options.SolidifierParams.MaxParentsTimeDifference {
 							if _, ok := parentsMap[attachmentMessageID]; !ok {
 								parentsMap[attachmentMessageID] = types.Void
 								parents = append(parents, attachmentMessageID)

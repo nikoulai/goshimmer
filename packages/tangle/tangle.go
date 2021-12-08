@@ -238,6 +238,7 @@ type Options struct {
 	GenesisNode                  *ed25519.PublicKey
 	SchedulerParams              SchedulerParams
 	RateSetterParams             RateSetterParams
+	SolidifierParams             SolidifierParams
 	WeightProvider               WeightProvider
 	SyncTimeWindow               time.Duration
 	StartSynced                  bool
@@ -299,6 +300,13 @@ func SchedulerConfig(config SchedulerParams) Option {
 func RateSetterConfig(params RateSetterParams) Option {
 	return func(options *Options) {
 		options.RateSetterParams = params
+	}
+}
+
+// SolidifierConfig is an Option for the Tangle that allows to set the solidifier.
+func SolidifierConfig(params SolidifierParams) Option {
+	return func(options *Options) {
+		options.SolidifierParams = params
 	}
 }
 

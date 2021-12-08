@@ -275,7 +275,7 @@ func TestMessageFactory_PrepareLikedReferences_2(t *testing.T) {
 	checkReferences(t, tangle, MessageIDs{testFramework.Message("3").ID(), testFramework.Message("4").ID()}, MessageIDs{testFramework.Message("2").ID(), testFramework.Message("5").ID()}, time.Now())
 
 	// Do not return too old like reference
-	checkReferences(t, tangle, MessageIDs{testFramework.Message("3").ID(), testFramework.Message("4").ID()}, MessageIDs{testFramework.Message("2").ID()}, time.Now().Add(maxParentsTimeDifference))
+	checkReferences(t, tangle, MessageIDs{testFramework.Message("3").ID(), testFramework.Message("4").ID()}, MessageIDs{testFramework.Message("2").ID()}, time.Now().Add(tangle.Options.SolidifierParams.MaxParentsTimeDifference))
 }
 
 // Tests if error is returned when non-existing transaction is tried to be liked.

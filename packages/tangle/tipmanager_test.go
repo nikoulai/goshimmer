@@ -290,7 +290,7 @@ func TestTipManager_TransactionTips(t *testing.T) {
 
 		transactions["1"] = makeTransaction(ledgerstate.NewInputs(inputs["G1"]), ledgerstate.NewOutputs(outputs["A"], outputs["B"], outputs["C"]), outputsByID, walletsByAddress, wallets["G1"])
 		// make sure that message is too old and cannot be directly referenced
-		issueTime := time.Now().Add(-maxParentsTimeDifference - 5*time.Minute)
+		issueTime := time.Now().Add(-tangle.Options.SolidifierParams.MaxParentsTimeDifference - 5*time.Minute)
 		messages["1"] = newTestParentsPayloadWithTimestamp(transactions["1"], []MessageID{EmptyMessageID}, []MessageID{}, nil, nil, issueTime)
 
 		storeAndBookMessage(t, tangle, messages["1"])

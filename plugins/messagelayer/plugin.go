@@ -188,6 +188,10 @@ func newTangle(deps tangledeps) *tangle.Tangle {
 		tangle.RateSetterConfig(tangle.RateSetterParams{
 			Initial: &RateSetterParameters.Initial,
 		}),
+		tangle.SolidifierConfig(tangle.SolidifierParams{
+			MaxParentsTimeDifference: SolidifierParameters.MaxParentsTimeDifference,
+			MinParentsTimeDifference: SolidifierParameters.MinParentsTimeDifference,
+		}),
 		tangle.SyncTimeWindow(Parameters.TangleTimeWindow),
 		tangle.StartSynced(Parameters.StartSynced),
 		tangle.CacheTimeProvider(database.CacheTimeProvider()),

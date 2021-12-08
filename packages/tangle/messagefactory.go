@@ -363,7 +363,7 @@ func PrepareLikeReferences(parents MessageIDs, issuingTime time.Time, tangle *Ta
 				likeReferencesMap[oldestAttachmentMessageID] = types.Void
 				// check difference between issuing time and message that would be set as like reference, to avoid setting too old message.
 				// what if original message is older than maxParentsTimeDifference even though the branch still exists?
-				if issuingTime.Sub(oldestAttachmentTime) < maxParentsTimeDifference {
+				if issuingTime.Sub(oldestAttachmentTime) < tangle.Options.SolidifierParams.MaxParentsTimeDifference {
 					likeReferences = append(likeReferences, oldestAttachmentMessageID)
 				}
 			}

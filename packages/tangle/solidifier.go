@@ -8,11 +8,15 @@ import (
 	"github.com/iotaledger/hive.go/syncutils"
 )
 
-// maxParentsTimeDifference defines the smallest allowed time difference between a child Message and its parents.
-const minParentsTimeDifference = 0 * time.Second
+// region SolidifierParams /////////////////////////////////////////////////////////////////////////////////////////////
 
-// maxParentsTimeDifference defines the biggest allowed time difference between a child Message and its parents.
-const maxParentsTimeDifference = 30 * time.Minute
+// SolidifierParams represents the parameters for the Solidifier.
+type SolidifierParams struct {
+	MinParentsTimeDifference time.Duration
+	MaxParentsTimeDifference time.Duration
+}
+
+// endregion ///////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 // region Solidifier ///////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -156,7 +160,7 @@ func (s *Solidifier) isParentMessageValid(parentMessageID MessageID, childMessag
 
 		s.tangle.Storage.MessageMetadata(parentMessageID).Consume(func(messageMetadata *MessageMetadata) {
 			timeDifference := childMessage.IssuingTime().Sub(messageMetadata.SolidificationTime())
-			valid = timeDifference >= minParentsTimeDifference && timeDifference <= maxParentsTimeDifference
+			valid = timeDifference >= s.tangle.Options.SolidifierParams.MinParentsTimeDifference && timeDifference <= s.tangle.Options.SolidifierParams.MaxParentsTimeDifference
 		})
 		return
 	}
@@ -164,7 +168,7 @@ func (s *Solidifier) isParentMessageValid(parentMessageID MessageID, childMessag
 	s.tangle.Storage.Message(parentMessageID).Consume(func(parentMessage *Message) {
 		timeDifference := childMessage.IssuingTime().Sub(parentMessage.IssuingTime())
 
-		valid = timeDifference >= minParentsTimeDifference && timeDifference <= maxParentsTimeDifference
+		valid = timeDifference >= s.tangle.Options.SolidifierParams.MinParentsTimeDifference && timeDifference <= s.tangle.Options.SolidifierParams.MaxParentsTimeDifference
 	})
 
 	s.tangle.Storage.MessageMetadata(parentMessageID).Consume(func(messageMetadata *MessageMetadata) {

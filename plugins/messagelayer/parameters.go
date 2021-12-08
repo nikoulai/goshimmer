@@ -69,6 +69,14 @@ type SchedulerParametersDefinition struct {
 	Rate string `default:"5ms" usage:"message scheduling interval [time duration string]"`
 }
 
+// SolidifierParametersDefinition contains the definition of the parameters used by the Solidifier.
+type SolidifierParametersDefinition struct {
+	// MaxBufferSize defines the maximum buffer size (in bytes).
+	MaxParentsTimeDifference time.Duration `default:"30m" usage:"the biggest allowed time difference between a child Message and its parents"`
+	// SchedulerRate defines the frequency to schedule a message.
+	MinParentsTimeDifference time.Duration `default:"0s" usage:"the smallest allowed time difference between a child Message and its parents"`
+}
+
 // Parameters contains the general configuration used by the messagelayer plugin.
 var Parameters = &ParametersDefinition{}
 
@@ -81,9 +89,13 @@ var RateSetterParameters = &RateSetterParametersDefinition{}
 // SchedulerParameters contains the scheduler configuration used by the messagelayer plugin.
 var SchedulerParameters = &SchedulerParametersDefinition{}
 
+// SolidifierParameters contains the solidifier configuration used by the messagelayer plugin.
+var SolidifierParameters = &SolidifierParametersDefinition{}
+
 func init() {
 	configuration.BindParameters(Parameters, "messageLayer")
 	configuration.BindParameters(ManaParameters, "mana")
 	configuration.BindParameters(RateSetterParameters, "rateSetter")
 	configuration.BindParameters(SchedulerParameters, "scheduler")
+	configuration.BindParameters(SolidifierParameters, "solidifier")
 }
