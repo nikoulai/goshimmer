@@ -3,7 +3,10 @@ package client
 import (
 	"encoding/csv"
 	"fmt"
+	"github.com/iotaledger/goshimmer/packages/jsonmodels"
 	"net/http"
+	"strconv"
+	"time"
 )
 
 const (
@@ -26,6 +29,8 @@ const (
 	RouteDiagnosticsTips = routeDiagnostics + "/tips"
 	// RouteDiagnosticsDRNG is the API route for DRNG diagnostics.
 	RouteDiagnosticsDRNG = routeDiagnostics + "/drng"
+	// RouteDiagnosticOrphanage is the APi route for orphanage diagnostic with end time in unix nano format.
+	RouteDiagnosticOrphanage = routeDiagnostics + "/orphanage"
 )
 
 // GetDiagnosticsMessages runs full message diagnostics
@@ -108,6 +113,20 @@ func (api *GoShimmerAPI) GetDiagnosticsTips() (*csv.Reader, error) {
 //	dRNGPayloadType,InstanceID,Round,PreviousSignature,Signature,DistributedPK
 func (api *GoShimmerAPI) GetDiagnosticsDRNG() (*csv.Reader, error) {
 	return api.diagnose(RouteDiagnosticsDRNG)
+}
+
+// GetDiagnosticsOrphanage runds diagnostic orphanage over the tangle, takes current time that will indicate
+// time after which it can stop walking, to syncronize results from different clients
+// Returns OrphanageResponse json response.
+func (api *GoShimmerAPI) GetDiagnosticsOrphanage(time time.Time) (*jsonmodels.OrphanageResponse, error) {
+	response := &jsonmodels.OrphanageResponse{}
+	timeStr := strconv.Itoa(int(time.UnixNano()))
+	route := RouteDiagnosticOrphanage + "/" + timeStr
+
+	if err := api.do(http.MethodGet, route, nil, response); err != nil {
+		return nil, err
+	}
+	return response, nil
 }
 
 // run an api call on a certain route and return a csv.

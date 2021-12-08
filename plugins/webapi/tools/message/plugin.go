@@ -53,6 +53,8 @@ const (
 	RouteDiagnosticsStrongTips = RouteDiagnosticsTips + "/strong"
 	// RouteDiagnosticsWeakTips is the API route for weak tips diagnostics.
 	RouteDiagnosticsWeakTips = RouteDiagnosticsTips + "/weak"
+	// RouteDiagnosticOrphanage is the APi route for orphanage diagnostic with end time in unix nano format.
+	RouteDiagnosticOrphanage = routeDiagnostics + "/orphanage/:time"
 )
 
 func configure(_ *node.Plugin) {
@@ -69,4 +71,5 @@ func configure(_ *node.Plugin) {
 	deps.Server.GET(RouteDiagnosticsLazyBookedBranches, DiagnosticLazyBookedBranchesHandler)
 	deps.Server.GET(RouteDiagnosticsInvalidBranches, DiagnosticInvalidBranchesHandler)
 	deps.Server.GET(RouteDiagnosticsTips, TipsDiagnosticHandler)
+	deps.Server.GET(RouteDiagnosticOrphanage, DiagnosticOrphanageHandler)
 }

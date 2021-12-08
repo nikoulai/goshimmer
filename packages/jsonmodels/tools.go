@@ -1,5 +1,7 @@
 package jsonmodels
 
+import "time"
+
 // PastconeRequest holds the message id to query.
 type PastconeRequest struct {
 	ID string `json:"id"`
@@ -23,4 +25,24 @@ type MissingResponse struct {
 type MissingAvailableResponse struct {
 	Availability map[string][]string `json:"msgavailability,omitempty"`
 	Count        int                 `json:"count"`
+}
+
+// OrphanageResponse is a struct providing response for an orphanage diagnostic API
+type OrphanageResponse struct {
+	CreatorNodeID string         `json:"creatorNodeId"`
+	WalkStartTime int64          `json:"walkStartTime"`
+	MaxParentAge  int64          `json:"maxParentAge"`
+	OrphansByNode map[string]int `json:"orphansByNode,omitempty"`
+	IssuedByNode  map[string]int `json:"issuedByNode,omitempty"`
+}
+
+// NewOrphanageResponse creates a response object for OrphanageResponse json model
+func NewOrphanageResponse(nodeId string, startTime time.Time, maxAge time.Duration, orphansByNode map[string]int, issuedByNode map[string]int) *OrphanageResponse {
+	return &OrphanageResponse{
+		CreatorNodeID: nodeId,
+		WalkStartTime: startTime.UnixNano(),
+		MaxParentAge:  maxAge.Nanoseconds(),
+		OrphansByNode: orphansByNode,
+		IssuedByNode:  issuedByNode,
+	}
 }
