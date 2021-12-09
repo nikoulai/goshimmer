@@ -239,6 +239,7 @@ type Options struct {
 	SchedulerParams              SchedulerParams
 	RateSetterParams             RateSetterParams
 	SolidifierParams             SolidifierParams
+	TipManagerParams             TipManagerParams
 	WeightProvider               WeightProvider
 	SyncTimeWindow               time.Duration
 	StartSynced                  bool
@@ -307,6 +308,13 @@ func RateSetterConfig(params RateSetterParams) Option {
 func SolidifierConfig(params SolidifierParams) Option {
 	return func(options *Options) {
 		options.SolidifierParams = params
+	}
+}
+
+// TipManagerConfig is an Option for the Tangle that allows to set the tip manager.
+func TipManagerConfig(params TipManagerParams) Option {
+	return func(options *Options) {
+		options.TipManagerParams = params
 	}
 }
 

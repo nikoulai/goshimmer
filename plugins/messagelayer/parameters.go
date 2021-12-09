@@ -77,6 +77,16 @@ type SolidifierParametersDefinition struct {
 	MinParentsTimeDifference time.Duration `default:"0s" usage:"the smallest allowed time difference between a child Message and its parents"`
 }
 
+// TipManagerParametersDefinition contains the definition of the parameters used by the Solidifier.
+type TipManagerParametersDefinition struct {
+	// MinParentsCount defines the minimum number of parents each parents block must have.
+	MinParentsCount int `default:"1" usage:"the minimum number of parents each parents block must have"`
+	// MaxParentsCount defines the maximum number of parents each parents block must have.
+	MaxParentsCount int `default:"8" usage:"the maximum number of parents each parents block must have"`
+	// TipLifeGracePeriodDiff defines the time difference between removing old tip from the tip pool and max parent age check.
+	TipLifeGracePeriodDiff time.Duration `default:"1m" usage:"the time difference between removing old tip from the tip pool and max parent age check"`
+}
+
 // Parameters contains the general configuration used by the messagelayer plugin.
 var Parameters = &ParametersDefinition{}
 
@@ -92,10 +102,14 @@ var SchedulerParameters = &SchedulerParametersDefinition{}
 // SolidifierParameters contains the solidifier configuration used by the messagelayer plugin.
 var SolidifierParameters = &SolidifierParametersDefinition{}
 
+// TipManagerParameters contains the tip manager configuration used by the messagelayer plugin.
+var TipManagerParameters = &TipManagerParametersDefinition{}
+
 func init() {
 	configuration.BindParameters(Parameters, "messageLayer")
 	configuration.BindParameters(ManaParameters, "mana")
 	configuration.BindParameters(RateSetterParameters, "rateSetter")
 	configuration.BindParameters(SchedulerParameters, "scheduler")
 	configuration.BindParameters(SolidifierParameters, "solidifier")
+	configuration.BindParameters(TipManagerParameters, "tipManager")
 }

@@ -192,6 +192,11 @@ func newTangle(deps tangledeps) *tangle.Tangle {
 			MaxParentsTimeDifference: SolidifierParameters.MaxParentsTimeDifference,
 			MinParentsTimeDifference: SolidifierParameters.MinParentsTimeDifference,
 		}),
+		tangle.TipManagerConfig(tangle.TipManagerParams{
+			MinParentsCount:        TipManagerParameters.MinParentsCount,
+			MaxParentsCount:        TipManagerParameters.MaxParentsCount,
+			TipLifeGracePeriodDiff: TipManagerParameters.TipLifeGracePeriodDiff,
+		}),
 		tangle.SyncTimeWindow(Parameters.TangleTimeWindow),
 		tangle.StartSynced(Parameters.StartSynced),
 		tangle.CacheTimeProvider(database.CacheTimeProvider()),

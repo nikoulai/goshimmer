@@ -35,12 +35,6 @@ const (
 	// MessageIDLength defines the length of an MessageID.
 	MessageIDLength = 32
 
-	// MinParentsCount defines the minimum number of parents each parents block must have.
-	MinParentsCount = 1
-
-	// MaxParentsCount defines the maximum number of parents each parents block must have.
-	MaxParentsCount = 8
-
 	// MinParentsBlocksCount defines the minimum number of parents each parents block must have.
 	MinParentsBlocksCount = 1
 
@@ -49,6 +43,12 @@ const (
 
 	// MinStrongParentsCount defines the minimum number of strong parents a message must have.
 	MinStrongParentsCount = 1
+)
+
+var (
+	// will be overwritten during Tip Manager setup
+	MaxParentsCount = 8
+	MinParentsCount = 1
 )
 
 // region MessageID ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -353,7 +353,7 @@ func newMessageWithValidation(version uint8, parentsBlocks []ParentsBlock, issui
 // validate messagesIDs are unique across blocks
 // there may be repetition across strong and like parents.
 func referencesUniqueAcrossBlocks(parentsBlocks []ParentsBlock) bool {
-	combinedParents := make(map[MessageID]types.Empty, NumberOfBlockTypes*MaxParentsCount)
+	combinedParents := make(map[MessageID]types.Empty, int(NumberOfBlockTypes)*MaxParentsCount)
 	uniqueParents := make(MessageIDs, 0, MaxParentsCount*NumberOfUniqueBlocks)
 	for _, block := range parentsBlocks {
 		// combine strong parent and like parents
@@ -425,7 +425,7 @@ func MessageFromMarshalUtil(marshalUtil *marshalutil.MarshalUtil) (*Message, err
 	if parentsBlocksCount, err = marshalUtil.ReadByte(); err != nil {
 		return nil, errors.Errorf("failed to parse parents count from MarshalUtil: %w", err)
 	}
-	if parentsBlocksCount < MinParentsCount || parentsBlocksCount > MaxParentsCount {
+	if int(parentsBlocksCount) < MinParentsCount || int(parentsBlocksCount) > MaxParentsCount {
 		return nil, errors.Errorf("parents count %d not allowed: %w", parentsBlocksCount, cerrors.ErrParseBytesFailed)
 	}
 

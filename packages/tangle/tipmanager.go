@@ -99,7 +99,12 @@ func (t *TimedTaskExecutor) Cancel(identifier interface{}) (canceled bool) {
 
 // region TipManager ///////////////////////////////////////////////////////////////////////////////////////////////////
 
-const tipLifeGracePeriodDiff = 1 * time.Minute
+// TipManagerParams represents the parameters for the Tip Manager.
+type TipManagerParams struct {
+	MinParentsCount        int
+	MaxParentsCount        int
+	TipLifeGracePeriodDiff time.Duration
+}
 
 // TipManager manages a map of tips and emits events for their removal and addition.
 type TipManager struct {
@@ -137,6 +142,9 @@ func (t *TipManager) Setup() {
 	t.Events.TipRemoved.Attach(events.NewClosure(func(tipEvent *TipEvent) {
 		t.tipsCleaner.Cancel(tipEvent.MessageID)
 	}))
+
+	MaxParentsCount = t.tangle.Options.TipManagerParams.MaxParentsCount
+	MinParentsCount = t.tangle.Options.TipManagerParams.MinParentsCount
 }
 
 // Set adds the given messageIDs as tips.
@@ -149,7 +157,7 @@ func (t *TipManager) Set(tips ...MessageID) {
 // AddTip adds the message to the tip pool if its issuing time is within the tipLifeGracePeriod.
 // Parents of a message that are currently tip lose the tip status and are removed.
 func (t *TipManager) AddTip(message *Message) {
-	tipLifeGracePeriod := t.tangle.Options.SolidifierParams.MaxParentsTimeDifference - tipLifeGracePeriodDiff
+	tipLifeGracePeriod := t.tangle.Options.SolidifierParams.MaxParentsTimeDifference - t.tangle.Options.TipManagerParams.TipLifeGracePeriodDiff
 
 	messageID := message.ID()
 	cachedMessageMetadata := t.tangle.Storage.MessageMetadata(messageID)
@@ -195,11 +203,11 @@ func (t *TipManager) AddTip(message *Message) {
 
 // Tips returns count number of tips, maximum MaxParentsCount.
 func (t *TipManager) Tips(p payload.Payload, countParents int) (parents MessageIDs, err error) {
-	if countParents > MaxParentsCount {
-		countParents = MaxParentsCount
+	if countParents > t.tangle.Options.TipManagerParams.MaxParentsCount {
+		countParents = t.tangle.Options.TipManagerParams.MaxParentsCount
 	}
-	if countParents < MinParentsCount {
-		countParents = MinParentsCount
+	if countParents < t.tangle.Options.TipManagerParams.MinParentsCount {
+		countParents = t.tangle.Options.TipManagerParams.MinParentsCount
 	}
 
 	// select parents
@@ -216,7 +224,7 @@ func (t *TipManager) Tips(p payload.Payload, countParents int) (parents MessageI
 			}
 			tries--
 
-			parents = t.selectTips(p, MaxParentsCount)
+			parents = t.selectTips(p, t.tangle.Options.TipManagerParams.MaxParentsCount)
 		}
 	}
 
@@ -226,7 +234,7 @@ func (t *TipManager) Tips(p payload.Payload, countParents int) (parents MessageI
 // selectTips returns a list of parents. In case of a transaction, it references young enough attachments
 // of consumed transactions directly. Otherwise/additionally count tips are randomly selected.
 func (t *TipManager) selectTips(p payload.Payload, count int) (parents MessageIDs) {
-	parents = make([]MessageID, 0, MaxParentsCount)
+	parents = make([]MessageID, 0, t.tangle.Options.TipManagerParams.MaxParentsCount)
 	parentsMap := make(map[MessageID]types.Empty)
 
 	// if transaction: reference young parents directly
@@ -260,18 +268,18 @@ func (t *TipManager) selectTips(p payload.Payload, count int) (parents MessageID
 		} else {
 			// if there are more than 8 referenced transactions:
 			// for now we simply select as many parents as possible and hope all transactions will be covered
-			count = MaxParentsCount
+			count = t.tangle.Options.TipManagerParams.MaxParentsCount
 		}
 	}
 
 	// nothing to do anymore
-	if len(parents) == MaxParentsCount {
+	if len(parents) == t.tangle.Options.TipManagerParams.MaxParentsCount {
 		return
 	}
 
 	// select some current tips (depending on length of parents)
-	if count+len(parents) > MaxParentsCount {
-		count = MaxParentsCount - len(parents)
+	if count+len(parents) > t.tangle.Options.TipManagerParams.MaxParentsCount {
+		count = t.tangle.Options.TipManagerParams.MaxParentsCount - len(parents)
 	}
 
 	tips := t.tips.RandomUniqueEntries(count)

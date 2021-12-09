@@ -854,7 +854,7 @@ func TestMessageFromMarshalUtil(t *testing.T) {
 
 	t.Run("CASE: Invalid parents count (less)", func(t *testing.T) {
 		msgBytes := createTestMsgBytes(MaxParentsCount/2, MaxParentsCount/2)
-		msgBytes[1] = MinParentsCount - 1
+		msgBytes[1] = byte(MinParentsCount) - 1
 		marshaller := marshalutil.New(msgBytes[:2])
 		_, err := MessageFromMarshalUtil(marshaller)
 		assert.Error(t, err)
@@ -863,7 +863,7 @@ func TestMessageFromMarshalUtil(t *testing.T) {
 
 	t.Run("CASE: Invalid parents count (more)", func(t *testing.T) {
 		msgBytes := createTestMsgBytes(MaxParentsCount/2, MaxParentsCount/2)
-		msgBytes[1] = MaxParentsCount + 1
+		msgBytes[1] = byte(MaxParentsCount) + 1
 		marshaller := marshalutil.New(msgBytes[:2])
 		_, err := MessageFromMarshalUtil(marshaller)
 		assert.Error(t, err)
