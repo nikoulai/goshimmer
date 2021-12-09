@@ -80,5 +80,12 @@
   },
   "faucet": {
     "powDifficulty": 12
+  },
+  "tipManager": {
+    "maxParentsCount": 2,
+    "tipLifeGracePeriodDiff": "0s"
+  },
+  "solidifier": {
+    "maxParentsTimeDifference": "1m"
   }
 }
