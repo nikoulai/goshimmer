@@ -1,7 +1,6 @@
 package message
 
 import (
-	"github.com/iotaledger/goshimmer/packages/consensus/gof"
 	"github.com/iotaledger/goshimmer/packages/jsonmodels"
 	"github.com/iotaledger/goshimmer/packages/tangle"
 	"github.com/iotaledger/hive.go/datastructure/walker"
@@ -32,19 +31,12 @@ func diagnosticOrphanage(c echo.Context) error {
 		// we assume no conflicts
 		approverMessageIDs := deps.Tangle.Utils.ApprovingMessageIDs(msgID)
 		var timestamp time.Time
-		var notConfirmed bool
 		var issuer string
 
 		deps.Tangle.Storage.Message(msgID).Consume(func(message *tangle.Message) {
 			timestamp = message.IssuingTime()
 			pubKey := message.IssuerPublicKey()
 			issuer = identity.New(pubKey).ID().String()
-
-			deps.Tangle.Storage.MessageMetadata(msgID).Consume(func(messageMetadata *tangle.MessageMetadata) {
-				// received before max parent age
-				grade := messageMetadata.GradeOfFinality()
-				notConfirmed = grade != gof.High
-			})
 		})
 		// count only messages older than parent age check from the API response collection start
 		if timestamp.Add(maxAge).Before(requestStartTime) {
