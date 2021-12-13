@@ -1,11 +1,11 @@
 package messagelayer
 
 import (
+	"context"
 	"fmt"
 	"math"
 	"os"
 	"sort"
-	"sync"
 	"time"
 
 	"github.com/iotaledger/hive.go/daemon"
@@ -15,6 +15,7 @@ import (
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/hive.go/node"
 	"github.com/iotaledger/hive.go/objectstorage"
+	"go.uber.org/dig"
 
 	db_pkg "github.com/iotaledger/goshimmer/packages/database"
 	"github.com/iotaledger/goshimmer/packages/gossip"
@@ -22,23 +23,16 @@ import (
 	"github.com/iotaledger/goshimmer/packages/mana"
 	"github.com/iotaledger/goshimmer/packages/shutdown"
 	"github.com/iotaledger/goshimmer/packages/tangle"
-	"github.com/iotaledger/goshimmer/plugins/autopeering/discovery"
-	"github.com/iotaledger/goshimmer/plugins/autopeering/local"
-	"github.com/iotaledger/goshimmer/plugins/database"
 )
 
 const (
 	// PluginName is the name of the mana plugin.
 	PluginName = "Mana"
-
-	// maxConsensusEventsInStorage = 110000
-	// slidingEventsInterval       = 10000 // 10% of maxConsensusEventsInStorage
 )
 
 var (
-	// manaPlugin is the plugin instance of the mana plugin.
-	manaPlugin         *node.Plugin
-	once               sync.Once
+	// ManaPlugin is the plugin instance of the mana plugin.
+	ManaPlugin         = node.NewPlugin(PluginName, nil, node.Enabled, configureManaPlugin, runManaPlugin)
 	manaLogger         *logger.Logger
 	baseManaVectors    map[mana.Type]mana.BaseManaVector
 	osFactory          *objectstorage.Factory
@@ -47,19 +41,21 @@ var (
 	// consensusBaseManaPastVectorStorage         *objectstorage.ObjectStorage
 	// consensusBaseManaPastVectorMetadataStorage *objectstorage.ObjectStorage
 	// consensusEventsLogStorage                  *objectstorage.ObjectStorage
-	// consensusEventsLogsStorageSize             atomic.Uint32
+	// consensusEventsLogsStorageSize             atomic.Uint32.
 	onTransactionConfirmedClosure *events.Closure
 	// onPledgeEventClosure          *events.Closure
 	// onRevokeEventClosure          *events.Closure
-	// debuggingEnabled              bool
+	// debuggingEnabled              bool.
 )
 
-// ManaPlugin gets the plugin instance.
-func ManaPlugin() *node.Plugin {
-	once.Do(func() {
-		manaPlugin = node.NewPlugin(PluginName, node.Enabled, configureManaPlugin, runManaPlugin)
-	})
-	return manaPlugin
+func init() {
+	ManaPlugin.Events.Init.Attach(events.NewClosure(func(_ *node.Plugin, container *dig.Container) {
+		if err := container.Provide(func() mana.ManaRetrievalFunc {
+			return GetConsensusMana
+		}, dig.Name("manaFunc")); err != nil {
+			Plugin.Panic(err)
+		}
+	}))
 }
 
 func configureManaPlugin(*node.Plugin) {
@@ -76,7 +72,7 @@ func configureManaPlugin(*node.Plugin) {
 
 	// configure storage for each vector type
 	storages = make(map[mana.Type]*objectstorage.ObjectStorage)
-	store := database.Store()
+	store := deps.Storage
 	osFactory = objectstorage.NewFactory(store, db_pkg.PrefixMana)
 	storages[mana.AccessMana] = osFactory.New(mana.PrefixAccess, mana.FromObjectStorage)
 	storages[mana.ConsensusMana] = osFactory.New(mana.PrefixConsensus, mana.FromObjectStorage)
@@ -102,8 +98,7 @@ func configureManaPlugin(*node.Plugin) {
 
 func configureEvents() {
 	// until we have the proper event...
-	Tangle().LedgerState.UTXODAG.Events().TransactionConfirmed.Attach(onTransactionConfirmedClosure)
-	// mana.Events().Pledged.Attach(onPledgeEventClosure)
+	deps.Tangle.ConfirmationOracle.Events().TransactionConfirmed.Attach(onTransactionConfirmedClosure)
 	// mana.Events().Revoked.Attach(onRevokeEventClosure)
 }
 
@@ -122,53 +117,12 @@ func configureEvents() {
 //}
 
 func onTransactionConfirmed(transactionID ledgerstate.TransactionID) {
-	Tangle().LedgerState.Transaction(transactionID).Consume(func(transaction *ledgerstate.Transaction) {
+	deps.Tangle.LedgerState.Transaction(transactionID).Consume(func(transaction *ledgerstate.Transaction) {
 		// holds all info mana pkg needs for correct mana calculations from the transaction
 		var txInfo *mana.TxInfo
+
 		// process transaction object to build txInfo
-		var totalAmount float64
-		var inputInfos []mana.InputInfo
-
-		// iterate over all inputs within the transaction
-		for _, input := range transaction.Essence().Inputs() {
-			i := input.(*ledgerstate.UTXOInput)
-
-			var amount float64
-			var inputTimestamp time.Time
-			var accessManaNodeID identity.ID
-			var consensusManaNodeID identity.ID
-			var _inputInfo mana.InputInfo
-
-			Tangle().LedgerState.CachedOutput(i.ReferencedOutputID()).Consume(func(o ledgerstate.Output) {
-				// first, sum balances of the input, calculate total amount as well for later
-				o.Balances().ForEach(func(color ledgerstate.Color, balance uint64) bool {
-					amount += float64(balance)
-					totalAmount += amount
-					return true
-				})
-				// derive the transaction that created this input
-				inputTxID := o.ID().TransactionID()
-				// look into the transaction, we need timestamp and access & consensus pledge IDs
-				Tangle().LedgerState.Transaction(inputTxID).Consume(func(transaction *ledgerstate.Transaction) {
-					if transaction != nil {
-						inputTimestamp = transaction.Essence().Timestamp()
-						accessManaNodeID = transaction.Essence().AccessPledgeID()
-						consensusManaNodeID = transaction.Essence().ConsensusPledgeID()
-					}
-				})
-				// build InputInfo for this particular input in the transaction
-				_inputInfo = mana.InputInfo{
-					TimeStamp: inputTimestamp,
-					Amount:    amount,
-					PledgeID: map[mana.Type]identity.ID{
-						mana.AccessMana:    accessManaNodeID,
-						mana.ConsensusMana: consensusManaNodeID,
-					},
-					InputID: o.ID(),
-				}
-			})
-			inputInfos = append(inputInfos, _inputInfo)
-		}
+		totalAmount, inputInfos := gatherInputInfos(transaction)
 
 		txInfo = &mana.TxInfo{
 			TimeStamp:     transaction.Essence().Timestamp(),
@@ -180,11 +134,46 @@ func onTransactionConfirmed(transactionID ledgerstate.TransactionID) {
 			},
 			InputInfos: inputInfos,
 		}
+
 		// book in all mana vectors.
 		for _, baseManaVector := range baseManaVectors {
 			baseManaVector.Book(txInfo)
 		}
 	})
+}
+
+func gatherInputInfos(transaction *ledgerstate.Transaction) (totalAmount float64, inputInfos []mana.InputInfo) {
+	inputInfos = make([]mana.InputInfo, 0)
+	for _, input := range transaction.Essence().Inputs() {
+		var inputInfo mana.InputInfo
+
+		deps.Tangle.LedgerState.CachedOutput(input.(*ledgerstate.UTXOInput).ReferencedOutputID()).Consume(func(o ledgerstate.Output) {
+			inputInfo.InputID = o.ID()
+
+			// first, sum balances of the input, calculate total amount as well for later
+			o.Balances().ForEach(func(color ledgerstate.Color, balance uint64) bool {
+				inputInfo.Amount += float64(balance)
+				totalAmount += float64(balance)
+				return true
+			})
+
+			// derive the transaction that created this input
+			inputTxID := o.ID().TransactionID()
+			// look into the transaction, we need timestamp and access & consensus pledge IDs
+			deps.Tangle.LedgerState.Transaction(inputTxID).Consume(func(transaction *ledgerstate.Transaction) {
+				if transaction == nil {
+					return
+				}
+				inputInfo.TimeStamp = transaction.Essence().Timestamp()
+				inputInfo.PledgeID = map[mana.Type]identity.ID{
+					mana.AccessMana:    transaction.Essence().AccessPledgeID(),
+					mana.ConsensusMana: transaction.Essence().ConsensusPledgeID(),
+				}
+			})
+		})
+		inputInfos = append(inputInfos, inputInfo)
+	}
+	return totalAmount, inputInfos
 }
 
 func runManaPlugin(_ *node.Plugin) {
@@ -196,7 +185,7 @@ func runManaPlugin(_ *node.Plugin) {
 	vectorsCleanUpInterval := ManaParameters.VectorsCleanupInterval
 	fmt.Printf("Prune interval: %v\n", pruneInterval)
 	mana.SetCoefficients(ema1, ema2, dec)
-	if err := daemon.BackgroundWorker("Mana", func(shutdownSignal <-chan struct{}) {
+	if err := daemon.BackgroundWorker("Mana", func(ctx context.Context) {
 		defer manaLogger.Infof("Stopping %s ... done", PluginName)
 		// ticker := time.NewTicker(pruneInterval)
 		// defer ticker.Stop()
@@ -208,23 +197,34 @@ func runManaPlugin(_ *node.Plugin) {
 				snapshot := &ledgerstate.Snapshot{}
 				f, err := os.Open(Parameters.Snapshot.File)
 				if err != nil {
-					plugin.Panic("can not open snapshot file:", err)
+					Plugin.Panic("can not open snapshot file:", err)
 				}
 				if _, err := snapshot.ReadFrom(f); err != nil {
-					plugin.Panic("could not read snapshot file in Mana Plugin:", err)
+					Plugin.Panic("could not read snapshot file in Mana Plugin:", err)
 				}
 				loadSnapshot(snapshot)
-				plugin.LogInfof("MANA: read snapshot from %s", Parameters.Snapshot.File)
+
+				// initialize cMana WeightProvider with snapshot
+				t := time.Unix(tangle.DefaultGenesisTime, 0)
+				genesisNodeID := identity.ID{}
+				for nodeID := range GetCMana() {
+					if nodeID == genesisNodeID {
+						continue
+					}
+					deps.Tangle.WeightProvider.Update(t, nodeID)
+				}
+
+				manaLogger.Infof("MANA: read snapshot from %s", Parameters.Snapshot.File)
 			}
 		}
 		pruneStorages()
 		for {
 			select {
-			case <-shutdownSignal:
+			case <-ctx.Done():
 				manaLogger.Infof("Stopping %s ...", PluginName)
 				// mana.Events().Pledged.Detach(onPledgeEventClosure)
 				// mana.Events().Pledged.Detach(onRevokeEventClosure)
-				Tangle().LedgerState.UTXODAG.Events().TransactionConfirmed.Detach(onTransactionConfirmedClosure)
+				deps.Tangle.ConfirmationOracle.Events().TransactionConfirmed.Detach(onTransactionConfirmedClosure)
 				storeManaVectors()
 				shutdownStorages()
 				return
@@ -352,7 +352,7 @@ func GetConsensusMana(nodeID identity.ID, optionalUpdateTime ...time.Time) (floa
 	return baseManaVectors[mana.ConsensusMana].GetMana(nodeID, optionalUpdateTime...)
 }
 
-// GetNeighborsMana returns the type mana of the nodes neighbors
+// GetNeighborsMana returns the type mana of the nodes neighbors.
 func GetNeighborsMana(manaType mana.Type, neighbors []*gossip.Neighbor, optionalUpdateTime ...time.Time) (mana.NodeMap, error) {
 	if !QueryAllowed() {
 		return mana.NodeMap{}, ErrQueryNotAllowed
@@ -380,7 +380,7 @@ func GetAllManaMaps(optionalUpdateTime ...time.Time) (map[mana.Type]mana.NodeMap
 }
 
 // OverrideMana sets the nodes mana to a specific value.
-// It can be useful for debugging, setting faucet mana, initialization, etc.. Triggers ManaUpdated
+// It can be useful for debugging, setting faucet mana, initialization, etc.. Triggers ManaUpdated.
 func OverrideMana(manaType mana.Type, nodeID identity.ID, bm *mana.AccessBaseMana) {
 	baseManaVectors[manaType].SetMana(nodeID, bm)
 }
@@ -396,9 +396,12 @@ func GetOnlineNodes(manaType mana.Type) (onlineNodesMana []mana.Node, t time.Tim
 	if !QueryAllowed() {
 		return []mana.Node{}, time.Now(), ErrQueryNotAllowed
 	}
-	knownPeers := discovery.Discovery().GetVerifiedPeers()
+	if deps.Discover == nil {
+		return
+	}
+	knownPeers := deps.Discover.GetVerifiedPeers()
 	// consider ourselves as a peer in the network too
-	knownPeers = append(knownPeers, local.GetInstance().Peer)
+	knownPeers = append(knownPeers, deps.Local.Peer)
 	onlineNodesMana = make([]mana.Node, 0)
 	for _, peer := range knownPeers {
 		if baseManaVectors[manaType].Has(peer.ID()) {
@@ -428,7 +431,7 @@ func verifyPledgeNodes() error {
 
 	access.Allowed = set.New(false)
 	// own ID is allowed by default
-	access.Allowed.Add(local.GetInstance().ID())
+	access.Allowed.Add(deps.Local.ID())
 	if access.IsFilterEnabled {
 		for _, pubKey := range ManaParameters.AllowedAccessPledge {
 			ID, err := mana.IDFromStr(pubKey)
@@ -441,7 +444,7 @@ func verifyPledgeNodes() error {
 
 	consensus.Allowed = set.New(false)
 	// own ID is allowed by default
-	consensus.Allowed.Add(local.GetInstance().ID())
+	consensus.Allowed.Add(deps.Local.ID())
 	if consensus.IsFilterEnabled {
 		for _, pubKey := range ManaParameters.AllowedConsensusPledge {
 			ID, err := mana.IDFromStr(pubKey)
@@ -459,7 +462,7 @@ func verifyPledgeNodes() error {
 
 // PendingManaOnOutput predicts how much mana (bm2) will be pledged to a node if the output specified is spent.
 func PendingManaOnOutput(outputID ledgerstate.OutputID) (float64, time.Time) {
-	cachedOutputMetadata := Tangle().LedgerState.CachedOutputMetadata(outputID)
+	cachedOutputMetadata := deps.Tangle.LedgerState.CachedOutputMetadata(outputID)
 	defer cachedOutputMetadata.Release()
 	outputMetadata := cachedOutputMetadata.Unwrap()
 
@@ -469,14 +472,14 @@ func PendingManaOnOutput(outputID ledgerstate.OutputID) (float64, time.Time) {
 	}
 
 	var value float64
-	Tangle().LedgerState.CachedOutput(outputID).Consume(func(output ledgerstate.Output) {
+	deps.Tangle.LedgerState.CachedOutput(outputID).Consume(func(output ledgerstate.Output) {
 		output.Balances().ForEach(func(color ledgerstate.Color, balance uint64) bool {
 			value += float64(balance)
 			return true
 		})
 	})
 
-	cachedTx := Tangle().LedgerState.Transaction(outputID.TransactionID())
+	cachedTx := deps.Tangle.LedgerState.Transaction(outputID.TransactionID())
 	defer cachedTx.Release()
 	tx := cachedTx.Unwrap()
 	txTimestamp := tx.Essence().Timestamp()
@@ -786,11 +789,13 @@ type AllowedPledge struct {
 func QueryAllowed() (allowed bool) {
 	// if debugging enabled, reply to the query
 	// if debugging is not allowed, only reply when in sync
-	// return Tangle().Synced() || debuggingEnabled
-	return true
+	// return deps.Tangle.Synced() || debuggingEnabled\
+
+	// query allowed only when base mana vectors have been initialized
+	return len(baseManaVectors) > 0
 }
 
-// loadSnapshot loads the tx snapshot and the access mana snapshot, sorts it and loads it into the various mana versions
+// loadSnapshot loads the tx snapshot and the access mana snapshot, sorts it and loads it into the various mana versions.
 func loadSnapshot(snapshot *ledgerstate.Snapshot) {
 	txSnapshotByNode := make(map[identity.ID]mana.SortedTxSnapshot)
 
@@ -815,13 +820,13 @@ func loadSnapshot(snapshot *ledgerstate.Snapshot) {
 	}
 
 	// sort txSnapshot per nodeID, so that for each nodeID it is in temporal order
-	SnapshotByNode := make(map[identity.ID]mana.SnapshotNode)
+	snapshotByNode := make(map[identity.ID]mana.SnapshotNode)
 	for nodeID := range txSnapshotByNode {
 		sort.Sort(txSnapshotByNode[nodeID])
 		snapshotNode := mana.SnapshotNode{
 			SortedTxSnapshot: txSnapshotByNode[nodeID],
 		}
-		SnapshotByNode[nodeID] = snapshotNode
+		snapshotByNode[nodeID] = snapshotNode
 	}
 
 	// determine addTime if snapshot should be updated for the difference to now
@@ -839,18 +844,18 @@ func loadSnapshot(snapshot *ledgerstate.Snapshot) {
 
 	// load access mana
 	for nodeID, accessMana := range snapshot.AccessManaByNode {
-		snapshotNode, ok := SnapshotByNode[nodeID]
+		snapshotNode, ok := snapshotByNode[nodeID]
 		if !ok { // fill with empty element if it does not exist yet
 			snapshotNode = mana.SnapshotNode{}
-			SnapshotByNode[nodeID] = snapshotNode
+			snapshotByNode[nodeID] = snapshotNode
 		}
 		snapshotNode.AccessMana = mana.AccessManaSnapshot{
 			Value:     accessMana.Value,
 			Timestamp: accessMana.Timestamp.Add(addTime),
 		}
-		SnapshotByNode[nodeID] = snapshotNode
+		snapshotByNode[nodeID] = snapshotNode
 	}
 
-	baseManaVectors[mana.ConsensusMana].LoadSnapshot(SnapshotByNode)
-	baseManaVectors[mana.AccessMana].LoadSnapshot(SnapshotByNode)
+	baseManaVectors[mana.ConsensusMana].LoadSnapshot(snapshotByNode)
+	baseManaVectors[mana.AccessMana].LoadSnapshot(snapshotByNode)
 }

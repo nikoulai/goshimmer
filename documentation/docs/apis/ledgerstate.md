@@ -1,4 +1,18 @@
+---
+description: The ledgerstate API provides endpoints to retrieve address details, unspent outputs for an address, get branch details, and list child branches amongst others.
+image: /img/logo/goshimmer_light.png
+keywords:
+- client library
+- HTTP API
+- addresses
+- branches
+- outputs
+- transactions
+- UTXO
+- unspent outputs
+---
 # Ledgerstate API Methods 
+
 ## HTTP APIs:
 
 * [/ledgerstate/addresses/:address](#ledgerstateaddressesaddress)
@@ -6,36 +20,36 @@
 * [/ledgerstate/branches/:branchID](#ledgerstatebranchesbranchid)
 * [/ledgerstate/branches/:branchID/children](#ledgerstatebranchesbranchidchildren)
 * [/ledgerstate/branches/:branchID/conflicts](#ledgerstatebranchesbranchidconflicts)
+* [/ledgerstate/branches/:branchID/supporters](#ledgerstatebranchesbranchidsupporters)
 * [/ledgerstate/outputs/:outputID](#ledgerstateoutputsoutputid)
 * [/ledgerstate/outputs/:outputID/consumers](#ledgerstateoutputsoutputidconsumers)
 * [/ledgerstate/outputs/:outputID/metadata](#ledgerstateoutputsoutputidmetadata)
 * [/ledgerstate/transactions/:transactionID](#ledgerstatetransactionstransactionid)
 * [/ledgerstate/transactions/:transactionID/metadata](#ledgerstatetransactionstransactionidmetadata)
-* [/ledgerstate/transactions/:transactionID/inclusionState](#ledgerstatetransactionstransactionidinclusionstate)
-* [/ledgerstate/transactions/:transactionID/consensus](#ledgerstatetransactionstransactionidconsensus)
 * [/ledgerstate/transactions/:transactionID/attachments](#ledgerstatetransactionstransactionidattachments)
 * [/ledgerstate/transactions](#ledgerstatetransactions)
 * [/ledgerstate/addresses/unspentOutputs](#ledgerstateaddressesunspentoutputs)
 
 
 ## Client Lib APIs:
+
 * [GetAddressOutputs()](#client-lib---getaddressoutputs)
 * [GetAddressUnspentOutputs()](#client-lib---getaddressunspentoutputs)
 * [GetBranch()](#client-lib---getbranch)
 * [GetBranchChildren()](#client-lib---getbranchchildren)
 * [GetBranchConflicts()](#client-lib---getbranchconflicts)
+* [GetBranchSupporters()](#client-lib---getbranchsupporters)
 * [GetOutput()](#client-lib---getoutput)
 * [GetOutputConsumers()](#client-lib---getoutputconsumers)
 * [GetOutputMetadata()](#client-lib---getoutputmetadata)
 * [GetTransaction()](#client-lib---gettransaction)
 * [GetTransactionMetadata()](#client-lib---gettransactionmetadata)
-* [GetTransactionInclusionState()](#client-lib---gettransactioninclusionstate)
-* [GetTransactionConsensusMetadata()](#client-lib---gettransactionconsensusmetadata)
 * [GetTransactionAttachments()](#client-lib---gettransactionattachments)
 * [PostTransaction()](#client-lib---posttransaction)
 * [PostAddressUnspentOutputs()](#client-lib---postaddressunspentoutputs)
 
 ## `/ledgerstate/addresses/:address`
+
 Get address details for a given base58 encoded address ID, such as output types and balances. For the client library API call balances will not be directly available as values because they are stored as a raw message. Balance can be read after retrieving `ledgerstate.Output` instance, as presented in the examples.
 
 ### Parameters
@@ -73,7 +87,7 @@ for _, output := range resp.Outputs {
 }
 ```
 
-### Response examples
+### Response Examples
 ```json
 {
     "address": {
@@ -169,7 +183,7 @@ for _, output := range resp.Outputs {
     out, err = output.ToLedgerstateOutput()
 }
 ```
-### Response examples
+### Response Examples
 ```json
 {
     "address": {
@@ -262,7 +276,7 @@ fmt.Println("branch parents IDs: ", resp.Parents)
 fmt.Println("branch conflicts IDs: ", resp.ConflictIDs)
 fmt.Printf("liked: %v, finalized: %v, monotonically liked: %v", resp.Liked, resp.Finalized, resp.MonotonicallyLiked)
 ```
-### Response examples
+### Response Examples
 ```json
 {
     "id": "5v6iyxKUSSF73yoZa6YngNN5tqoX8hJQWKGXrgcz3XTg",
@@ -331,7 +345,7 @@ for _, branch := range resp.ChildBranches {
 }
 ```
 
-### Response examples
+### Response Examples
 ```json
 {
     "branchID": "HuYUAwCeexmBePNXx5rNeJX1zUvUdUUs5LvmRmWe7HCV",
@@ -399,7 +413,7 @@ for _, branch := range resp.Conflicts {
     fmt.Printf("related branches: %v\n", branch.BranchIDs)
 }
 ```
-### Response examples
+### Response Examples
 ```json
 {
     "branchID": "HuYUAwCeexmBePNXx5rNeJX1zUvUdUUs5LvmRmWe7HCV",
@@ -441,6 +455,53 @@ for _, branch := range resp.Conflicts {
 | `outputIndex`   | int | The index of an output.     |
 
 
+## `/ledgerstate/branches/:branchID/supporters`
+Get a list of supporters of a given branchID.
+
+| **Parameter**            | `branchID`     |
+|--------------------------|----------------|
+| **Required or Optional** | required       |
+| **Description**          | The branch ID encoded in base58. |
+| **Type**                 | string         |
+
+### Examples
+
+### cURL
+
+```shell
+curl http://localhost:8080/ledgerstate/branches/:branchID/supporters \
+-X GET \
+-H 'Content-Type: application/json'
+```
+where `:branchID` is the ID of the branch, e.g. 2e2EU6fhxRhrXVnYQ6US4zmUkE5YJip25ecafn8gZeoZ.
+
+#### Client lib - `GetBranchSupporters()`
+```Go
+resp, err := goshimAPI.GetBranchSupporters("2e2EU6fhxRhrXVnYQ6US4zmUkE5YJip25ecafn8gZeoZ")
+if err != nil {
+    // return error
+}
+fmt.Printf("All supporters for branch %s:\n", resp.BranchID)
+// iterate over all supporters
+for _, supporter := range resp.Supporters {
+    fmt.Println("ID: ", supporter)
+}
+```
+
+### Response examples
+```json
+{
+  "branchID": "HuYUAwCeexmBePNXx5rNeJX1zUvUdUUs5LvmRmWe7HCV",
+  "supporters": ["b8QRhHerfg14cYQ4VFD7Fyh1HYTCbjt9aK1XJmdoXwq","41GvDSQnd12e4nWnd2WzmdLmffruXqsE46jgeUbnB8s1QnK"]
+}
+```
+
+### Results
+|Return field | Type | Description|
+|:-----|:------|:------|
+| `branchID`   | string    | The branch identifier encoded with base58.   |
+| `supporters` | [] string | The list of branch supporter IDs  |
+
 
 ## `/ledgerstate/outputs/:outputID`
 Get an output details for a given base58 encoded output ID, such as output types, addresses, and their corresponding balances.
@@ -477,7 +538,7 @@ fmt.Println("outputID: ", resp.OutputID.Base58)
 fmt.Println("output type: ", resp.Type)
 fmt.Println("transactionID: ", resp.OutputID.TransactionID)
 ```
-### Response examples
+### Response Examples
 ```json
 {
     "outputID": {
@@ -548,7 +609,7 @@ for _, consumer := range resp.Consumers {
     fmt.Println("valid: ", consumer.Valid)
 }
 ```
-### Response examples
+### Response Examples
 ```json
 {
     "outputID": {
@@ -630,7 +691,7 @@ fmt.Println("number of consumers: ", resp.ConsumerCount)
 fmt.Printf("finalized: %v, solid: %v\n", resp.Finalized, resp.Solid)
 fmt.Println("solidification time: ",  time.Unix(resp.SolidificationTime, 0))
 ```
-### Response examples
+### Response Examples
 ```json
 {
     "outputID": {
@@ -710,7 +771,7 @@ for _, output := range resp.Outputs{
 fmt.Println("access mana pledgeID:", resp.AccessPledgeID)
 fmt.Println("consensus mana pledgeID:", resp.ConsensusPledgeID)
 ```
-### Response examples
+### Response Examples
 ```json
 {
     "version": 0,
@@ -840,7 +901,7 @@ fmt.Println("branchID:", resp.BranchID)
 fmt.Printf("branch lazy booked: %v, solid: %v, finalized: %v\n", resp.LazyBooked, resp.Solid, resp.Finalized)
 fmt.Println("solidification time:",  time.Unix(resp.SolidificationTime, 0))
 ```
-### Response examples
+### Response Examples
 ```json
 {
     "transactionID": "HuYUAwCeexmBePNXx5rNeJX1zUvUdUUs5LvmRmWe7HCV",
@@ -860,119 +921,6 @@ fmt.Println("solidification time:",  time.Unix(resp.SolidificationTime, 0))
 | `solidificationTime`          | uint64      | The time of solidification of the transaction. |
 | `finalized`         | bool    | The boolean indicator if the transaction is finalized. |
 | `lazyBooked`    | bool      | The boolean indicator if the transaction is lazily booked.|
-
-
-
-## `/ledgerstate/transactions/:transactionID/inclusionState`
-Gets the fcob opinion associated with transaction based on a given base58 encoded transaction ID.
-
-### Parameters
-| **Parameter**            | `transactionID`      |
-|--------------------------|----------------|
-| **Required or Optional** | required       |
-| **Description**          | The transaction ID encoded in base58. |
-| **Type**                 | string         |
-
-### Examples
-
-#### cURL
-
-```shell
-curl http://localhost:8080/ledgerstate/transactions/:transactionID/inclusionState \
--X GET \
--H 'Content-Type: application/json'
-```
-
-where `:transactionID` is the ID of the branch, e.g. HuYUAwCeexmBePNXx5rNeJX1zUvUdUUs5LvmRmWe7HCV.
-
-#### Client lib - `GetTransactionInclusionState()`
-```Go
-resp, err := goshimAPI.GetTransactionInclusionState("41GvDSQnd12e4nWnd2WzmdLmffruXqsE46jgeUbnB8s1QnK")
-if err != nil {
-    // return error
-}
-fmt.Printf("Inclusion state of transaction %s:\n", resp.TransactionID)
-fmt.Printf("conflicting: %v, confirmed: %v, rejected: %v, pending: %v\n", resp.Conflicting, resp.Confirmed, resp.Rejected, resp.Pending)
-```
-### Response examples
-```json
-{
-    "transactionID": "HuYUAwCeexmBePNXx5rNeJX1zUvUdUUs5LvmRmWe7HCV",
-    "pending": false,
-    "confirmed": true,
-    "rejected": false,
-    "conflicting": true
-}
-```
-
-### Results
-|Return field | Type | Description|
-|:-----|:------|:------|
-| `transactionID`         | string  | The transaction identifier encoded with base58.  |
-| `pending`       | bool    | The boolean indicating if the transaction has not yet been confirmed nor rejected. |
-| `confirmed`  | bool      | The boolean indicating if the transaction is confirmed. |
-| `rejected`          | bool      | The boolean indicating if the transaction was rejected and is booked to the rejected branch. |
-| `conflicting`         | bool    | The boolean indicating if the transaction is conflicting with some other transaction. |
-
-
-
-## `/ledgerstate/transactions/:transactionID/consensus`
-Gets the fcob opinion associated with transaction based on a given base58 encoded transaction ID.
-
-### Parameters
-| **Parameter**            | `transactionID`      |
-|--------------------------|----------------|
-| **Required or Optional** | required       |
-| **Description**          | The transaction ID encoded in base58. |
-| **Type**                 | string         |
-### Examples
-
-#### cURL
-
-```shell
-curl http://localhost:8080/ledgerstate/transactions/:transactionID/consensus \
--X GET \
--H 'Content-Type: application/json'
-```
-
-where `:transactionID` is the ID of the branch, e.g. HuYUAwCeexmBePNXx5rNeJX1zUvUdUUs5LvmRmWe7HCV.
-
-#### Client lib - `GetTransactionConsensusMetadata()`
-```Go
-resp, err := goshimAPI.GetTransactionConsensusMetadata("DNSN8GaCeep6CVuUV6KXAabXkL3bv4PUP4NkTNKoZMqS")
-if err != nil {
-    // return err
-}
-fmt.Printf("Consensus metadata for transaction %s:\n", resp.TransactionID)
-fmt.Println("fcob opinion, is liked:", resp.Liked)
-fmt.Println("level of knowledge:", resp.LoK)
-fmt.Println("fcob timestamp:", time.Unix(resp.Timestamp, 0))
-fmt.Println("fcob time 1:", time.Unix(resp.FCOBTime1, 0))
-fmt.Println("fcob time 2:", time.Unix(resp.FCOBTime2, 0))
-```
-
-### Response examples
-```json
-{
-    "transactionID": "HuYUAwCeexmBePNXx5rNeJX1zUvUdUUs5LvmRmWe7HCV",
-    "timestamp": 1621889358,
-    "liked": true,
-    "lok": "LevelOfKnowledge(Three)",
-    "fcobTime1": 1621889360,
-    "fcobTime2": 1621889362
-}
-```
-
-### Results
-|Return field | Type | Description|
-|:-----|:------|:------|
-| `transactionID`         | string  | The transaction identifier encoded with base58.  |
-| `timestamp`       | uint64    | The timestamp of the arrival. |
-| `lok`          | string      | The level of knowledge of the transaction - the degree of certainty of the associated opinion.|
-| `liked`  | bool      | The fcob opinion for the transaction. |
-| `fcobTime1`         | uint64    | The fcob opinion's execution time.|
-| `fcobTime2`         | uint64    | The fcob opinion's locally finalized execution time.|
-
 
 
 ## `/ledgerstate/transactions/:transactionID/attachments`
@@ -1008,7 +956,7 @@ for _, msgID := range resp.MessageIDs {
     fmt.Println(msgID)
 }
 ```
-### Response examples
+### Response Examples
 ```json
 {
     "transactionID": "HuYUAwCeexmBePNXx5rNeJX1zUvUdUUs5LvmRmWe7HCV",
@@ -1092,7 +1040,7 @@ for _, outputs := range resp.UnspentOutputs {
 }
 ```
 
-### Response examples
+### Response Examples
 
 ```json
 {

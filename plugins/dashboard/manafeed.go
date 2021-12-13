@@ -1,6 +1,7 @@
 package dashboard
 
 import (
+	"context"
 	"sort"
 	"sync"
 	"time"
@@ -15,7 +16,6 @@ import (
 
 	"github.com/iotaledger/goshimmer/packages/mana"
 	"github.com/iotaledger/goshimmer/packages/shutdown"
-	"github.com/iotaledger/goshimmer/plugins/autopeering/local"
 	manaPlugin "github.com/iotaledger/goshimmer/plugins/messagelayer"
 )
 
@@ -60,13 +60,13 @@ func runManaFeed() {
 	notifyManaRevoke := events.NewClosure(func(ev *mana.RevokedEvent) {
 		manaFeedWorkerPool.TrySubmit(MsgTypeManaRevoke, ev)
 	})
-	if err := daemon.BackgroundWorker("Dashboard[ManaUpdater]", func(shutdownSignal <-chan struct{}) {
+	if err := daemon.BackgroundWorker("Dashboard[ManaUpdater]", func(ctx context.Context) {
 		mana.Events().Pledged.Attach(notifyManaPledge)
 		mana.Events().Revoked.Attach(notifyManaRevoke)
 		manaTicker := time.NewTicker(10 * time.Second)
 		for {
 			select {
-			case <-shutdownSignal:
+			case <-ctx.Done():
 				log.Info("Stopping Dashboard[ManaUpdater] ...")
 				manaFeedWorkerPool.Stop()
 				manaTicker.Stop()
@@ -85,7 +85,7 @@ func runManaFeed() {
 
 // region Websocket message sending handlers (live updates)
 func sendManaValue() {
-	ownID := local.GetInstance().ID()
+	ownID := deps.Local.ID()
 	access, _, err := manaPlugin.GetAccessMana(ownID)
 	// if node not found, returned value is 0.0
 	if err != nil && !errors.Is(err, mana.ErrNodeNotFoundInBaseManaVector) && !errors.Is(err, manaPlugin.ErrQueryNotAllowed) {
@@ -160,7 +160,7 @@ func sendManaMapOnline() {
 		Data: accessPayload,
 	})
 
-	weights, totalWeight := manaPlugin.Tangle().WeightProvider.WeightsOfRelevantSupporters()
+	weights, totalWeight := deps.Tangle.WeightProvider.WeightsOfRelevantSupporters()
 	consensusPayload := &ManaNetworkListMsgData{ManaType: mana.ConsensusMana.String()}
 	for nodeID, weight := range weights {
 		n := mana.Node{

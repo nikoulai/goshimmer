@@ -1,14 +1,15 @@
 package server
 
 import (
+	"context"
 	"io"
 	"net"
 	"strconv"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/cockroachdb/errors"
+	"github.com/iotaledger/hive.go/configuration"
 	"github.com/iotaledger/hive.go/daemon"
 	"github.com/iotaledger/hive.go/events"
 	"github.com/iotaledger/hive.go/logger"
@@ -17,15 +18,15 @@ import (
 	"github.com/iotaledger/hive.go/node"
 	"github.com/iotaledger/hive.go/protocol"
 	flag "github.com/spf13/pflag"
+	"go.uber.org/dig"
 
 	"github.com/iotaledger/goshimmer/packages/shutdown"
 	"github.com/iotaledger/goshimmer/plugins/analysis/packet"
-	"github.com/iotaledger/goshimmer/plugins/config"
 )
 
 const (
 	// PluginName is the name of the analysis server plugin.
-	PluginName = "Analysis-Server"
+	PluginName = "AnalysisServer"
 
 	// CfgAnalysisServerBindAddress defines the bind address of the analysis server.
 	CfgAnalysisServerBindAddress = "analysis.server.bindAddress"
@@ -34,28 +35,27 @@ const (
 	IdleTimeout = 1 * time.Minute
 )
 
+type dependencies struct {
+	dig.In
+
+	Config *configuration.Configuration
+}
+
 func init() {
+	Plugin = node.NewPlugin(PluginName, deps, node.Disabled, configure, run)
 	flag.String(CfgAnalysisServerBindAddress, "0.0.0.0:16178", "the bind address of the analysis server")
 }
 
 var (
-	// plugin is the plugin instance of the analysis server plugin.
-	plugin *node.Plugin
-	once   sync.Once
+	// Plugin is the plugin instance of the analysis server plugin.
+	Plugin *node.Plugin
+	deps   = new(dependencies)
 	server *tcp.TCPServer
 	prot   *protocol.Protocol
 	log    *logger.Logger
 )
 
-// Plugin gets the plugin instance.
-func Plugin() *node.Plugin {
-	once.Do(func() {
-		plugin = node.NewPlugin(PluginName, node.Disabled, configure, run)
-	})
-	return plugin
-}
-
-func configure(_ *node.Plugin) {
+func configure(plugin *node.Plugin) {
 	log = logger.NewLogger(PluginName)
 	server = tcp.NewServer()
 
@@ -69,7 +69,7 @@ func configure(_ *node.Plugin) {
 }
 
 func run(_ *node.Plugin) {
-	bindAddr := config.Node().String(CfgAnalysisServerBindAddress)
+	bindAddr := deps.Config.String(CfgAnalysisServerBindAddress)
 	addr, portStr, err := net.SplitHostPort(bindAddr)
 	if err != nil {
 		log.Fatal("invalid bind address in %s: %s", CfgAnalysisServerBindAddress, err)
@@ -79,7 +79,7 @@ func run(_ *node.Plugin) {
 		log.Fatal("invalid port in %s: %s", CfgAnalysisServerBindAddress, err)
 	}
 
-	if err := daemon.BackgroundWorker(PluginName, func(shutdownSignal <-chan struct{}) {
+	if err := daemon.BackgroundWorker(PluginName, func(ctx context.Context) {
 		log.Infof("%s started, bind-address=%s", PluginName, bindAddr)
 		defer log.Infof("Stopping %s ... done", PluginName)
 
@@ -89,7 +89,7 @@ func run(_ *node.Plugin) {
 
 		go server.Listen(addr, port)
 
-		<-shutdownSignal
+		<-ctx.Done()
 		log.Info("Stopping Server ...")
 		server.Shutdown()
 	}, shutdown.PriorityAnalysis); err != nil {
@@ -129,9 +129,6 @@ func wireUp(p *protocol.Protocol) {
 	p.Events.Received[packet.MessageTypeHeartbeat].Attach(events.NewClosure(func(data []byte) {
 		processHeartbeatPacket(data)
 	}))
-	p.Events.Received[packet.MessageTypeFPCHeartbeat].Attach(events.NewClosure(func(data []byte) {
-		processFPCHeartbeatPacket(data)
-	}))
 	p.Events.Received[packet.MessageTypeMetricHeartbeat].Attach(events.NewClosure(func(data []byte) {
 		processMetricHeartbeatPacket(data)
 	}))
@@ -147,20 +144,6 @@ func processHeartbeatPacket(data []byte) {
 		return
 	}
 	updateAutopeeringMap(heartbeatPacket)
-}
-
-// processHeartbeatPacket parses the serialized data into a FPC Heartbeat packet and triggers its event.
-// Note that the processFPCHeartbeatPacket function will return an error if the hb version field is different than banner.SimplifiedAppVersion,
-// thus the hb will be discarded.
-func processFPCHeartbeatPacket(data []byte) {
-	hb, err := packet.ParseFPCHeartbeat(data)
-	if err != nil {
-		if !errors.Is(err, packet.ErrInvalidFPCHeartbeatVersion) {
-			Events.Error.Trigger(err)
-		}
-		return
-	}
-	Events.FPCHeartbeat.Trigger(hb)
 }
 
 // processMetricHeartbeatPacket parses the serialized data into a Metric Heartbeat packet and triggers its event.

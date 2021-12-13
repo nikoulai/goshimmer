@@ -1,11 +1,11 @@
 #!/bin/bash
 
-TEST_NAMES='autopeering common drng value consensus faucet mana diagnostics'
+TEST_NAMES='autopeering common consensus drng value faucet mana diagnostics'
 
 export DOCKER_BUILDKIT=1
 export COMPOSE_DOCKER_CLI_BUILD=1
 echo "Build GoShimmer image"
-docker build -t iotaledger/goshimmer ../../.
+docker build --build-arg DOWNLOAD_SNAPSHOT=0 -t iotaledger/goshimmer ../../.
 
 echo "Pull additional Docker images"
 docker pull angelocapossele/drand:v1.1.4

@@ -29,7 +29,7 @@ func (id ID) String() string {
 // Payload represents the network delay payload type.
 type Payload struct {
 	id       ID
-	sentTime int64
+	sentTime int64 // [ns]
 
 	bytes      []byte
 	bytesMutex sync.RWMutex
@@ -120,7 +120,7 @@ func (p *Payload) Bytes() (bytes []byte) {
 
 	bytes = marshalUtil.Bytes()
 
-	return
+	return bytes
 }
 
 // String returns a human-friendly representation of the Payload.

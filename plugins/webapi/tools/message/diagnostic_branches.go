@@ -8,9 +8,8 @@ import (
 
 	"github.com/labstack/echo"
 
+	"github.com/iotaledger/goshimmer/packages/consensus/gof"
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
-	"github.com/iotaledger/goshimmer/packages/tangle"
-	"github.com/iotaledger/goshimmer/plugins/messagelayer"
 )
 
 // DiagnosticBranchesHandler runs the diagnostic over the Tangle.
@@ -43,7 +42,7 @@ func runDiagnosticBranches(c echo.Context) {
 		panic(err)
 	}
 
-	messagelayer.Tangle().LedgerState.BranchDAG.ForEachBranch(func(branch ledgerstate.Branch) {
+	deps.Tangle.LedgerState.BranchDAG.ForEachBranch(func(branch ledgerstate.Branch) {
 		switch branch.ID() {
 		case ledgerstate.MasterBranchID:
 			return
@@ -74,7 +73,7 @@ func runDiagnosticChildBranches(c echo.Context, branchID ledgerstate.BranchID) {
 		panic(err)
 	}
 
-	messagelayer.Tangle().LedgerState.BranchDAG.ChildBranches(branchID).Consume(func(childBranch *ledgerstate.ChildBranch) {
+	deps.Tangle.LedgerState.BranchDAG.ChildBranches(branchID).Consume(func(childBranch *ledgerstate.ChildBranch) {
 		conflictInfo := getDiagnosticConflictsInfo(childBranch.ChildBranchID())
 		_, err = fmt.Fprintln(c.Response(), conflictInfo.toCSV())
 		if err != nil {
@@ -92,28 +91,18 @@ var DiagnosticBranchesTableDescription = []string{
 	"ConflictSet",
 	"IssuanceTime",
 	"SolidTime",
-	"OpinionFormedTime",
-	"Liked",
-	"MonotonicallyLiked",
-	"InclusionState",
-	"Finalized",
 	"LazyBooked",
-	"TransactionLiked",
+	"GradeOfFinality",
 }
 
 // DiagnosticBranchInfo holds the information of a branch.
 type DiagnosticBranchInfo struct {
-	ID                 string
-	ConflictSet        []string
-	IssuanceTimestamp  time.Time
-	SolidTime          time.Time
-	OpinionFormedTime  time.Time
-	Liked              bool
-	MonotonicallyLiked bool
-	InclusionState     string
-	Finalized          bool
-	LazyBooked         bool
-	TransactionLiked   bool
+	ID                string
+	ConflictSet       []string
+	IssuanceTimestamp time.Time
+	SolidTime         time.Time
+	LazyBooked        bool
+	GradeOfFinality   gof.GradeOfFinality
 }
 
 func getDiagnosticConflictsInfo(branchID ledgerstate.BranchID) DiagnosticBranchInfo {
@@ -121,10 +110,8 @@ func getDiagnosticConflictsInfo(branchID ledgerstate.BranchID) DiagnosticBranchI
 		ID: branchID.Base58(),
 	}
 
-	messagelayer.Tangle().LedgerState.BranchDAG.Branch(branchID).Consume(func(branch ledgerstate.Branch) {
-		conflictInfo.Liked = branch.Liked()
-		conflictInfo.MonotonicallyLiked = branch.MonotonicallyLiked()
-		conflictInfo.InclusionState = messagelayer.Tangle().LedgerState.BranchInclusionState(branchID).String()
+	deps.Tangle.LedgerState.BranchDAG.Branch(branchID).Consume(func(branch ledgerstate.Branch) {
+		conflictInfo.GradeOfFinality, _ = deps.Tangle.LedgerState.UTXODAG.BranchGradeOfFinality(branch.ID())
 
 		if branch.Type() == ledgerstate.AggregatedBranchType {
 			return
@@ -132,20 +119,15 @@ func getDiagnosticConflictsInfo(branchID ledgerstate.BranchID) DiagnosticBranchI
 
 		transactionID := ledgerstate.TransactionID(branchID)
 
-		conflictInfo.ConflictSet = messagelayer.Tangle().LedgerState.ConflictSet(transactionID).Base58s()
+		conflictInfo.ConflictSet = deps.Tangle.LedgerState.ConflictSet(transactionID).Base58s()
 
-		messagelayer.Tangle().LedgerState.Transaction(transactionID).Consume(func(transaction *ledgerstate.Transaction) {
+		deps.Tangle.LedgerState.Transaction(transactionID).Consume(func(transaction *ledgerstate.Transaction) {
 			conflictInfo.IssuanceTimestamp = transaction.Essence().Timestamp()
-			messagelayer.Tangle().Storage.Attachments(transactionID).Consume(func(attachment *tangle.Attachment) {
-				conflictInfo.OpinionFormedTime = messagelayer.ConsensusMechanism().OpinionFormedTime(attachment.MessageID())
-			})
 		})
 
-		messagelayer.Tangle().LedgerState.TransactionMetadata(transactionID).Consume(func(transactionMetadata *ledgerstate.TransactionMetadata) {
+		deps.Tangle.LedgerState.TransactionMetadata(transactionID).Consume(func(transactionMetadata *ledgerstate.TransactionMetadata) {
 			conflictInfo.SolidTime = transactionMetadata.SolidificationTime()
-			conflictInfo.Finalized = transactionMetadata.Finalized()
 			conflictInfo.LazyBooked = transactionMetadata.LazyBooked()
-			conflictInfo.TransactionLiked = messagelayer.ConsensusMechanism().TransactionLiked(transactionID)
 		})
 	})
 
@@ -158,13 +140,7 @@ func (d DiagnosticBranchInfo) toCSV() (result string) {
 		strings.Join(d.ConflictSet, ";"),
 		fmt.Sprint(d.IssuanceTimestamp.UnixNano()),
 		fmt.Sprint(d.SolidTime.UnixNano()),
-		fmt.Sprint(d.OpinionFormedTime.UnixNano()),
-		fmt.Sprint(d.Liked),
-		fmt.Sprint(d.MonotonicallyLiked),
-		d.InclusionState,
-		fmt.Sprint(d.Finalized),
 		fmt.Sprint(d.LazyBooked),
-		fmt.Sprint(d.TransactionLiked),
 	}
 
 	result = strings.Join(row, ",")

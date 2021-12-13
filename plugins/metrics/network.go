@@ -3,14 +3,9 @@ package metrics
 import (
 	"github.com/iotaledger/hive.go/identity"
 	"go.uber.org/atomic"
-
-	"github.com/iotaledger/goshimmer/plugins/gossip"
 )
 
 var (
-	_FPCInboundBytes  atomic.Uint64
-	_FPCOutboundBytes atomic.Uint64
-
 	previousNeighbors = make(map[identity.ID]gossipTrafficMetric)
 	gossipOldTx       uint64
 	gossipOldRx       uint64
@@ -20,23 +15,13 @@ var (
 	analysisOutboundBytes atomic.Uint64
 )
 
-// FPCInboundBytes returns the total inbound FPC traffic.
-func FPCInboundBytes() uint64 {
-	return _FPCInboundBytes.Load()
-}
-
-// FPCOutboundBytes returns the total outbound FPC traffic.
-func FPCOutboundBytes() uint64 {
-	return _FPCOutboundBytes.Load()
-}
-
-// GossipInboundBytes returns the total inbound gossip traffic.
-func GossipInboundBytes() uint64 {
+// GossipInboundPackets returns the total amount of inbound gossip packets.
+func GossipInboundPackets() uint64 {
 	return gossipCurrentRx.Load()
 }
 
-// GossipOutboundBytes returns the total outbound gossip traffic.
-func GossipOutboundBytes() uint64 {
+// GossipOutboundPackets returns the total amount of outbound gossip packets.
+func GossipOutboundPackets() uint64 {
 	return gossipCurrentTx.Load()
 }
 
@@ -47,17 +32,17 @@ func AnalysisOutboundBytes() uint64 {
 
 func measureGossipTraffic() {
 	g := gossipCurrentTraffic()
-	gossipCurrentRx.Store(g.BytesRead)
-	gossipCurrentTx.Store(g.BytesWritten)
+	gossipCurrentRx.Store(g.PacketsRead)
+	gossipCurrentTx.Store(g.PacketsWritten)
 }
 
 type gossipTrafficMetric struct {
-	BytesRead    uint64
-	BytesWritten uint64
+	PacketsRead    uint64
+	PacketsWritten uint64
 }
 
 func gossipCurrentTraffic() (g gossipTrafficMetric) {
-	neighbors := gossip.Manager().AllNeighbors()
+	neighbors := deps.GossipMgr.AllNeighbors()
 
 	currentNeighbors := make(map[identity.ID]bool)
 	for _, neighbor := range neighbors {
@@ -65,25 +50,25 @@ func gossipCurrentTraffic() (g gossipTrafficMetric) {
 
 		if _, ok := previousNeighbors[neighbor.ID()]; !ok {
 			previousNeighbors[neighbor.ID()] = gossipTrafficMetric{
-				BytesRead:    neighbor.BytesRead(),
-				BytesWritten: neighbor.BytesWritten(),
+				PacketsRead:    neighbor.PacketsRead(),
+				PacketsWritten: neighbor.PacketsWritten(),
 			}
 		}
 
-		g.BytesRead += neighbor.BytesRead()
-		g.BytesWritten += neighbor.BytesWritten()
+		g.PacketsRead += neighbor.PacketsRead()
+		g.PacketsWritten += neighbor.PacketsWritten()
 	}
 
 	for prevNeighbor := range previousNeighbors {
 		if _, ok := currentNeighbors[prevNeighbor]; !ok {
-			gossipOldRx += previousNeighbors[prevNeighbor].BytesRead
-			gossipOldTx += previousNeighbors[prevNeighbor].BytesWritten
+			gossipOldRx += previousNeighbors[prevNeighbor].PacketsRead
+			gossipOldTx += previousNeighbors[prevNeighbor].PacketsWritten
 			delete(currentNeighbors, prevNeighbor)
 		}
 	}
 
-	g.BytesRead += gossipOldRx
-	g.BytesWritten += gossipOldTx
+	g.PacketsRead += gossipOldRx
+	g.PacketsWritten += gossipOldTx
 
 	return
 }

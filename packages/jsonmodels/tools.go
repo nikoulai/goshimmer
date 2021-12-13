@@ -23,3 +23,9 @@ type MissingResponse struct {
 type NodeQTrackerRequest struct {
 	Cmd string `json:"cmd"`
 }
+
+// MissingAvailableResponse is a map of messageIDs with the peers that have such message.
+type MissingAvailableResponse struct {
+	Availability map[string][]string `json:"msgavailability,omitempty"`
+	Count        int                 `json:"count"`
+}

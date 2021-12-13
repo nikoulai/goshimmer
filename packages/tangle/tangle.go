@@ -1,11 +1,11 @@
 package tangle
 
 import (
-	"strings"
 	"sync"
 	"time"
 
 	"github.com/iotaledger/goshimmer/packages/database"
+	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 
 	"github.com/cockroachdb/errors"
 	"github.com/iotaledger/hive.go/autopeering/peer"
@@ -16,7 +16,6 @@ import (
 	"github.com/iotaledger/hive.go/kvstore/mapdb"
 	"github.com/mr-tron/base58"
 
-	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/goshimmer/packages/markers"
 	"github.com/iotaledger/goshimmer/packages/tangle/payload"
 )
@@ -37,11 +36,11 @@ type Tangle struct {
 	Storage               *Storage
 	Solidifier            *Solidifier
 	Scheduler             *Scheduler
-	Orderer               *Orderer
+	Dispatcher            *Dispatcher
 	Booker                *Booker
 	ApprovalWeightManager *ApprovalWeightManager
 	TimeManager           *TimeManager
-	ConsensusManager      *ConsensusManager
+	OTVConsensusManager   *OTVConsensusManager
 	TipManager            *TipManager
 	Requester             *Requester
 	MessageFactory        *MessageFactory
@@ -49,17 +48,34 @@ type Tangle struct {
 	Utils                 *Utils
 	WeightProvider        WeightProvider
 	Events                *Events
+	ConfirmationOracle    ConfirmationOracle
 
 	setupParserOnce sync.Once
+}
+
+// ConfirmationOracle answers questions about entities' confirmation.
+type ConfirmationOracle interface {
+	IsMarkerConfirmed(marker *markers.Marker) bool
+	IsMessageConfirmed(msgID MessageID) bool
+	IsBranchConfirmed(branchID ledgerstate.BranchID) bool
+	IsTransactionConfirmed(transactionID ledgerstate.TransactionID) bool
+	IsOutputConfirmed(outputID ledgerstate.OutputID) bool
+	Events() *ConfirmationEvents
+}
+
+// ConfirmationEvents are events entailing confirmation.
+type ConfirmationEvents struct {
+	MessageConfirmed     *events.Event
+	BranchConfirmed      *events.Event
+	TransactionConfirmed *events.Event
 }
 
 // New is the constructor for the Tangle.
 func New(options ...Option) (tangle *Tangle) {
 	tangle = &Tangle{
 		Events: &Events{
-			MessageEligible: events.NewEvent(MessageIDCaller),
-			MessageInvalid:  events.NewEvent(MessageIDCaller),
-			Error:           events.NewEvent(events.ErrorCaller),
+			MessageInvalid: events.NewEvent(MessageInvalidCaller),
+			Error:          events.NewEvent(events.ErrorCaller),
 		},
 	}
 
@@ -73,12 +89,11 @@ func New(options ...Option) (tangle *Tangle) {
 	tangle.Booker = NewBooker(tangle)
 	tangle.ApprovalWeightManager = NewApprovalWeightManager(tangle)
 	tangle.TimeManager = NewTimeManager(tangle)
-	tangle.ConsensusManager = NewConsensusManager(tangle)
 	tangle.Requester = NewRequester(tangle)
 	tangle.TipManager = NewTipManager(tangle)
-	tangle.MessageFactory = NewMessageFactory(tangle, tangle.TipManager)
+	tangle.MessageFactory = NewMessageFactory(tangle, tangle.TipManager, PrepareLikeReferences)
 	tangle.Utils = NewUtils(tangle)
-	tangle.Orderer = NewOrderer(tangle)
+	tangle.Dispatcher = NewDispatcher(tangle)
 
 	tangle.WeightProvider = tangle.Options.WeightProvider
 
@@ -98,10 +113,6 @@ func (t *Tangle) Configure(options ...Option) {
 	for _, option := range options {
 		option(t.Options)
 	}
-
-	if t.Options.ConsensusMechanism != nil {
-		t.Options.ConsensusMechanism.Init(t)
-	}
 }
 
 // Setup sets up the data flow by connecting the different components (by calling their corresponding Setup method).
@@ -110,11 +121,10 @@ func (t *Tangle) Setup() {
 	t.Solidifier.Setup()
 	t.Requester.Setup()
 	t.Scheduler.Setup()
-	t.Orderer.Setup()
+	t.Dispatcher.Setup()
 	t.Booker.Setup()
 	t.ApprovalWeightManager.Setup()
 	t.TimeManager.Setup()
-	t.ConsensusManager.Setup()
 	t.TipManager.Setup()
 
 	// increase scheduler rate if the node is not synced at start
@@ -150,26 +160,7 @@ func (t *Tangle) IssuePayload(p payload.Payload, local *identity.LocalIdentity, 
 		return
 	}
 
-	if p.Type() == ledgerstate.TransactionType {
-		var invalidInputs []string
-		transaction := p.(*ledgerstate.Transaction)
-		for _, input := range transaction.Essence().Inputs() {
-			if input.Type() == ledgerstate.UTXOInputType {
-				t.LedgerState.CachedOutputMetadata(input.(*ledgerstate.UTXOInput).ReferencedOutputID()).Consume(func(outputMetadata *ledgerstate.OutputMetadata) {
-					t.LedgerState.BranchDAG.Branch(outputMetadata.BranchID()).Consume(func(branch ledgerstate.Branch) {
-						if branch.InclusionState() == ledgerstate.Rejected || !branch.MonotonicallyLiked() {
-							invalidInputs = append(invalidInputs, input.Base58())
-						}
-					})
-				})
-			}
-		}
-		if len(invalidInputs) > 0 {
-			return nil, errors.Errorf("invalid inputs: %s: %w", strings.Join(invalidInputs, ","), ErrInvalidInputs)
-		}
-	}
-
-	return t.MessageFactory.IssuePayload(p, local, parentsCount...)
+	return t.MessageFactory.IssuePayload(p, parentsCount...)
 }
 
 // Synced returns a boolean value that indicates if the node is fully synced and the Tangle has solidified all messages
@@ -185,11 +176,12 @@ func (t *Tangle) Prune() (err error) {
 
 // Shutdown marks the tangle as stopped, so it will not accept any new messages (waits for all backgroundTasks to finish).
 func (t *Tangle) Shutdown() {
+	t.Requester.Shutdown()
+	t.Parser.Shutdown()
 	t.MessageFactory.Shutdown()
 	t.Scheduler.Shutdown()
-	t.Orderer.Shutdown()
+	t.Dispatcher.Shutdown()
 	t.Booker.Shutdown()
-	t.ConsensusManager.Shutdown()
 	t.ApprovalWeightManager.Shutdown()
 	t.Storage.Shutdown()
 	t.LedgerState.Shutdown()
@@ -211,9 +203,6 @@ type Events struct {
 	// MessageInvalid is triggered when a Message is detected to be objectively invalid.
 	MessageInvalid *events.Event
 
-	// Fired when a message has been eligible.
-	MessageEligible *events.Event
-
 	// Error is triggered when the Tangle faces an error from which it can not recover.
 	Error *events.Event
 }
@@ -226,6 +215,17 @@ func MessageIDCaller(handler interface{}, params ...interface{}) {
 // MessageCaller is the caller function for events that hand over a Message.
 func MessageCaller(handler interface{}, params ...interface{}) {
 	handler.(func(*Message))(params[0].(*Message))
+}
+
+// MessageInvalidCaller is the caller function for events that had over an invalid message.
+func MessageInvalidCaller(handler interface{}, params ...interface{}) {
+	handler.(func(ev *MessageInvalidEvent))(params[0].(*MessageInvalidEvent))
+}
+
+// MessageInvalidEvent is struct that is passed along with triggering a messageInvalidEvent.
+type MessageInvalidEvent struct {
+	MessageID MessageID
+	Error     error
 }
 
 // endregion ///////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -242,7 +242,6 @@ type Options struct {
 	Identity                     *identity.LocalIdentity
 	IncreaseMarkersIndexCallback markers.IncreaseIndexCallback
 	TangleWidth                  int
-	ConsensusMechanism           ConsensusMechanism
 	GenesisNode                  *ed25519.PublicKey
 	SchedulerParams              SchedulerParams
 	RateSetterParams             RateSetterParams
@@ -263,13 +262,6 @@ func Store(store kvstore.KVStore) Option {
 func Identity(identity *identity.LocalIdentity) Option {
 	return func(options *Options) {
 		options.Identity = identity
-	}
-}
-
-// Consensus is an Option for the Tangle that allows to define the consensus mechanism that is used by the Tangle.
-func Consensus(consensusMechanism ConsensusMechanism) Option {
-	return func(options *Options) {
-		options.ConsensusMechanism = consensusMechanism
 	}
 }
 

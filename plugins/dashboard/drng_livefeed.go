@@ -1,6 +1,7 @@
 package dashboard
 
 import (
+	"context"
 	"encoding/hex"
 	"time"
 
@@ -59,7 +60,7 @@ func configureDrngLiveFeed() {
 }
 
 func runDrngLiveFeed() {
-	if err := daemon.BackgroundWorker("Dashboard[DRNGUpdater]", func(shutdownSignal <-chan struct{}) {
+	if err := daemon.BackgroundWorker("Dashboard[DRNGUpdater]", func(ctx context.Context) {
 		newMsgRateLimiter := time.NewTicker(time.Second / 10)
 		defer newMsgRateLimiter.Stop()
 
@@ -70,13 +71,13 @@ func runDrngLiveFeed() {
 			default:
 			}
 		})
-		drng.Instance().Events.Randomness.Attach(notifyNewRandomness)
+		deps.DRNGInstance.Events.Randomness.Attach(notifyNewRandomness)
 
 		defer drngLiveFeedWorkerPool.Stop()
 
-		<-shutdownSignal
+		<-ctx.Done()
 		log.Info("Stopping Dashboard[DRNGUpdater] ...")
-		drng.Instance().Events.Randomness.Detach(notifyNewRandomness)
+		deps.DRNGInstance.Events.Randomness.Detach(notifyNewRandomness)
 		log.Info("Stopping Dashboard[DRNGUpdater] ... done")
 	}, shutdown.PriorityDashboard); err != nil {
 		log.Panicf("Failed to start as daemon: %s", err)

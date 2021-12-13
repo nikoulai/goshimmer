@@ -3,12 +3,14 @@ package shutdown
 const (
 	// PriorityDatabase defines the shutdown priority for the database.
 	PriorityDatabase = iota
+	// PriorityPeerDatabase defines the shutdown priority for the peer database.
+	PriorityPeerDatabase
 	// PriorityMana defines the shutdown priority for the mana plugin.
 	PriorityMana
 	// PriorityTangle defines the shutdown priority for the tangle.
 	PriorityTangle
-	// PriorityFPC defines the shutdown priority for the FPC.
-	PriorityFPC
+	// PriorityDRNG defines the shutdown priority for dRNG.
+	PriorityDRNG
 	// PriorityFaucet defines the shutdown priority for the faucet.
 	PriorityFaucet
 	// PriorityRemoteLog defines the shutdown priority for remote log.
@@ -29,6 +31,8 @@ const (
 	PriorityWebAPI
 	// PriorityDashboard defines the shutdown priority for dashboard.
 	PriorityDashboard
+	// PriorityBroadcast defines the shutdown priority for the broadcast plugin.
+	PriorityBroadcast
 	// PrioritySynchronization defines the shutdown priority for synchronization.
 	PrioritySynchronization
 	// PriorityManaRefresher defines the shutdown priority for the manarefresher plugin.

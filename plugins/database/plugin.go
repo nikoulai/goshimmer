@@ -2,15 +2,18 @@
 package database
 
 import (
+	"context"
 	"strconv"
 	"sync"
 	"time"
 
 	"github.com/cockroachdb/errors"
 	"github.com/iotaledger/hive.go/daemon"
+	"github.com/iotaledger/hive.go/events"
 	"github.com/iotaledger/hive.go/kvstore"
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/hive.go/node"
+	"go.uber.org/dig"
 
 	"github.com/iotaledger/goshimmer/packages/database"
 	"github.com/iotaledger/goshimmer/packages/shutdown"
@@ -20,33 +23,32 @@ import (
 const PluginName = "Database"
 
 var (
-	// plugin is the plugin instance of the database plugin.
-	plugin     *node.Plugin
-	pluginOnce sync.Once
-	log        *logger.Logger
+	// Plugin is the plugin instance of the database plugin.
+	Plugin *node.Plugin
+	deps   = new(dependencies)
+	log    *logger.Logger
 
 	db                database.DB
-	store             kvstore.KVStore
 	cacheTimeProvider *database.CacheTimeProvider
-	storeOnce         sync.Once
 	cacheProviderOnce sync.Once
 )
 
-// Plugin gets the plugin instance.
-func Plugin() *node.Plugin {
-	pluginOnce.Do(func() {
-		plugin = node.NewPlugin(PluginName, node.Enabled, configure, run)
-	})
-	return plugin
+type dependencies struct {
+	dig.In
+	Store kvstore.KVStore
 }
 
-// Store returns the KVStore instance.
-func Store() kvstore.KVStore {
-	storeOnce.Do(createStore)
-	return store
+func init() {
+	Plugin = node.NewPlugin(PluginName, deps, node.Enabled, configure, run)
+
+	Plugin.Events.Init.Attach(events.NewClosure(func(_ *node.Plugin, container *dig.Container) {
+		if err := container.Provide(createStore); err != nil {
+			Plugin.Panic(err)
+		}
+	}))
 }
 
-// CacheTimeProvider  returns the cacheTimeProvider instance
+// CacheTimeProvider returns the cacheTimeProvider instance.
 func CacheTimeProvider() *database.CacheTimeProvider {
 	cacheProviderOnce.Do(createCacheTimeProvider)
 	return cacheTimeProvider
@@ -56,12 +58,7 @@ func createCacheTimeProvider() {
 	cacheTimeProvider = database.NewCacheTimeProvider(Parameters.ForceCacheTime)
 }
 
-// StoreRealm is a factory method for a different realm backed by the KVStore instance.
-func StoreRealm(realm kvstore.Realm) kvstore.KVStore {
-	return Store().WithRealm(realm)
-}
-
-func createStore() {
+func createStore() kvstore.KVStore {
 	log = logger.NewLogger(PluginName)
 
 	var err error
@@ -74,13 +71,11 @@ func createStore() {
 		log.Fatal("Unable to open the database, please delete the database folder. Error: %s", err)
 	}
 
-	store = db.NewStore()
+	return db.NewStore()
 }
 
 func configure(_ *node.Plugin) {
-	// assure that the store is initialized
-	store := Store()
-	configureHealthStore(store)
+	configureHealthStore(deps.Store)
 
 	if err := checkDatabaseVersion(healthStore); err != nil {
 		if errors.Is(err, ErrDBVersionIncompatible) {
@@ -119,12 +114,12 @@ func run(*node.Plugin) {
 
 // manageDBLifetime takes care of managing the lifetime of the database. It marks the database as dirty up on
 // startup and unmarks it up on shutdown. Up on shutdown it will run the db GC and then close the database.
-func manageDBLifetime(shutdownSignal <-chan struct{}) {
+func manageDBLifetime(ctx context.Context) {
 	// we mark the database only as corrupted from within a background worker, which means
 	// that we only mark it as dirty, if the node actually started up properly (meaning no termination
 	// signal was received before all plugins loaded).
 	MarkDatabaseUnhealthy()
-	<-shutdownSignal
+	<-ctx.Done()
 	runDatabaseGC()
 	MarkDatabaseHealthy()
 	log.Infof("Syncing database to disk...")

@@ -57,7 +57,9 @@ func NewNetwork(ctx context.Context, dockerClient *client.Client, name string, t
 
 // Peers returns all available peers in the network.
 func (n *Network) Peers() []*Node {
-	return n.peers
+	peersCopy := make([]*Node, len(n.peers))
+	copy(peersCopy, n.peers)
+	return peersCopy
 }
 
 // CreatePeer creates and returns a new GoShimmer peer.
@@ -288,6 +290,9 @@ func (n *Network) createNode(ctx context.Context, name string, conf config.GoShi
 
 	// create wallet
 	nodeSeed := walletseed.NewSeed()
+	if conf.UseNodeSeedAsWalletSeed {
+		nodeSeed = walletseed.NewSeed(conf.Seed)
+	}
 	if conf.Faucet.Enabled {
 		nodeSeed = walletseed.NewSeed(GenesisSeed)
 	}
@@ -338,24 +343,20 @@ func (n *Network) createEntryNode(ctx context.Context) error {
 	return nil
 }
 
-func (n *Network) createPeers(ctx context.Context, numPeers int, networkConfig CreateNetworkConfig) error {
+func (n *Network) createPeers(ctx context.Context, numPeers int, networkConfig CreateNetworkConfig, cfgAlterFunc ...CfgAlterFunc) error {
 	// create a peer conf from the network conf
 	conf := PeerConfig()
 	if networkConfig.StartSynced {
 		conf.MessageLayer.StartSynced = true
 	}
 	if networkConfig.Autopeering {
-		conf.Autopeering.Enabled = true
-		conf.Autopeering.EntryNodes = []string{
+		conf.AutoPeering.Enabled = true
+		conf.AutoPeering.EntryNodes = []string{
 			fmt.Sprintf("%s@%s:%d", base58.Encode(n.entryNode.Identity.PublicKey().Bytes()), n.entryNode.Name(), peeringPort),
 		}
 	}
 	if networkConfig.Activity {
 		conf.Activity.Enabled = true
-	}
-	if networkConfig.FPC {
-		conf.Consensus.Enabled = true
-		conf.FPC.Enabled = true
 	}
 
 	// the first peer is the master peer, it uses a special conf
@@ -365,11 +366,22 @@ func (n *Network) createPeers(ctx context.Context, numPeers int, networkConfig C
 		masterConfig.Faucet.Enabled = true
 	}
 
+	if len(cfgAlterFunc) > 0 && cfgAlterFunc[0] != nil {
+		masterConfig = cfgAlterFunc[0](0, masterConfig)
+	}
+
 	log.Printf("Starting %d peers...", numPeers)
 	if _, err := n.CreatePeer(ctx, masterConfig); err != nil {
 		return err
 	}
+
 	for i := 1; i < numPeers; i++ {
+		if len(cfgAlterFunc) > 0 && cfgAlterFunc[0] != nil {
+			if _, err := n.CreatePeer(ctx, cfgAlterFunc[0](i, conf)); err != nil {
+				return err
+			}
+			continue
+		}
 		if _, err := n.CreatePeer(ctx, conf); err != nil {
 			return err
 		}
@@ -422,7 +434,7 @@ func (n *Network) waitForManualPeering(ctx context.Context, nodes []*Node) error
 
 	log.Printf("Waiting for %d nodes to connect to their manual peers...", len(nodes))
 	defer log.Println("Waiting for nodes to connect to their manual peers... done")
-	return eventually(ctx, condition, time.Second)
+	return eventually(ctx, condition, 10*time.Second)
 }
 
 // namePrefix returns the suffix prefixed with the name.

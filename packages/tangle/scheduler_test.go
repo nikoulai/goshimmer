@@ -17,14 +17,8 @@ import (
 
 // region Scheduler_test /////////////////////////////////////////////////////////////////////////////////////////////
 
-var (
-	selfLocalIdentity = identity.GenerateLocalIdentity()
-	selfNode          = identity.New(selfLocalIdentity.PublicKey())
-	peerNode          = identity.GenerateIdentity()
-)
-
 func TestScheduler_StartStop(t *testing.T) {
-	tangle := newTestTangle(Identity(selfLocalIdentity))
+	tangle := NewTestTangle(Identity(selfLocalIdentity))
 	defer tangle.Shutdown()
 	tangle.Scheduler.Start()
 
@@ -33,7 +27,7 @@ func TestScheduler_StartStop(t *testing.T) {
 }
 
 func TestScheduler_Submit(t *testing.T) {
-	tangle := newTestTangle(Identity(selfLocalIdentity))
+	tangle := NewTestTangle(Identity(selfLocalIdentity))
 	defer tangle.Shutdown()
 	tangle.Scheduler.Start()
 
@@ -45,8 +39,51 @@ func TestScheduler_Submit(t *testing.T) {
 	assert.NoError(t, tangle.Scheduler.Unsubmit(msg.ID()))
 }
 
+func TestScheduler_updateActiveNodeList(t *testing.T) {
+	tangle := NewTestTangle(Identity(selfLocalIdentity))
+	defer tangle.Shutdown()
+	nodes := make(map[string]*identity.Identity)
+
+	tangle.Scheduler.updateActiveNodesList(map[identity.ID]float64{})
+	assert.Equal(t, 0, tangle.Scheduler.buffer.NumActiveNodes())
+
+	for _, node := range []string{"A", "B", "C", "D", "E", "F", "G"} {
+		nodes[node] = identity.GenerateIdentity()
+	}
+	tangle.Scheduler.updateActiveNodesList(map[identity.ID]float64{
+		nodes["A"].ID(): 30,
+		nodes["B"].ID(): 15,
+		nodes["C"].ID(): 25,
+		nodes["D"].ID(): 20,
+		nodes["E"].ID(): 10,
+		nodes["G"].ID(): 0,
+	})
+
+	assert.Equal(t, 5, tangle.Scheduler.buffer.NumActiveNodes())
+	assert.NotContains(t, tangle.Scheduler.buffer.NodeIDs(), nodes["G"].ID())
+
+	tangle.Scheduler.updateActiveNodesList(map[identity.ID]float64{
+		nodes["A"].ID(): 30,
+		nodes["B"].ID(): 15,
+		nodes["C"].ID(): 25,
+		nodes["E"].ID(): 0,
+		nodes["F"].ID(): 1,
+		nodes["G"].ID(): 5,
+	})
+	assert.Equal(t, 5, tangle.Scheduler.buffer.NumActiveNodes())
+	assert.Contains(t, tangle.Scheduler.buffer.NodeIDs(), nodes["A"].ID())
+	assert.Contains(t, tangle.Scheduler.buffer.NodeIDs(), nodes["B"].ID())
+	assert.Contains(t, tangle.Scheduler.buffer.NodeIDs(), nodes["C"].ID())
+	assert.Contains(t, tangle.Scheduler.buffer.NodeIDs(), nodes["F"].ID())
+	assert.Contains(t, tangle.Scheduler.buffer.NodeIDs(), nodes["G"].ID())
+
+	tangle.Scheduler.updateActiveNodesList(map[identity.ID]float64{})
+	assert.Equal(t, 0, tangle.Scheduler.buffer.NumActiveNodes())
+}
+
 func TestScheduler_Discarded(t *testing.T) {
-	tangle := newTestTangle(Identity(selfLocalIdentity))
+	t.Skip("Skip test. Zero mana nodes are allowed to issue messages.")
+	tangle := NewTestTangle(Identity(selfLocalIdentity))
 	defer tangle.Shutdown()
 
 	messageDiscarded := make(chan MessageID, 1)
@@ -71,7 +108,7 @@ func TestScheduler_Discarded(t *testing.T) {
 }
 
 func TestScheduler_DiscardedAtShutdown(t *testing.T) {
-	tangle := newTestTangle(Identity(selfLocalIdentity))
+	tangle := NewTestTangle(Identity(selfLocalIdentity))
 	defer tangle.Shutdown()
 
 	messageDiscarded := make(chan MessageID, 1)
@@ -97,7 +134,7 @@ func TestScheduler_DiscardedAtShutdown(t *testing.T) {
 }
 
 func TestScheduler_SetRateBeforeStart(t *testing.T) {
-	tangle := newTestTangle(Identity(selfLocalIdentity))
+	tangle := NewTestTangle(Identity(selfLocalIdentity))
 	defer tangle.Shutdown()
 
 	tangle.Scheduler.SetRate(time.Hour)
@@ -106,7 +143,7 @@ func TestScheduler_SetRateBeforeStart(t *testing.T) {
 }
 
 func TestScheduler_Schedule(t *testing.T) {
-	tangle := newTestTangle(Identity(selfLocalIdentity))
+	tangle := NewTestTangle(Identity(selfLocalIdentity))
 	defer tangle.Shutdown()
 
 	messageScheduled := make(chan MessageID, 1)
@@ -131,7 +168,7 @@ func TestScheduler_Schedule(t *testing.T) {
 }
 
 func TestScheduler_SetRate(t *testing.T) {
-	tangle := newTestTangle(Identity(selfLocalIdentity))
+	tangle := NewTestTangle(Identity(selfLocalIdentity))
 	defer tangle.Shutdown()
 
 	var scheduled atomic.Bool
@@ -160,7 +197,7 @@ func TestScheduler_SetRate(t *testing.T) {
 }
 
 func TestScheduler_Time(t *testing.T) {
-	tangle := newTestTangle(Identity(selfLocalIdentity))
+	tangle := NewTestTangle(Identity(selfLocalIdentity))
 	defer tangle.Shutdown()
 
 	messageScheduled := make(chan MessageID, 1)
@@ -203,7 +240,7 @@ func TestScheduler_Time(t *testing.T) {
 }
 
 func TestScheduler_Issue(t *testing.T) {
-	tangle := newTestTangle(Identity(selfLocalIdentity))
+	tangle := NewTestTangle(Identity(selfLocalIdentity))
 	defer tangle.Shutdown()
 
 	tangle.Events.Error.Attach(events.NewClosure(func(err error) { assert.Failf(t, "unexpected error", "error event triggered: %v", err) }))
@@ -244,7 +281,7 @@ func TestScheduler_Issue(t *testing.T) {
 func TestSchedulerFlow(t *testing.T) {
 	// create Scheduler dependencies
 	// create the tangle
-	tangle := newTestTangle(Identity(selfLocalIdentity))
+	tangle := NewTestTangle(Identity(selfLocalIdentity))
 	defer tangle.Shutdown()
 
 	tangle.Events.Error.Attach(events.NewClosure(func(err error) { assert.Failf(t, "unexpected error", "error event triggered: %v", err) }))
@@ -265,16 +302,27 @@ func TestSchedulerFlow(t *testing.T) {
 
 	// set C to have a timestamp in the future
 	msgC := newMessage(selfNode.PublicKey())
-	msgC.strongParents = []MessageID{messages["A"].ID(), messages["B"].ID()}
+
+	msgC.parentsBlocks[0] = ParentsBlock{
+		ParentsType: StrongParentType,
+		References:  MessageIDs{messages["A"].ID(), messages["B"].ID()},
+	}
+
 	msgC.issuingTime = time.Now().Add(5 * time.Second)
 	messages["C"] = msgC
 
 	msgD := newMessage(peerNode.PublicKey())
-	msgD.strongParents = []MessageID{messages["A"].ID(), messages["B"].ID()}
+	msgD.parentsBlocks[0] = ParentsBlock{
+		ParentsType: StrongParentType,
+		References:  MessageIDs{messages["A"].ID(), messages["B"].ID()},
+	}
 	messages["D"] = msgD
 
 	msgE := newMessage(selfNode.PublicKey())
-	msgE.strongParents = []MessageID{messages["A"].ID(), messages["B"].ID()}
+	msgE.parentsBlocks[0] = ParentsBlock{
+		ParentsType: StrongParentType,
+		References:  MessageIDs{messages["A"].ID(), messages["B"].ID()},
+	}
 	msgE.issuingTime = time.Now().Add(3 * time.Second)
 	messages["E"] = msgE
 
@@ -308,7 +356,7 @@ func TestSchedulerParallelSubmit(t *testing.T) {
 
 	// create Scheduler dependencies
 	// create the tangle
-	tangle := newTestTangle(Identity(selfLocalIdentity))
+	tangle := NewTestTangle(Identity(selfLocalIdentity))
 	defer tangle.Shutdown()
 
 	tangle.Events.Error.Attach(events.NewClosure(func(err error) { assert.Failf(t, "unexpected error", "error event triggered: %v", err) }))
@@ -360,7 +408,7 @@ func TestSchedulerParallelSubmit(t *testing.T) {
 }
 
 func BenchmarkScheduler(b *testing.B) {
-	tangle := newTestTangle(Identity(selfLocalIdentity))
+	tangle := NewTestTangle(Identity(selfLocalIdentity))
 	defer tangle.Shutdown()
 
 	msg := newMessage(selfNode.PublicKey())
@@ -377,8 +425,10 @@ func BenchmarkScheduler(b *testing.B) {
 }
 
 func newMessage(issuerPublicKey ed25519.PublicKey) *Message {
-	return NewMessage(
+	message, _ := NewMessage(
 		[]MessageID{EmptyMessageID},
+		[]MessageID{},
+		[]MessageID{},
 		[]MessageID{},
 		time.Now(),
 		issuerPublicKey,
@@ -387,6 +437,7 @@ func newMessage(issuerPublicKey ed25519.PublicKey) *Message {
 		0,
 		ed25519.Signature{},
 	)
+	return message
 }
 
 // endregion ///////////////////////////////////////////////////////////////////////////////////////////////////////////

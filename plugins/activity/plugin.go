@@ -1,64 +1,69 @@
 package activity
 
 import (
+	"context"
 	"math/rand"
-	"sync"
 	"time"
 
 	"github.com/iotaledger/hive.go/daemon"
 	"github.com/iotaledger/hive.go/node"
 	"github.com/iotaledger/hive.go/timeutil"
+	"go.uber.org/dig"
 
 	"github.com/iotaledger/goshimmer/packages/shutdown"
+	"github.com/iotaledger/goshimmer/packages/tangle"
 	"github.com/iotaledger/goshimmer/packages/tangle/payload"
-	"github.com/iotaledger/goshimmer/plugins/messagelayer"
 )
 
 var (
-	// plugin is the plugin instance of the activity plugin.
-	plugin *node.Plugin
-	once   sync.Once
+	// Plugin is the plugin instance of the activity plugin.
+	Plugin *node.Plugin
+	deps   = new(dependencies)
 )
 
-// Plugin gets the plugin instance.
-func Plugin() *node.Plugin {
-	once.Do(func() {
-		plugin = node.NewPlugin("Activity", node.Disabled, configure, run)
-	})
-	return plugin
+type dependencies struct {
+	dig.In
+	Tangle *tangle.Tangle
 }
 
-// configure events
-func configure(_ *node.Plugin) {
+func init() {
+	Plugin = node.NewPlugin("Activity", deps, node.Disabled, configure, run)
+}
+
+func configure(plugin *node.Plugin) {
 	plugin.LogInfof("starting node with activity plugin")
 }
 
 // broadcastActivityMessage broadcasts a sync beacon via communication layer.
 func broadcastActivityMessage() {
 	activityPayload := payload.NewGenericDataPayload([]byte("activity"))
+<<<<<<< HEAD
 	msg, err := messagelayer.Tangle().IssuePayload(activityPayload, messagelayer.Tangle().Options.Identity, Parameters.ParentsCount)
+=======
+	msg, err := deps.Tangle.IssuePayload(activityPayload, Parameters.ParentsCount)
+>>>>>>> dev/drop-head
 	if err != nil {
-		plugin.LogWarnf("error issuing activity message: %s", err)
+		Plugin.LogWarnf("error issuing activity message: %s", err)
 		return
 	}
 
-	plugin.LogDebugf("issued activity message %s", msg.ID())
+	Plugin.LogDebugf("issued activity message %s", msg.ID())
 }
 
 func run(_ *node.Plugin) {
-	if err := daemon.BackgroundWorker("Activity-plugin", func(shutdownSignal <-chan struct{}) {
+	if err := daemon.BackgroundWorker("Activity-plugin", func(ctx context.Context) {
 		// start with initial delay
 		rand.NewSource(time.Now().UnixNano())
-		initialDelay := rand.Intn(Parameters.DelayOffset)
-		time.Sleep(time.Duration(initialDelay) * time.Second)
+		initialDelay := time.Duration(rand.Intn(int(Parameters.DelayOffset)))
+		time.Sleep(initialDelay)
 
-		if Parameters.BroadcastIntervalSec > 0 {
-			timeutil.NewTicker(broadcastActivityMessage, time.Duration(Parameters.BroadcastIntervalSec)*time.Second, shutdownSignal)
+		if Parameters.BroadcastInterval > 0 {
+			timeutil.NewTicker(broadcastActivityMessage, Parameters.BroadcastInterval, ctx)
 		}
 
-		// Wait before terminating so we get correct log messages from the daemon regarding the shutdown order.
-		<-shutdownSignal
+		// Wait before terminating, so we get correct log messages from the daemon regarding the shutdown order.
+		<-ctx.Done()
 	}, shutdown.PriorityActivity); err != nil {
-		plugin.Panicf("Failed to start as daemon: %s", err)
+		Plugin.Panicf("Failed to start as daemon: %s", err)
 	}
 }

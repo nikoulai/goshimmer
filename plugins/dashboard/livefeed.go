@@ -1,13 +1,14 @@
 package dashboard
 
 import (
+	"context"
+
 	"github.com/iotaledger/hive.go/daemon"
 	"github.com/iotaledger/hive.go/events"
 	"github.com/iotaledger/hive.go/workerpool"
 
 	"github.com/iotaledger/goshimmer/packages/shutdown"
 	"github.com/iotaledger/goshimmer/packages/tangle"
-	"github.com/iotaledger/goshimmer/plugins/messagelayer"
 )
 
 var (
@@ -28,16 +29,16 @@ func configureLiveFeed() {
 
 func runLiveFeed() {
 	notifyNewMsg := events.NewClosure(func(messageID tangle.MessageID) {
-		messagelayer.Tangle().Storage.Message(messageID).Consume(func(message *tangle.Message) {
+		deps.Tangle.Storage.Message(messageID).Consume(func(message *tangle.Message) {
 			liveFeedWorkerPool.TrySubmit(message)
 		})
 	})
 
-	if err := daemon.BackgroundWorker("Dashboard[MsgUpdater]", func(shutdownSignal <-chan struct{}) {
-		messagelayer.Tangle().Storage.Events.MessageStored.Attach(notifyNewMsg)
-		<-shutdownSignal
+	if err := daemon.BackgroundWorker("Dashboard[MsgUpdater]", func(ctx context.Context) {
+		deps.Tangle.Storage.Events.MessageStored.Attach(notifyNewMsg)
+		<-ctx.Done()
 		log.Info("Stopping Dashboard[MsgUpdater] ...")
-		messagelayer.Tangle().Storage.Events.MessageStored.Detach(notifyNewMsg)
+		deps.Tangle.Storage.Events.MessageStored.Detach(notifyNewMsg)
 		liveFeedWorkerPool.Stop()
 		log.Info("Stopping Dashboard[MsgUpdater] ... done")
 	}, shutdown.PriorityDashboard); err != nil {

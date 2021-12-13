@@ -1,6 +1,7 @@
 package dashboard
 
 import (
+	"context"
 	"net/http"
 	"sync"
 	"time"
@@ -12,7 +13,6 @@ import (
 	"github.com/labstack/echo"
 
 	"github.com/iotaledger/goshimmer/packages/shutdown"
-	"github.com/iotaledger/goshimmer/plugins/messagelayer"
 	"github.com/iotaledger/goshimmer/plugins/metrics"
 )
 
@@ -21,7 +21,7 @@ var (
 	wsSendWorkerCount     = 1
 	wsSendWorkerQueueSize = 250
 	wsSendWorkerPool      *workerpool.NonBlockingQueuedWorkerPool
-	webSocketWriteTimeout = time.Duration(3) * time.Second
+	webSocketWriteTimeout = 3 * time.Second
 
 	// clients
 	wsClientsMu    sync.RWMutex
@@ -52,8 +52,7 @@ func configureWebSocketWorkerPool() {
 			broadcastWsMessage(&wsmsg{MsgTypeNodeStatus, currentNodeStatus()})
 			broadcastWsMessage(&wsmsg{MsgTypeNeighborMetric, neighborMetrics()})
 			broadcastWsMessage(&wsmsg{MsgTypeTipsMetric, &tipsInfo{
-				TotalTips: messagelayer.Tangle().TipManager.StrongTipCount() + messagelayer.Tangle().TipManager.WeakTipCount(),
-				WeakTips:  messagelayer.Tangle().TipManager.WeakTipCount(),
+				TotalTips: deps.Tangle.TipManager.TipCount(),
 			}})
 		case *componentsmetric:
 			broadcastWsMessage(&wsmsg{MsgTypeComponentCounterMetric, x})
@@ -76,10 +75,10 @@ func runWebSocketStreams() {
 		wsSendWorkerPool.TrySubmit(updateStatus)
 	})
 
-	if err := daemon.BackgroundWorker("Dashboard[StatusUpdate]", func(shutdownSignal <-chan struct{}) {
+	if err := daemon.BackgroundWorker("Dashboard[StatusUpdate]", func(ctx context.Context) {
 		metrics.Events.ReceivedMPSUpdated.Attach(updateStatus)
 		metrics.Events.ComponentCounterUpdated.Attach(updateComponentCounterStatus)
-		<-shutdownSignal
+		<-ctx.Done()
 		log.Info("Stopping Dashboard[StatusUpdate] ...")
 		metrics.Events.ReceivedMPSUpdated.Detach(updateStatus)
 		wsSendWorkerPool.Stop()
@@ -153,6 +152,8 @@ func sendInitialData(ws *websocket.Conn) error {
 	if err := ManaBufferInstance().SendMapOnline(ws); err != nil {
 		return err
 	}
+	sendAllConflicts()
+
 	return nil
 }
 

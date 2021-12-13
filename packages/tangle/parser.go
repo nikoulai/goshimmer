@@ -2,6 +2,7 @@ package tangle
 
 import (
 	"fmt"
+	"io"
 	"sync"
 	"time"
 
@@ -154,6 +155,13 @@ func (p *Parser) parseMessage(bytes []byte, peer *peer.Peer) {
 	}
 }
 
+// Shutdown closes all the message filters.
+func (p *Parser) Shutdown() {
+	for _, messageFiler := range p.messageFilters {
+		messageFiler.Close()
+	}
+}
+
 // endregion ///////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 // region ParserEvents /////////////////////////////////////////////////////////////////////////////////////////////////
@@ -244,8 +252,10 @@ type MessageFilter interface {
 	Filter(msg *Message, peer *peer.Peer)
 	// OnAccept registers the given callback as the acceptance function of the filter.
 	OnAccept(callback func(msg *Message, peer *peer.Peer))
-	// OnAccept registers the given callback as the rejection function of the filter.
+	// OnReject registers the given callback as the rejection function of the filter.
 	OnReject(callback func(msg *Message, err error, peer *peer.Peer))
+	// Closer closes the filter.
+	io.Closer
 }
 
 // endregion ///////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -303,6 +313,9 @@ func (f *MessageSignatureFilter) getRejectCallback() (result func(msg *Message, 
 	f.onRejectCallbackMutex.RUnlock()
 	return
 }
+
+// Close closes the filter.
+func (f *MessageSignatureFilter) Close() error { return nil }
 
 // endregion ///////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -464,7 +477,7 @@ type TransactionFilter struct {
 	onRejectCallbackMutex sync.RWMutex
 }
 
-// Filter compares the timestamps between the message and it's transaction payload and calls the corresponding callback.
+// Filter compares the timestamps between the message, and it's transaction payload and calls the corresponding callback.
 func (f *TransactionFilter) Filter(msg *Message, peer *peer.Peer) {
 	if payload := msg.Payload(); payload.Type() == ledgerstate.TransactionType {
 		transaction, _, err := ledgerstate.TransactionFromBytes(payload.Bytes())
@@ -513,6 +526,9 @@ func (f *TransactionFilter) getRejectCallback() (result func(msg *Message, err e
 	f.onRejectCallbackMutex.RUnlock()
 	return
 }
+
+// Close closes the filter.
+func (f *TransactionFilter) Close() error { return nil }
 
 // endregion ///////////////////////////////////////////////////////////////////////////////////////////////////////////
 

@@ -1,13 +1,15 @@
 package clock
 
 import (
+	"context"
 	"math/rand"
-	"sync"
 	"time"
 
 	"github.com/iotaledger/hive.go/daemon"
+	"github.com/iotaledger/hive.go/events"
 	"github.com/iotaledger/hive.go/node"
 	"github.com/iotaledger/hive.go/timeutil"
+	"go.uber.org/dig"
 
 	"github.com/iotaledger/goshimmer/packages/clock"
 	"github.com/iotaledger/goshimmer/packages/shutdown"
@@ -19,49 +21,53 @@ const (
 )
 
 var (
-	plugin     *node.Plugin
-	pluginOnce sync.Once
+	// Plugin is the plugin instance of the clock plugin.
+	Plugin *node.Plugin
 )
 
-// Plugin gets the clock plugin instance.
-func Plugin() *node.Plugin {
-	pluginOnce.Do(func() {
-		plugin = node.NewPlugin("Clock", node.Enabled, configure, run)
-	})
-	return plugin
+func init() {
+	Plugin = node.NewPlugin("Clock", nil, node.Enabled, configure, run)
+
+	Plugin.Events.Init.Attach(events.NewClosure(func(_ *node.Plugin, container *dig.Container) {
+		if err := container.Provide(func() *node.Plugin {
+			return Plugin
+		}, dig.Name("clock")); err != nil {
+			Plugin.Panic(err)
+		}
+	}))
 }
 
 func configure(plugin *node.Plugin) {
 	if len(Parameters.NTPPools) == 0 {
-		Plugin().LogFatalf("at least 1 NTP pool needs to be provided to synchronize the local clock.")
+		plugin.LogFatalf("at least 1 NTP pool needs to be provided to synchronize the local clock.")
 	}
 }
 
 func run(plugin *node.Plugin) {
-	if err := daemon.BackgroundWorker(Plugin().Name, func(shutdownSignal <-chan struct{}) {
+	if err := daemon.BackgroundWorker(plugin.Name, func(ctx context.Context) {
 		// sync clock on startup
 		queryNTPPool()
 
 		// sync clock every 30min to counter drift
-		timeutil.NewTicker(queryNTPPool, syncInterval, shutdownSignal)
+		timeutil.NewTicker(queryNTPPool, syncInterval, ctx)
 
-		<-shutdownSignal
+		<-ctx.Done()
 	}, shutdown.PrioritySynchronization); err != nil {
-		Plugin().Panicf("Failed to start as daemon: %s", err)
+		plugin.Panicf("Failed to start as daemon: %s", err)
 	}
 }
 
 // queryNTPPool queries configured ntpPools for maxTries.
 func queryNTPPool() {
-	Plugin().LogDebug("Synchronizing clock...")
+	Plugin.LogDebug("Synchronizing clock...")
 	for t := maxTries; t > 0; t-- {
 		index := rand.Int() % len(Parameters.NTPPools)
 		err := clock.FetchTimeOffset(Parameters.NTPPools[index])
 		if err == nil {
-			Plugin().LogDebug("Synchronizing clock... done")
+			Plugin.LogDebug("Synchronizing clock... done")
 			return
 		}
 	}
 
-	Plugin().LogWarn("error while trying to sync clock")
+	Plugin.LogWarn("error while trying to sync clock")
 }

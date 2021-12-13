@@ -6,35 +6,36 @@ import (
 	"time"
 
 	"github.com/cockroachdb/errors"
+	"github.com/iotaledger/hive.go/configuration"
 	"github.com/iotaledger/hive.go/daemon"
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/hive.go/node"
 	"github.com/labstack/echo"
 	"github.com/labstack/echo/middleware"
+	"go.uber.org/dig"
 
 	"github.com/iotaledger/goshimmer/packages/shutdown"
-	"github.com/iotaledger/goshimmer/plugins/config"
 )
 
 // PluginName is the name of the dashboard plugin.
-const PluginName = "Analysis-Dashboard"
+const PluginName = "AnalysisDashboard"
 
 var (
-	// plugin is the plugin instance of the dashboard plugin.
-	plugin = node.NewPlugin(PluginName, node.Disabled, configure, run)
-
+	// Plugin is the plugin instance of the dashboard plugin.
+	Plugin = node.NewPlugin(PluginName, deps, node.Disabled, configure, run)
+	deps   = new(dependencies)
 	log    *logger.Logger
 	server *echo.Echo
 )
 
-// Plugin gets the plugin instance
-func Plugin() *node.Plugin {
-	return plugin
+type dependencies struct {
+	dig.In
+
+	Config *configuration.Configuration
 }
 
 func configure(plugin *node.Plugin) {
 	log = logger.NewLogger(plugin.Name)
-	configureFPCLiveFeed()
 	configureAutopeeringWorkerPool()
 	configureServer()
 }
@@ -45,10 +46,10 @@ func configureServer() {
 	server.HidePort = true
 	server.Use(middleware.Recover())
 
-	if config.Node().Bool(CfgBasicAuthEnabled) {
+	if Parameters.BasicAuthEnabled {
 		server.Use(middleware.BasicAuth(func(username, password string, c echo.Context) (bool, error) {
-			if username == config.Node().String(CfgBasicAuthUsername) &&
-				password == config.Node().String(CfgBasicAuthPassword) {
+			if username == Parameters.BasicAuthUsername &&
+				password == Parameters.BasicAuthPassword {
 				return true, nil
 			}
 			return false, nil
@@ -59,8 +60,6 @@ func configureServer() {
 }
 
 func run(*node.Plugin) {
-	// run FPC stat reporting
-	runFPCLiveFeed()
 	// run data reporting for autopeering visualizer
 	runAutopeeringFeed()
 
@@ -70,11 +69,11 @@ func run(*node.Plugin) {
 	}
 }
 
-func worker(shutdownSignal <-chan struct{}) {
+func worker(ctx context.Context) {
 	defer log.Infof("Stopping %s ... done", PluginName)
 
 	stopped := make(chan struct{})
-	bindAddr := config.Node().String(CfgBindAddress)
+	bindAddr := Parameters.BindAddress
 	go func() {
 		log.Infof("%s started, bind-address=%s", PluginName, bindAddr)
 		if err := server.Start(bindAddr); err != nil {
@@ -94,7 +93,7 @@ func worker(shutdownSignal <-chan struct{}) {
 			select {
 			case <-ticker.C:
 				broadcastWsMessage(&wsmsg{MsgTypePing, ""})
-			case <-shutdownSignal:
+			case <-ctx.Done():
 				return
 			case <-stopped:
 				return
@@ -103,6 +102,10 @@ func worker(shutdownSignal <-chan struct{}) {
 	}()
 
 	log.Infof("Stopping %s ...", PluginName)
+	stopServer()
+}
+
+func stopServer() {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
 	if err := server.Shutdown(ctx); err != nil {

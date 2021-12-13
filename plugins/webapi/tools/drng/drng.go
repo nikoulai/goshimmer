@@ -15,7 +15,6 @@ import (
 
 	"github.com/iotaledger/goshimmer/packages/drng"
 	"github.com/iotaledger/goshimmer/packages/tangle"
-	"github.com/iotaledger/goshimmer/plugins/messagelayer"
 )
 
 // DiagnosticDRNGMessagesHandler runs the diagnostic over the Tangle.
@@ -36,8 +35,8 @@ func runDiagnosticDRNGMessages(c echo.Context) (err error) {
 	}
 
 	var writeErr error
-	messagelayer.Tangle().Utils.WalkMessageID(func(messageID tangle.MessageID, walker *walker.Walker) {
-		messagelayer.Tangle().Storage.Message(messageID).Consume(func(message *tangle.Message) {
+	deps.Tangle.Utils.WalkMessageID(func(messageID tangle.MessageID, walker *walker.Walker) {
+		deps.Tangle.Storage.Message(messageID).Consume(func(message *tangle.Message) {
 			if message.Payload().Type() == drng.PayloadType {
 				messageInfo := getDiagnosticDRNGMessageInfo(message)
 				if messageInfo == nil {
@@ -50,7 +49,7 @@ func runDiagnosticDRNGMessages(c echo.Context) (err error) {
 			}
 		})
 
-		messagelayer.Tangle().Storage.Approvers(messageID).Consume(func(approver *tangle.Approver) {
+		deps.Tangle.Storage.Approvers(messageID).Consume(func(approver *tangle.Approver) {
 			walker.Push(approver.ApproverMessageID())
 		})
 	}, tangle.MessageIDs{tangle.EmptyMessageID})
@@ -76,7 +75,6 @@ var DiagnosticDRNGMessagesTableDescription = []string{
 	"SolidTime",
 	"ScheduledTime",
 	"BookedTime",
-	"OpinionFormedTime",
 	"dRNGPayloadType",
 	"InstanceID",
 	"Round",
@@ -95,7 +93,6 @@ type DiagnosticDRNGMessagesInfo struct {
 	SolidTime         time.Time
 	ScheduledTime     time.Time
 	BookedTime        time.Time
-	OpinionFormedTime time.Time
 	PayloadType       string
 	InstanceID        uint32
 	Round             uint64
@@ -127,12 +124,11 @@ func getDiagnosticDRNGMessageInfo(message *tangle.Message) *DiagnosticDRNGMessag
 	msgInfo.Signature = base58.Encode(collectiveBeacon.Signature)
 	msgInfo.DistributedPK = base58.Encode(collectiveBeacon.Dpk)
 
-	messagelayer.Tangle().Storage.MessageMetadata(message.ID()).Consume(func(metadata *tangle.MessageMetadata) {
+	deps.Tangle.Storage.MessageMetadata(message.ID()).Consume(func(metadata *tangle.MessageMetadata) {
 		msgInfo.ArrivalTime = metadata.ReceivedTime()
 		msgInfo.SolidTime = metadata.SolidificationTime()
 		msgInfo.ScheduledTime = metadata.ScheduledTime()
 		msgInfo.BookedTime = metadata.BookedTime()
-		msgInfo.OpinionFormedTime = messagelayer.ConsensusMechanism().OpinionFormedTime(message.ID())
 	}, false)
 
 	return msgInfo
@@ -148,7 +144,6 @@ func (d *DiagnosticDRNGMessagesInfo) toCSVRow() (row []string) {
 		fmt.Sprint(d.SolidTime.UnixNano()),
 		fmt.Sprint(d.ScheduledTime.UnixNano()),
 		fmt.Sprint(d.BookedTime.UnixNano()),
-		fmt.Sprint(d.OpinionFormedTime.UnixNano()),
 		d.PayloadType,
 		fmt.Sprint(d.InstanceID),
 		fmt.Sprint(d.Round),

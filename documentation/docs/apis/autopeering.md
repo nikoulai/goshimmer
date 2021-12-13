@@ -1,3 +1,15 @@
+---
+description: The peering API allows retrieving basic information about autopeering using the /autopeering/neighbors endpoint or the GetAutopeeringNeighbors() function in the client lib.
+image: /img/logo/goshimmer_light.png
+keywords:
+- client library
+- HTTP API
+- peering api methods
+- neighbors
+- accepted neighbors
+- known peer
+---
+
 # Peering API Methods
 
 The peering API allows retrieving basic information about autopeering.
@@ -62,10 +74,6 @@ fmt.Println(string(neighbors))
         {
           "id": "gossip",
           "address": "178.254.42.235:14666"
-        },
-        {
-          "id": "FPC",
-          "address": "178.254.42.235:10895"
         }
       ]
     }
@@ -82,10 +90,6 @@ fmt.Println(string(neighbors))
         {
           "id": "gossip",
           "address": "35.214.101.88:14666"
-        },
-        {
-          "id": "FPC",
-          "address": "35.214.101.88:10895"
         }
       ]
     }

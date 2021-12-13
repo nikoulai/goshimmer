@@ -34,7 +34,6 @@ class MemoryMetrics {
 
 class TipsMetric {
     totaltips: number;
-    weaktips: number;
     ts: string;
 }
 
@@ -78,8 +77,8 @@ class NeighborMetrics {
     get currentNetIO(): NetworkIO {
         if (this.current && this.secondLast) {
             return {
-                tx: this.current.bytes_written - this.secondLast.bytes_written,
-                rx: this.current.bytes_read - this.secondLast.bytes_read,
+                tx: this.current.packets_written - this.secondLast.packets_written,
+                rx: this.current.packets_read - this.secondLast.packets_read,
                 ts: dateformat(new Date(), "HH:MM:ss"),
             };
         }
@@ -114,8 +113,8 @@ class NeighborMetric {
     id: string;
     address: string;
     connection_origin: number;
-    bytes_read: number;
-    bytes_written: number;
+    packets_read: number;
+    packets_written: number;
     ts: number;
 }
 
@@ -329,21 +328,17 @@ export class NodeStore {
         let totaltips = Object.assign({}, chartSeriesOpts,
             series("All tips", 'rgba(67, 196, 99,1)', 'rgba(67, 196, 99,0.4)')
         );
-        let weaktips = Object.assign({}, chartSeriesOpts,
-            series("Weak tips", 'rgba(250, 140, 30,1)', 'rgba(250, 140, 30,0.4)')
-        );
 
         let labels = [];
         for (let i = 0; i < this.collected_tips_metrics.length; i++) {
             let metric: TipsMetric = this.collected_tips_metrics[i];
             labels.push(metric.ts);
             totaltips.data.push(metric.totaltips);
-            weaktips.data.push(metric.weaktips);
         }
 
         return {
             labels: labels,
-            datasets: [totaltips, weaktips],
+            datasets: [totaltips],
         };
     }
 

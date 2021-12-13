@@ -5,10 +5,11 @@ import {
     DrngCbPayload,
     DrngPayload,
     DrngSubtype,
-    PayloadType,
-    TransactionPayload,
     getPayloadType,
-    Output, SigLockedSingleOutput
+    Output,
+    PayloadType,
+    SigLockedSingleOutput,
+    TransactionPayload
 } from "app/misc/Payload";
 import * as React from "react";
 import {Link} from 'react-router-dom';
@@ -16,6 +17,13 @@ import {RouterStore} from "mobx-react-router";
 
 export const GenesisMessageID = "1111111111111111111111111111111111111111111111111111111111111111";
 export const GenesisTransactionID = "11111111111111111111111111111111";
+
+export enum GoF {
+    None = 0,
+    Low,
+    Medium,
+    High,
+}
 
 export class Message {
     id: string;
@@ -25,17 +33,17 @@ export class Message {
     issuer_public_key: string;
     issuer_short_id: string;
     signature: string;
-    strongParents: Array<string>;
-    weakParents: Array<string>;
+    parentsByType: Map<string, Array<string>>;
     strongApprovers: Array<string>;
     weakApprovers: Array<string>;
     solid: boolean;
     branchID: string;
+    metadataBranchID: string;
     scheduled: boolean;
     booked: boolean;
-    eligible: boolean;
     invalid: boolean;
-    finalized: boolean;
+    gradeOfFinality: number;
+    gradeOfFinalityTime: number;
     payload_type: number;
     payload: any;
     rank: number;
@@ -55,7 +63,6 @@ export class ExplorerOutput {
     id: OutputID;
     output: Output;
     metadata: OutputMetadata
-    inclusionState: InclusionState;
     txTimestamp: number;
     pendingMana: number;
 }
@@ -72,9 +79,9 @@ export class OutputMetadata {
     solid: boolean;
     solidificationTime: number;
     consumerCount: number;
-    firstConsumer: string; // tx id of first consumer (can be unconfirmed)
     confirmedConsumer: string // tx id of confirmed consumer
-    finalized: boolean;
+    gradeOfFinality: number
+    gradeOfFinalityTime: number
 }
 
 class OutputConsumer {
@@ -99,10 +106,7 @@ class Branch {
     type: string;
     parents: Array<string>;
     conflictIDs: Array<string>;
-    liked: boolean;
-    monotonicallyLiked: boolean;
-    finalized: boolean;
-    inclusionState: string;
+    gradeOfFinality: number
 }
 
 class BranchChildren {
@@ -125,12 +129,9 @@ class BranchConflicts {
     conflicts: Array<BranchConflict>
 }
 
-export class InclusionState {
-	liked: boolean;
-	rejected: boolean;
-	finalized: boolean;
-	conflicting: boolean;
-	confirmed: boolean;
+class BranchSupporters {
+    branchID: string;
+    supporters: Array<string>
 }
 
 class SearchResult {
@@ -167,6 +168,7 @@ export class ExplorerStore {
     @observable branch: Branch = null;
     @observable branchChildren: BranchChildren = null;
     @observable branchConflicts: BranchConflicts = null;
+    @observable branchSupporters: BranchSupporters = null;
 
     // loading
     @observable query_loading: boolean = false;
@@ -434,6 +436,19 @@ export class ExplorerStore {
         }
     }
 
+    getBranchSupporters = async (id: string) => {
+        try {
+            let res = await fetch(`/api/branch/${id}/supporters`)
+            if (res.status === 404) {
+                return;
+            }
+            let branchSupporters: BranchSupporters = await res.json()
+            this.updateBranchSupporters(branchSupporters)
+        } catch (err) {
+            // ignore
+        }
+    }
+
     @action
     reset = () => {
         this.msg = null;
@@ -506,6 +521,11 @@ export class ExplorerStore {
     @action
     updateBranchConflicts = (conflicts: BranchConflicts) => {
         this.branchConflicts = conflicts;
+    }
+
+    @action
+    updateBranchSupporters = (branchSupporters: BranchSupporters) => {
+        this.branchSupporters = branchSupporters;
     }
 
     @action

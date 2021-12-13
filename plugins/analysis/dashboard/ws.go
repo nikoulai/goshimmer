@@ -9,12 +9,11 @@ import (
 	"github.com/labstack/echo"
 
 	analysisserver "github.com/iotaledger/goshimmer/plugins/analysis/server"
-	"github.com/iotaledger/goshimmer/plugins/config"
 	"github.com/iotaledger/goshimmer/plugins/dashboard"
 )
 
 var (
-	webSocketWriteTimeout = time.Duration(3) * time.Second
+	webSocketWriteTimeout = 3 * time.Second
 
 	// clients
 	wsClientsMu    sync.Mutex
@@ -104,7 +103,7 @@ func websocketRoute(c echo.Context) error {
 	defer removeWsClient(clientID)
 
 	// send mana dashboard address info
-	manaDashboardHostAddress := config.Node().String(CfgManaDashboardAddress)
+	manaDashboardHostAddress := Parameters.ManaDashboardAddress
 	err = sendJSON(ws, &wsmsg{
 		Type: dashboard.MsgManaDashboardAddress,
 		Data: manaDashboardHostAddress,
@@ -115,9 +114,6 @@ func websocketRoute(c echo.Context) error {
 
 	// replay autopeering events from the past upon connecting a new client
 	analysisserver.ReplayAutopeeringEvents(createAutopeeringEventHandlers(ws))
-
-	// replay FPC past events
-	replayFPCRecords(ws)
 
 	for {
 		msg := <-wsClient.channel

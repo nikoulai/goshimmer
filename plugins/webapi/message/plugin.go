@@ -3,42 +3,65 @@ package message
 import (
 	"fmt"
 	"net/http"
-	"sync"
+	"strconv"
 
 	"github.com/iotaledger/hive.go/node"
 	"github.com/labstack/echo"
+	"go.uber.org/dig"
 
-	"github.com/iotaledger/goshimmer/packages/consensus/fcob"
 	"github.com/iotaledger/goshimmer/packages/jsonmodels"
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
+	"github.com/iotaledger/goshimmer/packages/markers"
 	"github.com/iotaledger/goshimmer/packages/tangle"
 	"github.com/iotaledger/goshimmer/packages/tangle/payload"
-	"github.com/iotaledger/goshimmer/plugins/messagelayer"
-	"github.com/iotaledger/goshimmer/plugins/webapi"
 )
 
 // region Plugin ///////////////////////////////////////////////////////////////////////////////////////////////////////
 
 var (
-	// plugin holds the singleton instance of the plugin.
-	plugin *node.Plugin
+	// Plugin holds the singleton instance of the plugin.
+	Plugin *node.Plugin
 
-	// pluginOnce is used to ensure that the plugin is a singleton.
-	once sync.Once
+	deps = new(dependencies)
 )
 
-// Plugin returns the plugin as a singleton.
-func Plugin() *node.Plugin {
-	once.Do(func() {
-		plugin = node.NewPlugin("WebAPI message Endpoint", node.Enabled, func(*node.Plugin) {
-			webapi.Server().GET("messages/:messageID", GetMessage)
-			webapi.Server().GET("messages/:messageID/metadata", GetMessageMetadata)
-			webapi.Server().GET("messages/:messageID/consensus", GetMessageConsensusMetadata)
-			webapi.Server().POST("messages/payload", PostPayload)
-		})
-	})
+type dependencies struct {
+	dig.In
 
-	return plugin
+	Server *echo.Echo
+	Tangle *tangle.Tangle
+}
+
+func init() {
+	Plugin = node.NewPlugin("WebAPIMessageEndpoint", deps, node.Enabled, configure)
+}
+
+func configure(_ *node.Plugin) {
+	deps.Server.GET("messages/:messageID", GetMessage)
+	deps.Server.GET("messages/:messageID/metadata", GetMessageMetadata)
+	deps.Server.POST("messages/payload", PostPayload)
+
+	deps.Server.GET("messages/sequences/:sequenceID/markerindexbranchidmapping", GetMarkerIndexBranchIDMapping)
+}
+
+// endregion ///////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+// region GetMarkerIndexBranchIDMapping ////////////////////////////////////////////////////////////////////////////////
+
+// GetMarkerIndexBranchIDMapping is the handler for the /messages/sequences/:sequenceID/markerindexbranchidmapping endpoint.
+func GetMarkerIndexBranchIDMapping(c echo.Context) (err error) {
+	sequenceID, err := sequenceIDFromContext(c)
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, jsonmodels.NewErrorResponse(err))
+	}
+
+	if deps.Tangle.Storage.MarkerIndexBranchIDMapping(sequenceID).Consume(func(markerIndexBranchIDMapping *tangle.MarkerIndexBranchIDMapping) {
+		err = c.String(http.StatusOK, markerIndexBranchIDMapping.String())
+	}) {
+		return
+	}
+
+	return c.JSON(http.StatusNotFound, jsonmodels.NewErrorResponse(fmt.Errorf("failed to load MarkerIndexBranchIDMapping of %s", sequenceID)))
 }
 
 // endregion ///////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -52,13 +75,13 @@ func GetMessage(c echo.Context) (err error) {
 		return c.JSON(http.StatusBadRequest, jsonmodels.NewErrorResponse(err))
 	}
 
-	if messagelayer.Tangle().Storage.Message(messageID).Consume(func(message *tangle.Message) {
+	if deps.Tangle.Storage.Message(messageID).Consume(func(message *tangle.Message) {
 		err = c.JSON(http.StatusOK, jsonmodels.Message{
 			ID:              message.ID().Base58(),
-			StrongParents:   message.StrongParents().ToStrings(),
-			WeakParents:     message.WeakParents().ToStrings(),
-			StrongApprovers: messagelayer.Tangle().Utils.ApprovingMessageIDs(message.ID(), tangle.StrongApprover).ToStrings(),
-			WeakApprovers:   messagelayer.Tangle().Utils.ApprovingMessageIDs(message.ID(), tangle.WeakApprover).ToStrings(),
+			StrongParents:   message.ParentsByType(tangle.StrongParentType).ToStrings(),
+			WeakParents:     message.ParentsByType(tangle.WeakParentType).ToStrings(),
+			StrongApprovers: deps.Tangle.Utils.ApprovingMessageIDs(message.ID(), tangle.StrongApprover).ToStrings(),
+			WeakApprovers:   deps.Tangle.Utils.ApprovingMessageIDs(message.ID(), tangle.WeakApprover).ToStrings(),
 			IssuerPublicKey: message.IssuerPublicKey().String(),
 			IssuingTime:     message.IssuingTime().Unix(),
 			SequenceNumber:  message.SequenceNumber(),
@@ -91,7 +114,7 @@ func GetMessageMetadata(c echo.Context) (err error) {
 		return c.JSON(http.StatusBadRequest, jsonmodels.NewErrorResponse(err))
 	}
 
-	if messagelayer.Tangle().Storage.MessageMetadata(messageID).Consume(func(messageMetadata *tangle.MessageMetadata) {
+	if deps.Tangle.Storage.MessageMetadata(messageID).Consume(func(messageMetadata *tangle.MessageMetadata) {
 		err = c.JSON(http.StatusOK, NewMessageMetadata(messageMetadata))
 	}) {
 		return
@@ -102,52 +125,26 @@ func GetMessageMetadata(c echo.Context) (err error) {
 
 // NewMessageMetadata returns MessageMetadata from the given tangle.MessageMetadata.
 func NewMessageMetadata(metadata *tangle.MessageMetadata) jsonmodels.MessageMetadata {
-	branchID, err := messagelayer.Tangle().Booker.MessageBranchID(metadata.ID())
+	branchID, err := deps.Tangle.Booker.MessageBranchID(metadata.ID())
 	if err != nil {
 		branchID = ledgerstate.BranchID{}
 	}
 
 	return jsonmodels.MessageMetadata{
-		ID:                 metadata.ID().Base58(),
-		ReceivedTime:       metadata.ReceivedTime().Unix(),
-		Solid:              metadata.IsSolid(),
-		SolidificationTime: metadata.SolidificationTime().Unix(),
-		StructureDetails:   jsonmodels.NewStructureDetails(metadata.StructureDetails()),
-		BranchID:           branchID.String(),
-		Scheduled:          metadata.Scheduled(),
-		ScheduledTime:      metadata.ScheduledTime().Unix(),
-		Booked:             metadata.IsBooked(),
-		BookedTime:         metadata.BookedTime().Unix(),
-		Eligible:           metadata.IsEligible(),
-		Invalid:            metadata.IsInvalid(),
-		Finalized:          metadata.IsFinalized(),
-		FinalizedTime:      metadata.FinalizedTime().Unix(),
+		ID:                  metadata.ID().Base58(),
+		ReceivedTime:        metadata.ReceivedTime().Unix(),
+		Solid:               metadata.IsSolid(),
+		SolidificationTime:  metadata.SolidificationTime().Unix(),
+		StructureDetails:    jsonmodels.NewStructureDetails(metadata.StructureDetails()),
+		BranchID:            branchID.String(),
+		Scheduled:           metadata.Scheduled(),
+		ScheduledTime:       metadata.ScheduledTime().Unix(),
+		Booked:              metadata.IsBooked(),
+		BookedTime:          metadata.BookedTime().Unix(),
+		Invalid:             metadata.IsInvalid(),
+		GradeOfFinality:     metadata.GradeOfFinality(),
+		GradeOfFinalityTime: metadata.GradeOfFinalityTime().Unix(),
 	}
-}
-
-// endregion ///////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-// region GetMessageMetadata ///////////////////////////////////////////////////////////////////////////////////////////
-
-// GetMessageConsensusMetadata is the handler for the /messages/:messageID/consensus endpoint.
-func GetMessageConsensusMetadata(c echo.Context) (err error) {
-	messageID, err := messageIDFromContext(c)
-	if err != nil {
-		return c.JSON(http.StatusBadRequest, jsonmodels.NewErrorResponse(err))
-	}
-
-	consensusMechanism := messagelayer.Tangle().Options.ConsensusMechanism.(*fcob.ConsensusMechanism)
-	if consensusMechanism != nil {
-		if consensusMechanism.Storage.MessageMetadata(messageID).Consume(func(messageMetadata *fcob.MessageMetadata) {
-			consensusMechanism.Storage.TimestampOpinion(messageID).Consume(func(timestampOpinion *fcob.TimestampOpinion) {
-				err = c.JSON(http.StatusOK, jsonmodels.NewMessageConsensusMetadata(messageMetadata, timestampOpinion))
-			})
-		}) {
-			return
-		}
-	}
-
-	return c.JSON(http.StatusNotFound, jsonmodels.NewErrorResponse(fmt.Errorf("failed to load MessageConsensusMetadata with %s", messageID)))
 }
 
 // endregion ///////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -158,7 +155,7 @@ func GetMessageConsensusMetadata(c echo.Context) (err error) {
 func PostPayload(c echo.Context) error {
 	var request jsonmodels.PostPayloadRequest
 	if err := c.Bind(&request); err != nil {
-		Plugin().LogInfo(err.Error())
+		Plugin.LogInfo(err.Error())
 		return c.JSON(http.StatusBadRequest, jsonmodels.NewErrorResponse(err))
 	}
 
@@ -167,7 +164,7 @@ func PostPayload(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, jsonmodels.NewErrorResponse(err))
 	}
 
-	msg, err := messagelayer.Tangle().IssuePayload(parsedPayload, messagelayer.Tangle().Options.Identity)
+	msg, err := deps.Tangle.IssuePayload(parsedPayload, deps.Tangle.Options.Identity)
 	if err != nil {
 		return c.JSON(http.StatusBadRequest, jsonmodels.NewErrorResponse(err))
 	}
@@ -190,6 +187,16 @@ func messageIDFromContext(c echo.Context) (messageID tangle.MessageID, err error
 	}
 
 	return
+}
+
+// sequenceIDFromContext determines the sequenceID from the sequenceID parameter in an echo.Context.
+func sequenceIDFromContext(c echo.Context) (id markers.SequenceID, err error) {
+	sequenceIDInt, err := strconv.Atoi(c.Param("sequenceID"))
+	if err != nil {
+		return
+	}
+
+	return markers.SequenceID(sequenceIDInt), nil
 }
 
 // endregion ///////////////////////////////////////////////////////////////////////////////////////////////////////////

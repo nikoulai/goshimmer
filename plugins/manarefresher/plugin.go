@@ -1,41 +1,45 @@
 package manarefresher
 
 import (
+	"context"
 	"fmt"
-	"sync"
 	"time"
 
 	"github.com/cockroachdb/errors"
+	"github.com/iotaledger/hive.go/autopeering/peer"
 	"github.com/iotaledger/hive.go/daemon"
 	"github.com/iotaledger/hive.go/node"
+	"go.uber.org/dig"
 
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/goshimmer/packages/shutdown"
-	"github.com/iotaledger/goshimmer/plugins/autopeering/local"
+	"github.com/iotaledger/goshimmer/packages/tangle"
 )
 
 var (
-	// plugin is the plugin instance of the activity plugin.
-	plugin    *node.Plugin
-	once      sync.Once
+	// Plugin is the plugin instance of the manarefresher plugin.
+	Plugin    *node.Plugin
+	deps      = new(dependencies)
 	refresher *Refresher
 )
 
-// minRefreshInterval is the minimum refresh interval allowed for delegated outputs.
-const minRefreshInterval = 1 // minutes
-
-// Plugin gets the plugin instance.
-func Plugin() *node.Plugin {
-	once.Do(func() {
-		plugin = node.NewPlugin("ManaRefresher", node.Enabled, configure, run)
-	})
-	return plugin
+type dependencies struct {
+	dig.In
+	Local  *peer.Local
+	Tangle *tangle.Tangle
 }
 
-// configure events
-func configure(_ *node.Plugin) {
+// minRefreshInterval is the minimum refresh interval allowed for delegated outputs.
+const minRefreshInterval = 1 * time.Minute
+
+func init() {
+	Plugin = node.NewPlugin("ManaRefresher", deps, node.Enabled, configure, run)
+}
+
+// configure events.
+func configure(plugin *node.Plugin) {
 	plugin.LogInfof("starting node with manarefresher plugin")
-	nodeIDPrivateKey, err := local.GetInstance().Database().LocalPrivateKey()
+	nodeIDPrivateKey, err := deps.Local.Database().LocalPrivateKey()
 	if err != nil {
 		panic(errors.Wrap(err, "couldn't load private key of node identity"))
 	}
@@ -43,17 +47,17 @@ func configure(_ *node.Plugin) {
 	refresher = NewRefresher(localWallet, &DelegationReceiver{wallet: localWallet})
 
 	if Parameters.RefreshInterval < minRefreshInterval {
-		panic(fmt.Sprintf("manarefresh interval of %d minutes is too small, minimum is %d minutes", Parameters.RefreshInterval, minRefreshInterval))
+		panic(fmt.Sprintf("manarefresh interval of %d is too small, minimum is %d ", Parameters.RefreshInterval, minRefreshInterval))
 	}
 }
 
-func run(_ *node.Plugin) {
-	if err := daemon.BackgroundWorker("ManaRefresher-plugin", func(shutdownSignal <-chan struct{}) {
-		ticker := time.NewTicker(time.Duration(Parameters.RefreshInterval) * time.Minute)
+func run(plugin *node.Plugin) {
+	if err := daemon.BackgroundWorker("ManaRefresher-plugin", func(ctx context.Context) {
+		ticker := time.NewTicker(Parameters.RefreshInterval)
 		defer ticker.Stop()
 		for {
 			select {
-			case <-shutdownSignal:
+			case <-ctx.Done():
 				return
 
 			case <-ticker.C:

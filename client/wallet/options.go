@@ -1,6 +1,8 @@
 package wallet
 
 import (
+	"time"
+
 	"github.com/capossele/asset-registry/pkg/registryservice"
 	"github.com/iotaledger/hive.go/bitmask"
 
@@ -34,7 +36,7 @@ func ReusableAddress(enabled bool) Option {
 	}
 }
 
-// FaucetPowDifficulty configures the wallet with the faucet's target PoW difficulty
+// FaucetPowDifficulty configures the wallet with the faucet's target PoW difficulty.
 func FaucetPowDifficulty(powTarget int) Option {
 	return func(wallet *Wallet) {
 		wallet.faucetPowDifficulty = powTarget
@@ -42,7 +44,7 @@ func FaucetPowDifficulty(powTarget int) Option {
 }
 
 // ConfirmationPollingInterval defines how often the wallet polls the node for confirmation info.
-func ConfirmationPollingInterval(interval int) Option {
+func ConfirmationPollingInterval(interval time.Duration) Option {
 	return func(wallet *Wallet) {
 		if interval < 0 {
 			wallet.ConfirmationPollInterval = DefaultPollingInterval
@@ -53,7 +55,7 @@ func ConfirmationPollingInterval(interval int) Option {
 }
 
 // ConfirmationTimeout defines the timeout for waiting for tx confirmation.
-func ConfirmationTimeout(timeout int) Option {
+func ConfirmationTimeout(timeout time.Duration) Option {
 	return func(wallet *Wallet) {
 		if timeout < 0 {
 			wallet.ConfirmationPollInterval = DefaultConfirmationTimeout

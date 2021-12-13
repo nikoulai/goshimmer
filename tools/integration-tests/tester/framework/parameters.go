@@ -4,8 +4,9 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/iotaledger/goshimmer/tools/integration-tests/tester/framework/config"
 	"github.com/mr-tron/base58"
+
+	"github.com/iotaledger/goshimmer/tools/integration-tests/tester/framework/config"
 )
 
 const (
@@ -13,7 +14,6 @@ const (
 	apiPort     = 8080
 	gossipPort  = 14666
 	peeringPort = 14626
-	fpcPort     = 10895
 
 	containerNameEntryNode   = "entry_node"
 	containerNameReplica     = "replica_"
@@ -27,8 +27,6 @@ const (
 )
 
 var (
-	// GenesisTokenAmount is the amount of tokens in the genesis output.
-	GenesisTokenAmount = 1000000000000000
 	// GenesisSeed is the seed of the funds created at genesis.
 	GenesisSeed = []byte{
 		95, 76, 224, 164, 168, 80, 141, 174, 133, 77, 153, 100, 4, 202, 113, 104,
@@ -52,8 +50,6 @@ type CreateNetworkConfig struct {
 	Faucet bool
 	// Activity specifies whether nodes schedule activity messages in regular intervals.
 	Activity bool
-	// FPC specified whether FPC is enabled.
-	FPC bool
 }
 
 // PeerConfig specifies the default config of a standard GoShimmer peer.
@@ -62,7 +58,7 @@ func PeerConfig() config.GoShimmer {
 
 	c.Image = "iotaledger/goshimmer"
 
-	c.DisabledPlugins = []string{"portcheck", "dashboard", "analysis-client", "profiling", "clock"}
+	c.DisabledPlugins = []string{"portcheck", "dashboard", "analysisClient", "profiling", "clock"}
 
 	c.Network.Enabled = true
 
@@ -70,39 +66,35 @@ func PeerConfig() config.GoShimmer {
 	c.Database.ForceCacheTime = 0 // disable caching for tests
 
 	c.Gossip.Enabled = true
-	c.Gossip.Port = gossipPort
 
 	c.POW.Enabled = true
-	c.POW.Difficulty = 2
+	c.POW.Difficulty = 1
 
-	c.Webapi.Enabled = true
-	c.Webapi.BindAddress = fmt.Sprintf(":%d", apiPort)
+	c.WebAPI.Enabled = true
+	c.WebAPI.BindAddress = fmt.Sprintf(":%d", apiPort)
 
-	c.Autopeering.Enabled = false
-	c.Autopeering.Port = peeringPort
-	c.Autopeering.EntryNodes = nil
+	c.AutoPeering.Enabled = false
+	c.AutoPeering.BindAddress = fmt.Sprintf(":%d", peeringPort)
+	c.AutoPeering.EntryNodes = nil
 
 	c.MessageLayer.Enabled = true
-	c.MessageLayer.FCOB.QuarantineTime = 2
 	c.MessageLayer.Snapshot.File = fmt.Sprintf("/assets/%s.bin", base58.Encode(GenesisSeed))
 	c.MessageLayer.Snapshot.GenesisNode = "" // use the default time based approach
 
 	c.Faucet.Enabled = false
 	c.Faucet.Seed = base58.Encode(GenesisSeed)
-	c.Faucet.PowDifficulty = 3
-	c.PreparedOutputsCount = 10
+	c.Faucet.PowDifficulty = 1
+	c.Faucet.SupplyOutputsCount = 4
+	c.Faucet.SplittingMultiplier = 4
+	c.Faucet.GenesisTokenAmount = 2500000000000000
 
 	c.Mana.Enabled = true
+	c.Mana.SnapshotResetTime = true
 
 	c.Consensus.Enabled = false
 
-	c.FPC.Enabled = true
-	c.FPC.BindAddress = fmt.Sprintf(":%d", fpcPort)
-	c.FPC.RoundInterval = 5
-	c.FPC.TotalRoundsFinalization = 10
-
 	c.Activity.Enabled = false
-	c.BroadcastIntervalSec = 1 // increase frequency to speedup tests
+	c.Activity.BroadcastInterval = time.Second // increase frequency to speedup tests
 
 	c.DRNG.Enabled = false
 
@@ -113,14 +105,16 @@ func PeerConfig() config.GoShimmer {
 func EntryNodeConfig() config.GoShimmer {
 	c := PeerConfig()
 
-	c.DisabledPlugins = append(c.DisabledPlugins, "issuer", "metrics", "valuetransfers", "consensus")
+	c.DisabledPlugins = append(c.DisabledPlugins, "issuer", "metrics", "valuetransfers", "consensus", "manarefresher", "manualpeering", "chat",
+		"WebAPIDataEndpoint", "WebAPIDRNGEndpoint", "WebAPIFaucetEndpoint", "WebAPIMessageEndpoint", "Snapshot", "WebAPIToolsDRNGEndpoint",
+		"WebAPIToolsMessageEndpoint", "WebAPIWeightProviderEndpoint", "WebAPIInfoEndpoint", "WebAPILedgerstateEndpoint")
 	c.Gossip.Enabled = false
-	c.Autopeering.Enabled = true
+	c.POW.Enabled = false
+	c.AutoPeering.Enabled = true
 	c.MessageLayer.Enabled = false
 	c.Faucet.Enabled = false
 	c.Mana.Enabled = false
 	c.Consensus.Enabled = false
-	c.FPC.Enabled = false
 	c.Activity.Enabled = false
 	c.DRNG.Enabled = false
 

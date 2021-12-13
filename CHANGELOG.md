@@ -1,3 +1,257 @@
+# v0.8.3 - 2021-11-30
+
+> This release introduces a critical bug fix on the network read loop
+
+The snapshot has been taken at 2021-11-28 11:31am CET.
+
+Changelog:
+- Critical fix on the lib2p's stream readloop.
+
+# v0.8.2 - 2021-11-26
+
+> This release introduces a revamp of the network stack using libp2p, and some minor changes to the deployment logic
+
+The snapshot has been taken at 2021-11-19 11:37pm CET.
+
+Changelog:
+- Use libp2p as network stack.
+- Fix deployment logic to expose DRNGs' API ports.
+- Add community entry nodes.
+
+# v0.8.1 - 2021-11-11
+
+> This release introduces some minor changes to the message solidification and requesting mechanisms.
+
+The snapshot has been taken at 2021-11-05 12:18pm CET.
+
+Changelog:
+- There is now a 1% chance that an inbound request for a missing message gets relayed to neighbors to get resolved.
+- Messages requests are enqueued for retry with a random jitter.
+- Use of TimedExecutor for the message requester.
+- Better logging for message requester and filters.
+- Messages that could not be retrieved and get removed from the requester can be requested another time later.
+- Fixed analysis dashboard.
+
+# v0.8.0 - 2021-11-05
+
+> This release introduces changes to the consensus mechanism. Specifically, a first implementation of pure On Tangle Voting (OTV), like switch, and the Grades of Finality (GoF) is included. This release does not entail algorithmic optimizations of these components. Therefore, it is to be expected, that performance degrades over time.
+
+This is a **breaking** feature release. You must delete your current database and upgrade your node to further participate in the network. Applications that rely on confirmation need to adjust to be compatible with the newly introduced Grades of Finality.
+
+The snapshot has been taken at 2021-11-05 12:18pm CET.
+
+Changelog:
+- Add caching to CI operations
+- Upgrade hive.go and adjust codebase to use context for cancellation instead of channels
+- Add LRU cache to BranchDAG
+- Add new consensus mechanism
+  - Implement pure On Tangle Voting (OTV)
+  - Remove FCOB, FPC and timestamp voting with FPC from the dataflow
+  - Implement like switch
+    - Make message layout more flexible and add parent blocks to accommodate like switch
+    - Message syntactical validation
+    - Adjust tip selection and message creation for like switch
+    - Adjust booking of messages to execute like switch logic when inheriting branches
+  - Grades of Finality (GoF)
+    - Marker confirmation with like switch
+    - Remove Liked / Finalized / InclusionState references
+    - Remove deprecated consensus manager and events
+    - Inherit markers from strong and like parents
+  - Add conflicts page for node dashboard
+  - Adjust all unit and integration tests to use GoF
+  - Add new consensus integration tests
+  - Fix cMana weight provider with activity log for each node
+  - Add OTV metrics collection
+  - Optimize tracking of AW for branches and markers
+
+# v0.7.7 - 2021-10-09
+
+> This release does **not** include changes to the consensus mechanism and still uses FPC+FCoB.
+
+This is a **breaking** maintenance release. You must delete your current database and upgrade your node to further participate in the network.
+
+The snapshot has been taken at 2021-10-08 2pm CEST.
+
+Changelog:
+- Changes the way the faucet plugin manages outputs in order to be able to service more funding requests. 
+- Fixes a nil pointer caused when a re-org is detected but the `RemoteLog` plugin is not enabled.
+- Fixes an issue where the CLI wallet would no longer work under Windows.
+- Use Go 1.17.2 docker image
+
+# v0.7.6 - 2021-09-23
+
+> This release does **not** include changes to the consensus mechanism and still uses FPC+FCoB.
+
+This is a **breaking** maintenance release. We urge community node operators to re-apply their config changes on
+top of `config.default.json` as many config keys have changed.
+
+Most importantly, the node's identity seed is now defined via `node.seed` (previously `autopeering.seed`). The node will
+now store the private key derived from the seed per default under a separate `peerdb` database which **must not** be shared.
+If the node is started with a `node.seed` different to what an existing private key in a `peerdb` contains, the node panics;
+if you want to automatically override the already stored private key, use `node.overwriteStoredSeed=true`.
+
+We have also created a more streamlined deployment for our infrastructure which means that IF provided endpoints have changed:
+
+| Service                             | Old                                | New                                                        |
+| ----------------------------------- | ---------------------------------- | ---------------------------------------------------------- |
+| Analysis Server                     | ressims.iota.cafe:21888            | analysisentry-01.devnet.shimmer.iota.cafe:21888            |
+| IOTA 2.0 DevNet Analyzer            | http://ressims.iota.cafe:28080     | http://analysisentry-01.devnet.shimmer.iota.cafe:28080     |
+| Autopeering Entry Node "2PV5487..." | [identity]@ressims.iota.cafe:15626 | [identity]@analysisentry-01.devnet.shimmer.iota.cafe:15626 |
+| LogStash Remote Log                 | ressims.iota.cafe:5213             | metrics-01.devnet.shimmer.iota.cafe:5213                   |
+| Daily Database                      | N/A                                | https://dbfiles-goshimmer.s3.eu-central-1.amazonaws.com/dbs/nectar/automated/latest-db.tgz |
+
+Other changes:
+* Refactors codebase, mainly:
+  * Usage of `time.Duration` instead of numeric types for time parameters/config options variables etc.
+  * Normalization of all plugin names to camel case and without spaces
+  * Extracts some code from the `MessageLayer` plugin into a new `Consensus` plugin
+  * Use of dependency injection to populate plugin dependencies via https://github.com/uber-go/dig
+* Adds CI workflows to use GitHub environments to deploy `develop` branch changes and releases
+* Adds a check to see whether during the GoShimmer docker image build, the snapshot file should be downloaded
+* Adds a new plugin `Peer` which stores the node's identity private key in a separate database
+* Adds a broadcast plugin by community member @arne-fuchs simply providing a raw TCP stream of txs
+* Adds a lock to prevent multiple active instances of the CLI wallet
+* Adds improvements to the spammer precision
+* Adds timestamp filter
+* Fixes a bug where the `TxInfo` object passed to the mana booking could have a wrong `totalAmount`
+* Refactors the `./tools/docker-network` to leverage docker profiles
+* Updates frontend dependencies
+* Updates `config.default.json` to use our new infrastructure
+
+Plugin names have been normalized, so please make sure to adapt your custom config too:
+- `Analysis-Dashboard` -> `AnalysisDashboard`
+- `Analysis-Server` -> `AnalysisServer`
+- `Analysis-Client` -> `AnalysisClient`
+- `Autopeering` -> `AutoPeering` (no effect)
+- `Graceful Shutdown` -> `GracefulShutdown`
+- `Manualpeering` -> `ManualPeering` (no effect)
+- `PoW` -> `POW` (no effect)
+- `WebAPI autopeering Endpoint` -> `WebAPIAutopeeringEndpoint`
+- `WebAPI data Endpoint` -> `WebAPIDataEndpoint`
+- `WebAPI DRNG Endpoint` -> `WebAPIDRNGEndpoint`
+- `WebAPI faucet Endpoint` -> `WebAPIFaucetEndpoint`
+- `WebAPI healthz Endpoint` -> `WebAPIHealthzEndpoint`
+- `WebAPI info Endpoint` -> `WebAPIInfoEndpoint`
+- `WebAPI ledgerstate Endpoint` -> `WebAPILedgerstateEndpoint`
+- `WebAPI Mana Endpoint` -> `WebAPIManaEndpoint`
+- `WebAPI message Endpoint`
+- `WebAPIMessageEndpoint`
+- `snapshot` -> `Snapshot` (no effect)
+- `WebAPI tools Endpoint` (deleted) -> `WebAPIToolsDRNGEndpoint` & `WebAPIToolsMessageEndpoint`
+- `WebAPI WeightProvider Endpoint` -> `WebAPIWeightProviderEndpoint`
+
+Config key changes `config.default.json`:
+```diff
+@@ -1,7 +1,7 @@
+ {
+   "analysis": {
+     "client": {
+-      "serverAddress": "ressims.iota.cafe:21888"
++      "serverAddress": "analysisentry-01.devnet.shimmer.iota.cafe:21888"
+     },
+     "server": {
+       "bindAddress": "0.0.0.0:16178"
+@@ -11,17 +11,17 @@
+       "dev": false
+     }
+   },
+-  "autopeering": {
++  "autoPeering": {
+     "entryNodes": [
+-      "2PV5487xMw5rasGBXXWeqSi4hLz7r19YBt8Y1TGAsQbj@ressims.iota.cafe:15626",
++      "2PV5487xMw5rasGBXXWeqSi4hLz7r19YBt8Y1TGAsQbj@analysisentry-01.devnet.shimmer.iota.cafe:15626",
+       "5EDH4uY78EA6wrBkHHAVBWBMDt7EcksRq6pjzipoW15B@entry-devnet.tanglebay.com:14646"
+     ],
+-    "port": 14626
++    "bindAddress": "0.0.0.0:14626"
+   },
+   "dashboard": {
+     "bindAddress": "127.0.0.1:8081",
+     "dev": false,
+-    "basic_auth": {
++    "basicAuth": {
+       "enabled": false,
+       "username": "goshimmer",
+       "password": "goshimmer"
+@@ -44,7 +44,7 @@
+         "64wCsTZpmKjRVHtBKXiFojw7uw3GszumfvC4kHdWsHga"
+       ]
+     },
+-    "xteam": {
++    "xTeam": {
+       "instanceId": 1339,
+       "threshold": 4,
+       "distributedPubKey": "",
+@@ -69,10 +69,7 @@
+     "bindAddress": "0.0.0.0:10895"
+   },
+   "gossip": {
+-    "port": 14666,
+-    "tipsBroadcaster": {
+-      "interval": "10s"
+-    }
++    "bindAddress": "0.0.0.0:14666"
+   },
+   "logger": {
+     "level": "info",
+@@ -85,7 +82,7 @@
+     ],
+     "disableEvents": true,
+     "remotelog": {
+-      "serverAddress": "ressims.iota.cafe:5213"
++      "serverAddress": "metrics-01.devnet.shimmer.iota.cafe:5213"
+     }
+   },
+   "metrics": {
+@@ -103,6 +100,7 @@
+     "externalAddress": "auto"
+   },
+   "node": {
++    "seed": "",
++    "peerDBDirectory": "peerdb",
+     "disablePlugins": [],
+     "enablePlugins": []
+   },
+@@ -110,7 +108,6 @@
+     "difficulty": 22,
+     "numThreads": 1,
+     "timeout": "1m"
+-
+   },
+   "profiling": {
+     "bindAddress": "127.0.0.1:6061"
+@@ -120,13 +117,16 @@
+   },
+   "webapi": {
+     "bindAddress": "127.0.0.1:8080",
+-    "basic_auth": {
++    "basicAuth": {
+       "enabled": false,
+       "username": "goshimmer",
+       "password": "goshimmer"
+     }
+   },
++  "broadcast": {
++    "bindAddress": "127.0.0.1:5050"
++  },
+   "networkdelay": {
+     "originPublicKey": "9DB3j9cWYSuEEtkvanrzqkzCQMdH1FGv3TawJdVbDxkd"
+   }
+```
+
+# v0.7.5 - 2021-08-09
+* Move the scheduler of the congestion control at the end of data flow
+* Add new metrics collection
+* Add alias initial state validation
+* Add creation of new marker sequence after maxVerticesWithoutFutureMarker threshold
+* Fix booking of transactions in multiple conflict sets
+* Fix manual peering parsing from config.json
+* Update JS dependencies
+* Update Dockerfile to explicitly expose used ports
+* Update docs to docusaurus
+* Update snapshot file with DevNet UTXO at 2021-08-09 13:33 UTC
+* **Breaking**: bumps network and database versions
+
 # v0.7.4 - 2021-07-08
 * Add ParametersDefinition structs in integration test framework
 * Add UTXO-DAG interface
