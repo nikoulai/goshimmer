@@ -6,6 +6,7 @@ import (
 
 	"github.com/iotaledger/goshimmer/packages/tangle/schedulerutils"
 
+	"github.com/iotaledger/hive.go/crypto"
 	"github.com/iotaledger/hive.go/crypto/ed25519"
 	"github.com/iotaledger/hive.go/identity"
 	"github.com/iotaledger/hive.go/marshalutil"
@@ -17,7 +18,8 @@ import (
 
 const (
 	numMessages = 100
-	maxBuffer   = 40 * numMessages
+	msgSize     = 44
+	maxBuffer   = msgSize * numMessages
 	maxQueue    = 2 * maxBuffer / numMessages
 )
 
@@ -86,7 +88,7 @@ func TestBufferQueue_SubmitWithDrop_Unready(t *testing.T) {
 	assert.LessOrEqual(t, maxBuffer, b.Size())
 
 	// dropping two unready messages to fit the new one
-	droppedMessages = b.Submit(newLargeTestMessage(selfNode.PublicKey(), make([]byte, 40)), mockAccessManaRetriever)
+	droppedMessages = b.Submit(newLargeTestMessage(selfNode.PublicKey(), make([]byte, msgSize)), mockAccessManaRetriever)
 	assert.Len(t, droppedMessages, 2)
 	assert.Equal(t, preparedMessages[1].IDBytes(), droppedMessages[0][:])
 	assert.Equal(t, preparedMessages[2].IDBytes(), droppedMessages[1][:])
@@ -143,7 +145,7 @@ func TestBufferQueue_SubmitWithDrop_Ready(t *testing.T) {
 	assert.LessOrEqual(t, maxBuffer, b.Size())
 
 	// drop two ready messages to fit the newly submitted one
-	droppedMessages = b.Submit(newLargeTestMessage(selfNode.PublicKey(), make([]byte, 40)), mockAccessManaRetriever)
+	droppedMessages = b.Submit(newLargeTestMessage(selfNode.PublicKey(), make([]byte, msgSize)), mockAccessManaRetriever)
 	assert.Len(t, droppedMessages, 2)
 	assert.Equal(t, preparedMessages[1].IDBytes(), droppedMessages[0][:])
 	assert.Equal(t, preparedMessages[2].IDBytes(), droppedMessages[1][:])
@@ -267,12 +269,14 @@ type testMessage struct {
 	issuingTime time.Time
 	payload     []byte
 	bytes       []byte
+	nonce       int32
 }
 
 func newTestMessage(pubKey ed25519.PublicKey) *testMessage {
 	return &testMessage{
 		pubKey:      pubKey,
 		issuingTime: time.Now(),
+		nonce:       crypto.Randomness.Int31(),
 	}
 }
 
@@ -281,6 +285,7 @@ func newLargeTestMessage(pubKey ed25519.PublicKey, payload []byte) *testMessage 
 		pubKey:      pubKey,
 		issuingTime: time.Now(),
 		payload:     payload,
+		nonce:       crypto.Randomness.Int31(),
 	}
 }
 
@@ -298,6 +303,7 @@ func (m *testMessage) Bytes() []byte {
 	marshalUtil.Write(m.pubKey)
 	marshalUtil.WriteTime(m.issuingTime)
 	marshalUtil.WriteBytes(m.payload)
+	marshalUtil.WriteInt32(m.nonce)
 	m.bytes = marshalUtil.Bytes()
 
 	return m.bytes
