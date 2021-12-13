@@ -140,7 +140,7 @@ func (f *MessageFactory) IssuePayload(p payload.Payload, local *identity.LocalId
 	f.issuanceMutex.Unlock()
 
 	// create the signature
-	msg, err := NewMessage(
+	dummyMsg, err := NewMessage(
 		parents,
 		nil,
 		nil,
@@ -152,10 +152,29 @@ func (f *MessageFactory) IssuePayload(p payload.Payload, local *identity.LocalId
 		nonce,
 		ed25519.EmptySignature,
 	)
-	dummyBytes := msg.Bytes()
 
-	contentLength := len(dummyBytes) - len(msg.Signature())
-	msg.signature = local.Sign(dummyBytes[:contentLength])
+	if err != nil {
+		err = errors.Errorf("there is a problem with the message syntax: %w", err)
+		f.Events.Error.Trigger(err)
+		return nil, err
+	}
+
+	// create the signature
+	dummyBytes := dummyMsg.Bytes()
+	contentLength := len(dummyBytes) - len(dummyMsg.Signature())
+	signature := local.Sign(dummyBytes[:contentLength])
+	msg, err := NewMessage(
+		parents,
+		nil,
+		nil,
+		likeReferences,
+		issuingTime,
+		issuerPublicKey,
+		sequenceNumber,
+		p,
+		nonce,
+		signature,
+	)
 
 	if err != nil {
 		err = errors.Errorf("there is a problem with the message syntax: %w", err)
