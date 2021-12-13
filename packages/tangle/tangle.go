@@ -160,7 +160,7 @@ func (t *Tangle) IssuePayload(p payload.Payload, local *identity.LocalIdentity, 
 		return
 	}
 
-	return t.MessageFactory.IssuePayload(p, parentsCount...)
+	return t.MessageFactory.IssuePayload(p, local, parentsCount...)
 }
 
 // Synced returns a boolean value that indicates if the node is fully synced and the Tangle has solidified all messages

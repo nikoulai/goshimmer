@@ -139,7 +139,6 @@ func registerLocalMetrics() {
 			increasePerPayloadCounter(message.Payload().Type())
 			increasePerIssuerCounter(message.IssuerPublicKey())
 			// MessageStored is triggered in storeMessageWorker that saves the msg to database
-			messageTotalCountDB.Inc()
 
 			deps.Tangle.Storage.MessageMetadata(messageID).Consume(func(msgMetaData *tangle.MessageMetadata) {
 				sumTimesSinceIssued[Store] += msgMetaData.ReceivedTime().Sub(message.IssuingTime())

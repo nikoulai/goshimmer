@@ -125,8 +125,9 @@ var (
 	messageCountPerIssuer = make(map[string]int64)
 
 	// protect map from concurrent read/write.
-	messageCountPerPayloadMutex syncutils.RWMutex
-	messageCountPerIssuerMutex  syncutils.RWMutex
+	messageCountPerIssuerMutex syncutils.RWMutex
+	// current number of message tips.
+	messageTips atomic.Uint64
 
 	// total number of parents of all messages per parent type.
 	parentsCountPerType      = make(map[tangle.ParentsType]uint64)

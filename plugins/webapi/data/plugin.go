@@ -59,11 +59,11 @@ func broadcastData(c echo.Context) error {
 
 	nodeIdentity := identity.NewLocalIdentity(request.PublicKey, request.PrivateKey)
 	issueData := func() (*tangle.Message, error) {
-		return deps.Tangle.IssuePayload(payload.NewGenericDataPayload(request.Data))
+		return deps.Tangle.IssuePayload(payload.NewGenericDataPayload(request.Data), nodeIdentity)
 	}
 
 	// await MessageScheduled event to be triggered.
-	msg, err := messagelayer.AwaitMessageToBeIssued(issueData, nodeIdentity, maxIssuedAwaitTime)
+	msg, err := messagelayer.AwaitMessageToBeIssued(issueData, nodeIdentity.PublicKey(), maxIssuedAwaitTime)
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, jsonmodels.DataResponse{Error: err.Error()})
 	}

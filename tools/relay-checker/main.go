@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/iotaledger/hive.go/crypto/ed25519"
 	"go.uber.org/dig"
 
 	client "github.com/iotaledger/goshimmer/client"
@@ -12,7 +13,8 @@ import (
 )
 
 func testBroadcastData(api *client.GoShimmerAPI) (string, error) {
-	msgID, err := api.Data([]byte(msgData))
+	keypar := ed25519.GenerateKeyPair()
+	msgID, err := api.Data([]byte(msgData), keypar.PublicKey, keypar.PrivateKey)
 	if err != nil {
 		return "", fmt.Errorf("broadcast failed: %w", err)
 	}

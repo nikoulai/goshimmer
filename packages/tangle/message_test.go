@@ -218,7 +218,7 @@ func TestMessage_MarshalUnmarshal(t *testing.T) {
 
 	tangle.MessageFactory.likeReferencesFunc = emptyLikeReferences
 
-	testMessage, err := tangle.MessageFactory.IssuePayload(payload.NewGenericDataPayload([]byte("test")))
+	testMessage, err := tangle.MessageFactory.IssuePayload(payload.NewGenericDataPayload([]byte("test")), tangle.Options.Identity)
 	require.NoError(t, err)
 	assert.Equal(t, true, testMessage.VerifySignature())
 

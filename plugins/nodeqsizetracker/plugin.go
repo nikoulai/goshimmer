@@ -1,19 +1,22 @@
 package nodeqsizetracker
 
 import (
+	"context"
 	"fmt"
 	"sync"
 	"time"
 
+	"github.com/iotaledger/hive.go/autopeering/peer"
 	"github.com/iotaledger/hive.go/daemon"
 	"github.com/iotaledger/hive.go/events"
 	"github.com/iotaledger/hive.go/identity"
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/hive.go/node"
+	"github.com/labstack/echo"
+	"go.uber.org/dig"
 
 	"github.com/iotaledger/goshimmer/packages/shutdown"
-	"github.com/iotaledger/goshimmer/plugins/messagelayer"
-	"github.com/iotaledger/goshimmer/plugins/webapi"
+	"github.com/iotaledger/goshimmer/packages/tangle"
 )
 
 // PluginName is the name of the spammer plugin.
@@ -29,29 +32,37 @@ var (
 	getQSize     chan map[identity.ID]int
 	stopChan     chan struct{}
 	wg           sync.WaitGroup
+	deps         = new(dependencies)
 )
+
+type dependencies struct {
+	dig.In
+
+	Tangle *tangle.Tangle
+	Server *echo.Echo
+	Local  *peer.Local
+}
 
 // Plugin gets the plugin instance.
 func Plugin() *node.Plugin {
 	once.Do(func() {
-		plugin = node.NewPlugin(PluginName, node.Enabled, configure, run)
+		plugin = node.NewPlugin(PluginName, deps, node.Enabled, configure, run)
 	})
 	return plugin
 }
 
 func configure(plugin *node.Plugin) {
-	log = logger.NewLogger(PluginName)
 	stopChan = make(chan struct{})
 	getQSize = make(chan map[identity.ID]int, 1024)
 	closure = events.NewClosure(func() {
-		getQSize <- messagelayer.Tangle().Scheduler.NodeQueueSizes()
+		getQSize <- deps.Tangle.Scheduler.NodeQueueSizes()
 	})
-	webapi.Server().GET("nodeqsizetracker", handleRequest)
+	deps.Server.GET("nodeqsizetracker", handleRequest)
 }
 
 func run(*node.Plugin) {
-	if err := daemon.BackgroundWorker("nodeqsizetracker", func(shutdownSignal <-chan struct{}) {
-		<-shutdownSignal
+	if err := daemon.BackgroundWorker("nodeqsizetracker", func(ctx context.Context) {
+		<-ctx.Done()
 
 		stop()
 	}, shutdown.PrioritySpammer); err != nil {
@@ -63,7 +74,7 @@ func start() {
 	nodeQSizeMap = make(map[int64]map[identity.ID]int)
 	stopChan = make(chan struct{})
 	getQSize = make(chan map[identity.ID]int, 1024)
-	messagelayer.Tangle().Scheduler.Events.SchedulerTicked.Attach(closure)
+	deps.Tangle.Scheduler.Events.SchedulerTicked.Attach(closure)
 	wg.Add(1)
 
 	go func() {
@@ -82,7 +93,7 @@ func start() {
 }
 
 func stop() {
-	messagelayer.Tangle().Scheduler.Events.SchedulerTicked.Detach(closure)
+	deps.Tangle.Scheduler.Events.SchedulerTicked.Detach(closure)
 	close(stopChan)
 	wg.Wait()
 }

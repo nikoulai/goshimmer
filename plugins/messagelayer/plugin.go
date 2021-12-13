@@ -14,12 +14,12 @@ import (
 	"github.com/iotaledger/hive.go/identity"
 	"github.com/iotaledger/hive.go/kvstore"
 	"github.com/iotaledger/hive.go/node"
+	"github.com/mr-tron/base58"
 	"go.uber.org/dig"
 
 	"github.com/iotaledger/goshimmer/packages/consensus/finality"
 	"github.com/iotaledger/goshimmer/packages/consensus/otv"
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
-	"github.com/iotaledger/goshimmer/packages/mana"
 	"github.com/iotaledger/goshimmer/packages/shutdown"
 	"github.com/iotaledger/goshimmer/packages/tangle"
 	"github.com/iotaledger/goshimmer/plugins/database"
@@ -236,6 +236,15 @@ func accessManaRetriever(nodeID identity.ID) float64 {
 		return 1
 	}
 	return aMana
+}
+
+func accessManaMapRetriever() (result map[identity.ID]float64) {
+	result = make(map[identity.ID]float64)
+	for stringNodeID, mana := range fixedAccessMana {
+		nodeID, _ := identity.ParseID(stringNodeID)
+		result[nodeID] = mana
+	}
+	return
 }
 
 func totalAccessManaRetriever() float64 {

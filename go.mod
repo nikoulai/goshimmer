@@ -25,12 +25,10 @@ require (
 	github.com/magiconair/properties v1.8.1
 	github.com/markbates/pkger v0.17.1
 	github.com/mr-tron/base58 v1.2.0
-	github.com/panjf2000/ants/v2 v2.4.3
-	github.com/pkg/errors v0.9.1
-	github.com/prometheus/client_golang v1.7.0
 	github.com/multiformats/go-multiaddr v0.4.1
 	github.com/multiformats/go-varint v0.0.6
 	github.com/panjf2000/ants/v2 v2.4.6
+	github.com/pkg/errors v0.9.1
 	github.com/prometheus/client_golang v1.11.0
 	github.com/shirou/gopsutil v2.20.5+incompatible
 	github.com/spf13/afero v1.3.0 // indirect

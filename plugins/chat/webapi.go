@@ -35,8 +35,8 @@ func SendChatMessage(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, Response{Error: "message is too long"})
 	}
 
-	chatPayload := NewPayload(req.From, req.To, req.Message)
-	msg, err := messagelayer.Tangle().IssuePayload(chatPayload, messagelayer.Tangle().Options.Identity)
+	chatPayload := chat.NewPayload(req.From, req.To, req.Message)
+	msg, err := deps.Tangle.IssuePayload(chatPayload, deps.Tangle.Options.Identity)
 	if err != nil {
 		return c.JSON(http.StatusBadRequest, Response{Error: err.Error()})
 	}

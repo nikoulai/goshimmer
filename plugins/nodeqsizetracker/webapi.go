@@ -9,7 +9,6 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/iotaledger/goshimmer/packages/jsonmodels"
-	"github.com/iotaledger/goshimmer/plugins/messagelayer"
 )
 
 func handleRequest(c echo.Context) error {
@@ -40,10 +39,10 @@ func sendCSVResults(c echo.Context) error {
 
 	csvWriter := csv.NewWriter(c.Response())
 	if err := csvWriter.Write(nodeQSizeTableDescription); err != nil {
-		return errors.Errorf("failed to write table description row: %w", err)
+		return errors.Errorf("failed to write table description row: %s", err)
 	}
 
-	nodeID := messagelayer.Tangle().Options.Identity.ID().String()
+	nodeID := deps.Tangle.Options.Identity.ID().String()
 	var keys []int64
 	for k := range nodeQSizeMap {
 		keys = append(keys, k)
@@ -54,14 +53,14 @@ func sendCSVResults(c echo.Context) error {
 		for issuer, sz := range nodeQSizeMap[timestamp] {
 			row := nodeQToCSVRow(nodeID, issuer.String(), timestamp, sz)
 			if err := csvWriter.Write(row); err != nil {
-				log.Errorf("failed to write message diagnostic info row: %w", err)
+				log.Errorf("failed to write message diagnostic info row: %s", err)
 			}
 		}
 	}
 
 	csvWriter.Flush()
 	if err := csvWriter.Error(); err != nil {
-		return errors.Errorf("csv writer failed after flush: %w", err)
+		return errors.Errorf("csv writer failed after flush: %s", err)
 	}
 	return nil
 }

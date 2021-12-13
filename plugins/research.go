@@ -25,9 +25,8 @@ var Research = node.Plugins(
 	prometheus.Plugin,
 	remotemetrics.Plugin,
 	networkdelay.App(),
-	chat.App(),
-	nodeqsizetracker.Plugin(),
 	txstream.Plugin,
 	activity.Plugin,
 	chat.Plugin,
+	nodeqsizetracker.Plugin(),
 )
