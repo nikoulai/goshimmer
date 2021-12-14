@@ -193,7 +193,7 @@ func toggleSpammer(enabled bool) {
 			continue
 		}
 
-		resp, err := info.client.ToggleSpammer(enabled, info.mpm, "uniform", "mpm")
+		resp, err := info.client.ToggleSpammer(enabled, info.mpm, "mpm", "uniform")
 		if err != nil {
 			panic(err)
 		}
