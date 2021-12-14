@@ -28,5 +28,5 @@ var Research = node.Plugins(
 	txstream.Plugin,
 	activity.Plugin,
 	chat.Plugin,
-	nodeqsizetracker.Plugin(),
+	nodeqsizetracker.Plugin,
 )

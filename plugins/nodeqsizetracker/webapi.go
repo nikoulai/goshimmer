@@ -22,11 +22,11 @@ func handleRequest(c echo.Context) error {
 	case "start":
 		stop()
 		start()
-		log.Infof("Started tracking nodeQ sizes")
+		Plugin.LogInfof("Started tracking nodeQ sizes")
 		return c.NoContent(http.StatusOK)
 	case "stop":
 		stop()
-		log.Info("Stopped tracking nodeQ sizes")
+		Plugin.LogInfof("Stopped tracking nodeQ sizes")
 		return sendCSVResults(c)
 	default:
 		return c.NoContent(http.StatusBadRequest)
@@ -53,7 +53,7 @@ func sendCSVResults(c echo.Context) error {
 		for issuer, sz := range nodeQSizeMap[timestamp] {
 			row := nodeQToCSVRow(nodeID, issuer.String(), timestamp, sz)
 			if err := csvWriter.Write(row); err != nil {
-				log.Errorf("failed to write message diagnostic info row: %s", err)
+				Plugin.LogErrorf("failed to write message diagnostic info row: %s", err)
 			}
 		}
 	}

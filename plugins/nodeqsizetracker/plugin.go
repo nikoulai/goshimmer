@@ -10,7 +10,6 @@ import (
 	"github.com/iotaledger/hive.go/daemon"
 	"github.com/iotaledger/hive.go/events"
 	"github.com/iotaledger/hive.go/identity"
-	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/hive.go/node"
 	"github.com/labstack/echo"
 	"go.uber.org/dig"
@@ -19,14 +18,10 @@ import (
 	"github.com/iotaledger/goshimmer/packages/tangle"
 )
 
-// PluginName is the name of the spammer plugin.
-const PluginName = "NodeQSizeTracker"
-
 var (
 	// plugin is the plugin instance of the spammer plugin.
-	plugin       *node.Plugin
+	Plugin       *node.Plugin
 	once         sync.Once
-	log          *logger.Logger
 	closure      *events.Closure
 	nodeQSizeMap map[int64]map[identity.ID]int
 	getQSize     chan map[identity.ID]int
@@ -44,11 +39,8 @@ type dependencies struct {
 }
 
 // Plugin gets the plugin instance.
-func Plugin() *node.Plugin {
-	once.Do(func() {
-		plugin = node.NewPlugin(PluginName, deps, node.Enabled, configure, run)
-	})
-	return plugin
+func init() {
+	Plugin = node.NewPlugin("NodeQSizeTracker", deps, node.Enabled, configure)
 }
 
 func configure(plugin *node.Plugin) {
@@ -60,13 +52,13 @@ func configure(plugin *node.Plugin) {
 	deps.Server.GET("nodeqsizetracker", handleRequest)
 }
 
-func run(*node.Plugin) {
+func run(plugin *node.Plugin) {
 	if err := daemon.BackgroundWorker("nodeqsizetracker", func(ctx context.Context) {
 		<-ctx.Done()
 
 		stop()
 	}, shutdown.PrioritySpammer); err != nil {
-		log.Panicf("Failed to start as daemon: %s", err)
+		plugin.LogFatalf("Failed to start as daemon: %s", err)
 	}
 }
 

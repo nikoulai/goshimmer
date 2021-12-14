@@ -33,7 +33,7 @@ var (
 			mpm:    274,
 		},
 		{
-			name:   "replica",
+			name:   "master2",
 			apiURL: "http://127.0.0.1:8070",
 			mpm:    0,
 		},
@@ -193,7 +193,7 @@ func toggleSpammer(enabled bool) {
 			continue
 		}
 
-		resp, err := info.client.ToggleSpammer(enabled, info.mpm, "uniform", "mps")
+		resp, err := info.client.ToggleSpammer(enabled, info.mpm, "uniform", "mpm")
 		if err != nil {
 			panic(err)
 		}

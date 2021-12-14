@@ -26,7 +26,7 @@ services:
       --metrics.local=true
       --metrics.manaResearch=false
       --node.disablePlugins=portcheck,clock
-      --node.enablePlugins=analysisServer,analysisDashboard,prometheus,spammer,WebAPIToolsMessageEndpoint,activity,snapshot
+      --node.enablePlugins=analysisServer,analysisDashboard,prometheus,spammer,WebAPIToolsMessageEndpoint,activity,snapshot,"NodeQSizeTracker"
       --prometheus.bindAddress=0.0.0.0:9311
       --prometheus.processMetrics=false
       --webAPI.exportPath=/tmp/
@@ -77,7 +77,7 @@ services:
     command: >
       --config=/run/secrets/goshimmer.config.json
       --database.directory=/tmp/mainnetdb
-      --node.enablePlugins="webapi tools endpoint",activity,spammer
+      --node.enablePlugins="webapi tools endpoint",activity,spammer,"NodeQSizeTracker"
       --messageLayer.snapshot.file=/run/secrets/goshimmer.message.snapshot.bin
       --messageLayer.snapshot.genesisNode=
       --node.disablePlugins=portcheck,clock
@@ -101,7 +101,7 @@ services:
       --config=/run/secrets/goshimmer.config.json
       --database.directory=/tmp/mainnetdb
       --node.peerDBDirectory=/tmp/peerdb
-      --node.enablePlugins=bootstrap,"webapi tools endpoint",faucet,activity,spammer
+      --node.enablePlugins=bootstrap,"webapi tools endpoint",faucet,activity,spammer,"NodeQSizeTracker"
       --node.seed=base58:3YX6e7AL28hHihZewKdq6CMkEYVsTJBLgRiprUNiNq5E
       --node.overwriteStoredSeed=true
       --node.enablePlugins=bootstrap,"webAPIToolsEndpoint",faucet,activity
