@@ -18,8 +18,7 @@ import (
 
 const (
 	numMessages = 100
-	msgSize     = 44
-	maxBuffer   = msgSize * numMessages
+	maxBuffer   = 44 * numMessages
 	maxQueue    = 2 * maxBuffer / numMessages
 )
 
@@ -36,7 +35,7 @@ func TestBufferQueue_Submit(t *testing.T) {
 
 	var size int
 	for i := 0; i < numMessages; i++ {
-		msg := newTestMessage(identity.GenerateIdentity().PublicKey())
+		msg := newTestMessageWithIndex(identity.GenerateIdentity().PublicKey(), i)
 		size += len(msg.Bytes())
 		assert.Empty(t, b.Submit(msg, mockAccessManaRetriever))
 		assert.EqualValues(t, i+1, b.NumActiveNodes())
@@ -50,7 +49,7 @@ func TestBufferQueue_Unsubmit(t *testing.T) {
 
 	messages := make([]*testMessage, numMessages)
 	for i := range messages {
-		messages[i] = newTestMessage(identity.GenerateIdentity().PublicKey())
+		messages[i] = newTestMessageWithIndex(identity.GenerateIdentity().PublicKey(), i)
 		assert.Empty(t, b.Submit(messages[i], mockAccessManaRetriever))
 	}
 	assert.EqualValues(t, numMessages, b.NumActiveNodes())
@@ -68,10 +67,10 @@ func TestBufferQueue_SubmitWithDrop_Unready(t *testing.T) {
 	b := schedulerutils.NewBufferQueue(maxBuffer, maxQueue)
 	preparedMessages := make([]*testMessage, 0, 2*numMessages)
 	for i := 0; i < numMessages/2; i++ {
-		preparedMessages = append(preparedMessages, newTestMessage(noManaNode.PublicKey()))
+		preparedMessages = append(preparedMessages, newTestMessageWithIndex(noManaNode.PublicKey(), i))
 	}
 	for i := 0; i < numMessages/2; i++ {
-		preparedMessages = append(preparedMessages, newTestMessage(selfNode.PublicKey()))
+		preparedMessages = append(preparedMessages, newTestMessageWithIndex(selfNode.PublicKey(), i))
 	}
 	for _, msg := range preparedMessages {
 		droppedMessages := b.Submit(msg, mockAccessManaRetriever)
@@ -82,13 +81,13 @@ func TestBufferQueue_SubmitWithDrop_Unready(t *testing.T) {
 	assert.EqualValues(t, maxBuffer, b.Size())
 
 	// dropping single unready message
-	droppedMessages := b.Submit(newTestMessage(selfNode.PublicKey()), mockAccessManaRetriever)
+	droppedMessages := b.Submit(newTestMessageWithIndex(selfNode.PublicKey(), 0), mockAccessManaRetriever)
 	assert.Len(t, droppedMessages, 1)
 	assert.Equal(t, preparedMessages[0].IDBytes(), droppedMessages[0][:])
 	assert.LessOrEqual(t, maxBuffer, b.Size())
 
 	// dropping two unready messages to fit the new one
-	droppedMessages = b.Submit(newLargeTestMessage(selfNode.PublicKey(), make([]byte, msgSize)), mockAccessManaRetriever)
+	droppedMessages = b.Submit(newLargeTestMessage(selfNode.PublicKey(), make([]byte, 44)), mockAccessManaRetriever)
 	assert.Len(t, droppedMessages, 2)
 	assert.Equal(t, preparedMessages[1].IDBytes(), droppedMessages[0][:])
 	assert.Equal(t, preparedMessages[2].IDBytes(), droppedMessages[1][:])
@@ -100,7 +99,7 @@ func TestBufferQueue_SubmitWithDrop_DropNewMessage(t *testing.T) {
 	b := schedulerutils.NewBufferQueue(maxBuffer, maxQueue)
 	preparedMessages := make([]*testMessage, 0, 2*numMessages)
 	for i := 0; i < numMessages; i++ {
-		preparedMessages = append(preparedMessages, newTestMessage(selfNode.PublicKey()))
+		preparedMessages = append(preparedMessages, newTestMessageWithIndex(selfNode.PublicKey(), i))
 	}
 	for _, msg := range preparedMessages {
 		droppedMessages := b.Submit(msg, mockAccessManaRetriever)
@@ -124,10 +123,10 @@ func TestBufferQueue_SubmitWithDrop_Ready(t *testing.T) {
 	b := schedulerutils.NewBufferQueue(maxBuffer, maxQueue)
 	preparedMessages := make([]*testMessage, 0, 2*numMessages)
 	for i := 0; i < numMessages/2; i++ {
-		preparedMessages = append(preparedMessages, newTestMessage(noManaNode.PublicKey()))
+		preparedMessages = append(preparedMessages, newTestMessageWithIndex(noManaNode.PublicKey(), i))
 	}
 	for i := 0; i < numMessages/2; i++ {
-		preparedMessages = append(preparedMessages, newTestMessage(selfNode.PublicKey()))
+		preparedMessages = append(preparedMessages, newTestMessageWithIndex(selfNode.PublicKey(), i))
 	}
 	for _, msg := range preparedMessages {
 		droppedMessages := b.Submit(msg, mockAccessManaRetriever)
@@ -139,13 +138,13 @@ func TestBufferQueue_SubmitWithDrop_Ready(t *testing.T) {
 	assert.EqualValues(t, maxBuffer, b.Size())
 
 	// drop single ready message
-	droppedMessages := b.Submit(newTestMessage(selfNode.PublicKey()), mockAccessManaRetriever)
+	droppedMessages := b.Submit(newTestMessageWithIndex(selfNode.PublicKey(), 0), mockAccessManaRetriever)
 	assert.Len(t, droppedMessages, 1)
 	assert.Equal(t, preparedMessages[0].IDBytes(), droppedMessages[0][:])
 	assert.LessOrEqual(t, maxBuffer, b.Size())
 
 	// drop two ready messages to fit the newly submitted one
-	droppedMessages = b.Submit(newLargeTestMessage(selfNode.PublicKey(), make([]byte, msgSize)), mockAccessManaRetriever)
+	droppedMessages = b.Submit(newLargeTestMessage(selfNode.PublicKey(), make([]byte, 44)), mockAccessManaRetriever)
 	assert.Len(t, droppedMessages, 2)
 	assert.Equal(t, preparedMessages[1].IDBytes(), droppedMessages[0][:])
 	assert.Equal(t, preparedMessages[2].IDBytes(), droppedMessages[1][:])
@@ -157,7 +156,7 @@ func TestBufferQueue_Ready(t *testing.T) {
 
 	messages := make([]*testMessage, numMessages)
 	for i := range messages {
-		messages[i] = newTestMessage(identity.GenerateIdentity().PublicKey())
+		messages[i] = newTestMessageWithIndex(identity.GenerateIdentity().PublicKey(), i)
 		assert.Empty(t, b.Submit(messages[i], mockAccessManaRetriever))
 	}
 	for i := range messages {
@@ -194,7 +193,7 @@ func TestBufferQueue_Ring(t *testing.T) {
 
 	messages := make([]*testMessage, numMessages)
 	for i := range messages {
-		messages[i] = newTestMessage(identity.GenerateIdentity().PublicKey())
+		messages[i] = newTestMessageWithIndex(identity.GenerateIdentity().PublicKey(), i)
 		assert.Empty(t, b.Submit(messages[i], mockAccessManaRetriever))
 		assert.True(t, b.Ready(messages[i]))
 	}
@@ -212,7 +211,7 @@ func TestBufferQueue_IDs(t *testing.T) {
 
 	ids := make([]schedulerutils.ElementID, numMessages)
 	for i := range ids {
-		msg := newTestMessage(identity.GenerateIdentity().PublicKey())
+		msg := newTestMessageWithIndex(identity.GenerateIdentity().PublicKey(), i)
 		assert.Empty(t, b.Submit(msg, mockAccessManaRetriever))
 		if i%2 == 0 {
 			assert.True(t, b.Ready(msg))
@@ -269,7 +268,15 @@ type testMessage struct {
 	issuingTime time.Time
 	payload     []byte
 	bytes       []byte
-	nonce       int32
+	idx         int
+}
+
+func newTestMessageWithIndex(pubKey ed25519.PublicKey, index int) *testMessage {
+	return &testMessage{
+		pubKey:      pubKey,
+		idx:         index,
+		issuingTime: time.Now(),
+	}
 }
 
 func newTestMessage(pubKey ed25519.PublicKey) *testMessage {
@@ -289,6 +296,14 @@ func newLargeTestMessage(pubKey ed25519.PublicKey, payload []byte) *testMessage 
 	}
 }
 
+func newLargeTestMessage(pubKey ed25519.PublicKey, payload []byte) *testMessage {
+	return &testMessage{
+		pubKey:      pubKey,
+		issuingTime: time.Now(),
+		payload:     payload,
+	}
+}
+
 func (m *testMessage) IDBytes() []byte {
 	tmp := blake2b.Sum256(m.Bytes())
 	return tmp[:]
@@ -303,7 +318,7 @@ func (m *testMessage) Bytes() []byte {
 	marshalUtil.Write(m.pubKey)
 	marshalUtil.WriteTime(m.issuingTime)
 	marshalUtil.WriteBytes(m.payload)
-	marshalUtil.WriteInt32(m.nonce)
+	marshalUtil.WriteInt32(int32(m.idx))
 	m.bytes = marshalUtil.Bytes()
 
 	return m.bytes

@@ -121,10 +121,9 @@ func (b *BufferQueue) dropHead(accessManaRetriever func(identity.ID) float64) (m
 			}
 		}
 
-		// if the submitted message is older than the oldest ready message, then drop the submitted message
-		// otherwise drop the oldest ready message
+		// if the oldest not-ready message is older than the oldest ready message, drop the former otherwise the latter
 		readyQueueFront := longestQueue.Front()
-		if oldestMessage != nil && (readyQueueFront == nil || readyQueueFront != nil && oldestMessage.IssuingTime().Before(readyQueueFront.IssuingTime())) {
+		if oldestMessage != nil && (readyQueueFront == nil || oldestMessage.IssuingTime().Before(readyQueueFront.IssuingTime())) {
 			messagesDropped = append(messagesDropped, ElementIDFromBytes(oldestMessage.IDBytes()))
 			// no need to check if Unsubmit call succeeded, as the mutex of the scheduler is locked to current context
 			b.Unsubmit(oldestMessage)
@@ -169,17 +168,6 @@ func (b *BufferQueue) Ready(msg Element) bool {
 	return nodeQueue.Ready(msg)
 }
 
-// InsertNode creates a queue for the given node and adds it to the list of active nodes.
-func (b *BufferQueue) InsertNode(nodeID identity.ID) {
-	_, nodeActive := b.activeNode[nodeID]
-	if nodeActive {
-		return
-	}
-
-	nodeQueue := NewNodeQueue(nodeID)
-	b.activeNode[nodeID] = b.ringInsert(nodeQueue)
-}
-
 // ReadyMessagesCount returns the number of ready messages in the buffer.
 func (b *BufferQueue) ReadyMessagesCount() (readyMsgCount int) {
 	start := b.Current()
@@ -211,6 +199,17 @@ func (b *BufferQueue) TotalMessagesCount() (msgCount int) {
 		}
 	}
 	return
+}
+
+// InsertNode creates a queue for the given node and adds it to the list of active nodes.
+func (b *BufferQueue) InsertNode(nodeID identity.ID) {
+	_, nodeActive := b.activeNode[nodeID]
+	if nodeActive {
+		return
+	}
+
+	nodeQueue := NewNodeQueue(nodeID)
+	b.activeNode[nodeID] = b.ringInsert(nodeQueue)
 }
 
 // RemoveNode removes all messages (submitted and ready) for the given node.
