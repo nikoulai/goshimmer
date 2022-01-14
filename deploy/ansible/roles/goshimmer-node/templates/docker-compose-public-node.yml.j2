@@ -49,6 +49,12 @@ services:
      {% if powDifficulty|default(None) %}
       --pow.difficulty={{ powDifficulty }}
      {% endif %}
+     {% if schedulerRate|default(None) %}
+      --scheduler.rate={{ schedulerRate }}
+     {% endif %}
+     {% if schedulerBufferSize|default(None) %}
+      --scheduler.maxBufferSize={{ schedulerBufferSize }}
+     {% endif %}
       --logger.level={{ logLevel }}
       --logger.disableEvents=false
       --logger.remotelog.serverAddress={{ remoteLoggerHost }}:5213

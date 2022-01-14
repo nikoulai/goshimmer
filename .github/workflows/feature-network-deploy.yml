@@ -10,6 +10,14 @@ on:
         description: 'PoW difficulty (default: 21):'
         required: false
         default: ""
+      schedulerRate:
+        description: 'Scheduler rate (default: 5ms):'
+        required: false
+        default: ""
+      schedulerBufferSize:
+        description: 'Scheduler buffer size in bytes (default: 100000000 / 100MB):'
+        required: false
+        default: ""
 jobs:
   deploy:
     environment: feature
@@ -81,6 +89,8 @@ jobs:
           GOSHIMMER_DOCKER_IMAGE: 'iotaledgertesting/goshimmer'
           GOSHIMMER_DOCKER_TAG: 'feature'
           POW_DIFFICULTY: '${{github.event.inputs.powDifficulty}}'
+          SCHEDULER_RATE: '${{github.event.inputs.schedulerRate}}'
+          SCHEDULER_BUFFER_SIZE: '${{github.event.inputs.schedulerBufferSize}}'
         run: |
           export NETWORK_VERSION=$((16#$(git rev-parse --short "$COMMIT_SHA")%1000000000+1000))
           ./deploy/ansible/run.sh feature.yml
