@@ -77,7 +77,7 @@ services:
     command: >
       --config=/run/secrets/goshimmer.config.json
       --database.directory=/tmp/mainnetdb
-      --node.enablePlugins="webapi tools endpoint",activity,spammer,"NodeQSizeTracker"
+      --node.enablePlugins="webapi tools endpoint",spammer,"NodeQSizeTracker"
       --messageLayer.snapshot.file=/run/secrets/goshimmer.message.snapshot.bin
       --messageLayer.snapshot.genesisNode=
       --node.disablePlugins=portcheck,clock

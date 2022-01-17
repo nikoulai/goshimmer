@@ -25,12 +25,12 @@ var (
 		{
 			name:   "master",
 			apiURL: "http://127.0.0.1:8080",
-			mpm:    808,
+			mpm:    8340,
 		},
 		{
 			name:   "faucet",
 			apiURL: "http://127.0.0.1:8090",
-			mpm:    274,
+			mpm:    2940,
 		},
 		{
 			name:   "master2",
@@ -389,7 +389,7 @@ func spamWithNodes(api *client.GoShimmerAPI, shutdown chan struct{}) {
 		go func() {
 			randomizedStart := rand.Intn(5000)
 			time.Sleep(time.Duration(randomizedStart) * time.Millisecond)
-			spam(api, pk, 5*time.Second, shutdown)
+			spam(api, pk, 500*time.Millisecond, shutdown)
 		}()
 	}
 
@@ -403,7 +403,7 @@ func spamWithNodes(api *client.GoShimmerAPI, shutdown chan struct{}) {
 		go func() {
 			randomizedStart := rand.Intn(5000)
 			time.Sleep(time.Duration(randomizedStart) * time.Millisecond)
-			spam(api, pk, 5556*time.Millisecond, shutdown)
+			spam(api, pk, 556*time.Millisecond, shutdown)
 		}()
 	}
 
