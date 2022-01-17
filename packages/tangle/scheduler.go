@@ -400,7 +400,7 @@ func (s *Scheduler) schedule() *Message {
 			if err != nil {
 				panic("MessageID could not be parsed!")
 			}
-			if s.tangle.ConfirmationOracle.IsMessageConfirmed(msgID) && clock.Since(msg.IssuingTime()) > s.confirmedMsgThreshold {
+			if clock.Since(msg.IssuingTime()) > s.confirmedMsgThreshold && s.tangle.ConfirmationOracle.IsMessageConfirmed(msgID) {
 				// if a message is confirmed, and issued some time ago, don't schedule it and take the next one from the queue
 				// do we want to mark those messages somehow for debugging?
 				s.Events.MessageSkipped.Trigger(msgID)
@@ -503,7 +503,7 @@ loop:
 					}
 				})
 			}
-			SchedulerTickTime += time.Now().Sub(schedulerTickStart)
+			SchedulerTickTime += time.Since(schedulerTickStart)
 
 		// on close, exit the loop
 		case <-s.shutdownSignal:
