@@ -13,6 +13,7 @@ import (
 
 	"github.com/iotaledger/goshimmer/packages/clock"
 	"github.com/iotaledger/goshimmer/packages/tangle/schedulerutils"
+	"github.com/iotaledger/goshimmer/plugins/metrics"
 )
 
 const (
@@ -493,6 +494,8 @@ loop:
 		// every rate time units
 		case <-s.ticker.C:
 			// TODO: pause the ticker, if there are no ready messages
+			schedulerTickStart := time.Now()
+
 			if msg := s.schedule(); msg != nil {
 				s.tangle.Storage.MessageMetadata(msg.ID()).Consume(func(messageMetadata *MessageMetadata) {
 					if messageMetadata.SetScheduled(true) {
@@ -500,6 +503,7 @@ loop:
 					}
 				})
 			}
+			metrics.AddSchedulerTickTime(time.Now().Sub(schedulerTickStart))
 
 		// on close, exit the loop
 		case <-s.shutdownSignal:

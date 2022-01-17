@@ -17,6 +17,7 @@ var (
 	sinceIssuedTotalTime                      *prometheus.GaugeVec
 	initialSchedulerTotalTime                 prometheus.Gauge
 	schedulerTotalTime                        prometheus.Gauge
+	schedulerTickTotalTime                    prometheus.Gauge
 	parentsCount                              *prometheus.GaugeVec
 	initialMissingMessagesCountDB             prometheus.Gauge
 	messageMissingCountDB                     prometheus.Gauge
@@ -106,6 +107,11 @@ func registerTangleMetrics() {
 		Help: "total time the scheduled messages spend in the scheduling queue since the node start",
 	})
 
+	schedulerTickTotalTime = prometheus.NewGauge(prometheus.GaugeOpts{
+		Name: "tangle_scheduler_tick_total_time",
+		Help: "total time the scheduled took to perform scheduling",
+	})
+
 	messageMissingCountDB = prometheus.NewGauge(prometheus.GaugeOpts{
 		Name: "tangle_message_missing_initial_count_db",
 		Help: "number of missing messages in the node's database at the start of the node",
@@ -174,6 +180,7 @@ func registerTangleMetrics() {
 	registry.MustRegister(sinceReceivedTotalTime)
 	registry.MustRegister(initialSchedulerTotalTime)
 	registry.MustRegister(schedulerTotalTime)
+	registry.MustRegister(schedulerTickTotalTime)
 	registry.MustRegister(initialMissingMessagesCountDB)
 	registry.MustRegister(messageMissingCountDB)
 	registry.MustRegister(messageRequestCount)
@@ -222,6 +229,7 @@ func collectTangleMetrics() {
 
 	initialSchedulerTotalTime.Set(float64(metrics.InitialSchedulerTime()))
 	schedulerTotalTime.Set(float64(metrics.SchedulerTime()))
+	schedulerTickTotalTime.Set(float64(metrics.SchedulerTickTime()))
 	initialMissingMessagesCountDB.Set(float64(metrics.InitialMessageMissingCountDB()))
 	messageMissingCountDB.Set(float64(metrics.MessageMissingCountDB()))
 	messageRequestCount.Set(float64(metrics.MessageRequestQueueSize()))

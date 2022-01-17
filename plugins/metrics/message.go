@@ -107,7 +107,9 @@ var (
 
 	// sum of time messages spend in the queue (since start of the node).
 	sumSchedulerBookedTime time.Duration
-	schedulerTimeMutex     syncutils.RWMutex
+	schedulerTickTime      time.Duration
+
+	schedulerTimeMutex syncutils.RWMutex
 )
 
 // other metrics stored since the start of a node.
@@ -265,6 +267,20 @@ func SchedulerTime() (result int64) {
 	defer schedulerTimeMutex.RUnlock()
 	result = sumSchedulerBookedTime.Milliseconds()
 	return
+}
+
+// SchedulerTickTime returns the total time it took to run scheduler ticks.
+func SchedulerTickTime() (result int64) {
+	schedulerTimeMutex.RLock()
+	defer schedulerTimeMutex.RUnlock()
+	result = schedulerTickTime.Milliseconds()
+	return
+}
+
+func AddSchedulerTickTime(time time.Duration) {
+	schedulerTimeMutex.Lock()
+	defer schedulerTimeMutex.Unlock()
+	schedulerTickTime += time
 }
 
 // InitialSchedulerTime returns the cumulative time it took for all message to become scheduled at startup [milliseconds].
