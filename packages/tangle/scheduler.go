@@ -13,7 +13,6 @@ import (
 
 	"github.com/iotaledger/goshimmer/packages/clock"
 	"github.com/iotaledger/goshimmer/packages/tangle/schedulerutils"
-	"github.com/iotaledger/goshimmer/plugins/metrics"
 )
 
 const (
@@ -27,6 +26,7 @@ const (
 
 // ErrNotRunning is returned when a message is submitted when the scheduler has been stopped.
 var ErrNotRunning = errors.New("scheduler stopped")
+var SchedulerTickTime time.Duration
 
 // SchedulerParams defines the scheduler config parameters.
 type SchedulerParams struct {
@@ -503,7 +503,7 @@ loop:
 					}
 				})
 			}
-			metrics.AddSchedulerTickTime(time.Now().Sub(schedulerTickStart))
+			SchedulerTickTime += time.Now().Sub(schedulerTickStart)
 
 		// on close, exit the loop
 		case <-s.shutdownSignal:

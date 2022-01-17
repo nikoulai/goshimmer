@@ -107,7 +107,6 @@ var (
 
 	// sum of time messages spend in the queue (since start of the node).
 	sumSchedulerBookedTime time.Duration
-	schedulerTickTime      time.Duration
 
 	schedulerTimeMutex syncutils.RWMutex
 )
@@ -273,14 +272,8 @@ func SchedulerTime() (result int64) {
 func SchedulerTickTime() (result int64) {
 	schedulerTimeMutex.RLock()
 	defer schedulerTimeMutex.RUnlock()
-	result = schedulerTickTime.Milliseconds()
+	result = tangle.SchedulerTickTime.Milliseconds()
 	return
-}
-
-func AddSchedulerTickTime(time time.Duration) {
-	schedulerTimeMutex.Lock()
-	defer schedulerTimeMutex.Unlock()
-	schedulerTickTime += time
 }
 
 // InitialSchedulerTime returns the cumulative time it took for all message to become scheduled at startup [milliseconds].
