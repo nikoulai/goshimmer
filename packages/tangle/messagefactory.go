@@ -159,22 +159,22 @@ func (f *MessageFactory) IssuePayload(p payload.Payload, local *identity.LocalId
 		return nil, err
 	}
 
-	// create the signature
-	dummyBytes := dummyMsg.Bytes()
-	contentLength := len(dummyBytes) - len(dummyMsg.Signature())
-	signature := local.Sign(dummyBytes[:contentLength])
-	msg, err := NewMessage(
-		parents,
-		nil,
-		nil,
-		likeReferences,
-		issuingTime,
-		issuerPublicKey,
-		sequenceNumber,
-		p,
-		nonce,
-		signature,
-	)
+	// // create the signature
+	// dummyBytes := dummyMsg.Bytes()
+	// contentLength := len(dummyBytes) - len(dummyMsg.Signature())
+	// signature := local.Sign(dummyBytes[:contentLength])
+	// msg, err := NewMessage(
+	// 	parents,
+	// 	nil,
+	// 	nil,
+	// 	likeReferences,
+	// 	issuingTime,
+	// 	issuerPublicKey,
+	// 	sequenceNumber,
+	// 	p,
+	// 	nonce,
+	// 	signature,
+	// )
 
 	if err != nil {
 		err = errors.Errorf("there is a problem with the message syntax: %w", err)
@@ -182,8 +182,8 @@ func (f *MessageFactory) IssuePayload(p payload.Payload, local *identity.LocalId
 		return nil, err
 	}
 
-	f.Events.MessageConstructed.Trigger(msg)
-	return msg, nil
+	f.Events.MessageConstructed.Trigger(dummyMsg)
+	return dummyMsg, nil
 }
 
 func (f *MessageFactory) getIssuingTime(parents MessageIDs) time.Time {

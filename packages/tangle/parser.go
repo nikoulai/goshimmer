@@ -50,7 +50,7 @@ func NewParser() (result *Parser) {
 
 	// add builtin filters
 	result.AddBytesFilter(NewRecentlySeenBytesFilter())
-	result.AddMessageFilter(NewMessageSignatureFilter())
+	// result.AddMessageFilter(NewMessageSignatureFilter())
 	result.AddMessageFilter(NewTransactionFilter())
 	return
 }
