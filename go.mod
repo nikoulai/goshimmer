@@ -28,6 +28,7 @@ require (
 	github.com/multiformats/go-multiaddr v0.4.1
 	github.com/multiformats/go-varint v0.0.6
 	github.com/panjf2000/ants/v2 v2.4.7
+	github.com/pkg/errors v0.9.1 // indirect
 	github.com/prometheus/client_golang v1.11.0
 	github.com/shirou/gopsutil v2.20.5+incompatible
 	github.com/spf13/afero v1.3.0 // indirect

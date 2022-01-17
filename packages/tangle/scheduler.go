@@ -555,6 +555,7 @@ type SchedulerEvents struct {
 	// MessageSkipped is triggered when a message is confirmed before it's scheduled, and is skipped by the scheduler.
 	MessageSkipped  *events.Event
 	NodeBlacklisted *events.Event
+	SchedulerTicked *events.Event
 	Error           *events.Event
 }
 
