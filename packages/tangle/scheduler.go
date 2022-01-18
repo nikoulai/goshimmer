@@ -24,9 +24,12 @@ const (
 	MinMana float64 = 1.0
 )
 
-// ErrNotRunning is returned when a message is submitted when the scheduler has been stopped.
-var ErrNotRunning = errors.New("scheduler stopped")
-var SchedulerTickTime time.Duration
+var (
+	// ErrNotRunning is returned when a message is submitted when the scheduler has been stopped.
+	ErrNotRunning      = errors.New("scheduler stopped")
+	SchedulerTickTime  time.Duration
+	SchedulerTickCount int64
+)
 
 // SchedulerParams defines the scheduler config parameters.
 type SchedulerParams struct {
@@ -504,7 +507,7 @@ loop:
 				})
 			}
 			SchedulerTickTime += time.Since(schedulerTickStart)
-
+			SchedulerTickCount += 1
 		// on close, exit the loop
 		case <-s.shutdownSignal:
 			break loop

@@ -276,6 +276,11 @@ func SchedulerTickTime() (result int64) {
 	return
 }
 
+func SchedulerTickCount() (result int64) {
+	result = tangle.SchedulerTickCount
+	return
+}
+
 // InitialSchedulerTime returns the cumulative time it took for all message to become scheduled at startup [milliseconds].
 func InitialSchedulerTime() (result int64) {
 	schedulerTimeMutex.RLock()
