@@ -281,6 +281,17 @@ func SchedulerTickCount() (result int64) {
 	return
 }
 
+// MessageProcessTriggerTime returns the total time it took to process trigger at the end of booking.
+func MessageProcessTriggerTime() (result int64) {
+	result = tangle.MessageProcessTriggerTime.Milliseconds()
+	return
+}
+
+func MessageProcessTriggerCount() (result int64) {
+	result = tangle.MessageProcessTriggerCount
+	return
+}
+
 // InitialSchedulerTime returns the cumulative time it took for all message to become scheduled at startup [milliseconds].
 func InitialSchedulerTime() (result int64) {
 	schedulerTimeMutex.RLock()

@@ -22,7 +22,8 @@
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 0,
-  "iteration": 1642419663284,
+  "id": 3,
+  "iteration": 1642581012887,
   "links": [],
   "liveNow": false,
   "panels": [
@@ -1962,7 +1963,33 @@
           },
           "unit": "ms"
         },
-        "overrides": []
+        "overrides": [
+          {
+            "__systemRef": "hideSeriesFrom",
+            "matcher": {
+              "id": "byNames",
+              "options": {
+                "mode": "exclude",
+                "names": [
+                  "Trigger process time",
+                  "Scheduler tick time"
+                ],
+                "prefix": "All except:",
+                "readOnly": true
+              }
+            },
+            "properties": [
+              {
+                "id": "custom.hideFrom",
+                "value": {
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": true
+                }
+              }
+            ]
+          }
+        ]
       },
       "gridPos": {
         "h": 9,
@@ -2037,11 +2064,23 @@
             "uid": "PBFA97CFB590B2093"
           },
           "exemplar": true,
-          "expr": "rate(tangle_scheduler_tick_total_time{instance=\"$instance\"}[1m])",
+          "expr": "rate(tangle_scheduler_tick_total_time{instance=\"$instance\"}[1m])/rate(tangle_scheduler_tick_count{instance=\"$instance\"}[1m])",
           "hide": false,
           "interval": "",
           "legendFormat": "Scheduler tick time",
           "refId": "E"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PBFA97CFB590B2093"
+          },
+          "exemplar": true,
+          "expr": "rate(tangle_message_processed_trigger_time{instance=\"$instance\"}[1m])/rate(tangle_message_processed_trigger_count{instance=\"$instance\"}[1m])",
+          "hide": false,
+          "interval": "",
+          "legendFormat": "Trigger process time",
+          "refId": "F"
         }
       ],
       "title": "Average Solidification Time",
@@ -5147,8 +5186,8 @@
       {
         "current": {
           "selected": false,
-          "text": "bootstrap-01.feature.shimmer.iota.cafe:9311",
-          "value": "bootstrap-01.feature.shimmer.iota.cafe:9311"
+          "text": "faucet:9311",
+          "value": "faucet:9311"
         },
         "datasource": {
           "type": "prometheus",
@@ -5177,8 +5216,8 @@
       {
         "current": {
           "selected": false,
-          "text": "aW1tsMveLUg",
-          "value": "aW1tsMveLUg"
+          "text": "dAnF7pQ6k7a",
+          "value": "dAnF7pQ6k7a"
         },
         "datasource": {
           "type": "prometheus",
@@ -5226,6 +5265,6 @@
   "timezone": "",
   "title": "GoShimmer Local Metrics",
   "uid": "R-T27yW7k",
-  "version": 9,
+  "version": 2,
   "weekStart": ""
 }

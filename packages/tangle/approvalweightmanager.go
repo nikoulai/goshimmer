@@ -25,6 +25,9 @@ const (
 	minSupporterWeight float64 = 0.000000000000001
 )
 
+var MessageProcessTriggerTime time.Duration
+var MessageProcessTriggerCount int64
+
 // MarkerConfirmed is a function type that provides information whether a marker is confirmed.
 type MarkerConfirmed func(marker *markers.Marker) (confirmed bool)
 
@@ -67,8 +70,10 @@ func (a *ApprovalWeightManager) ProcessMessage(messageID MessageID) {
 	a.tangle.Storage.Message(messageID).Consume(func(message *Message) {
 		a.updateBranchSupporters(message)
 		a.updateSequenceSupporters(message)
-
+		startTime := time.Now()
 		a.Events.MessageProcessed.Trigger(messageID)
+		MessageProcessTriggerTime += time.Since(startTime)
+		MessageProcessTriggerCount++
 	})
 }
 
