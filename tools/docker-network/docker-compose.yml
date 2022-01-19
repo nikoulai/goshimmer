@@ -106,7 +106,7 @@ services:
       --node.enablePlugins=bootstrap,"webapi tools endpoint",faucet,activity,spammer,"NodeQSizeTracker"
       --node.seed=base58:3YX6e7AL28hHihZewKdq6CMkEYVsTJBLgRiprUNiNq5E
       --node.overwriteStoredSeed=true
-      --node.enablePlugins=bootstrap,"webAPIToolsEndpoint",faucet,activity,prometheus
+      --node.enablePlugins=bootstrap,"webAPIToolsEndpoint",activity,prometheus
       --prometheus.bindAddress=0.0.0.0:9311
       --prometheus.processMetrics=false
       --messageLayer.snapshot.file=/run/secrets/goshimmer.message.snapshot.bin

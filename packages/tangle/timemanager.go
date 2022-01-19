@@ -118,9 +118,10 @@ func (t *TimeManager) Time() time.Time {
 // Synced returns whether the node is in sync based on the difference between TangleTime and current wall time which can
 // be configured via SyncTimeWindow.
 func (t *TimeManager) Synced() bool {
-	t.lastSyncedMutex.RLock()
-	defer t.lastSyncedMutex.RUnlock()
-	return t.lastSynced
+	// t.lastSyncedMutex.RLock()
+	// defer t.lastSyncedMutex.RUnlock()
+	// return t.lastSynced
+	return true
 }
 
 func (t *TimeManager) synced() bool {

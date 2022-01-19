@@ -30,7 +30,7 @@ var (
 		{
 			name:   "faucet",
 			apiURL: "http://127.0.0.1:8090",
-			mpm:    2940,
+			mpm:    3000,
 		},
 		{
 			name:   "master2",

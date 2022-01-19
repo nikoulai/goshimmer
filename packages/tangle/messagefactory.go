@@ -121,14 +121,14 @@ func (f *MessageFactory) IssuePayload(p payload.Payload, local *identity.LocalId
 		}
 		issuingTime = f.getIssuingTime(parents)
 
-		likeReferences, err = f.likeReferencesFunc(parents, issuingTime, f.tangle)
-		if err != nil {
-			err = errors.Errorf("like references could not be prepared: %w", err)
-			f.Events.Error.Trigger(err)
-			f.issuanceMutex.Unlock()
-			return nil, err
-		}
-		nonce, errPoW = f.doPOW(parents, nil, likeReferences, issuingTime, issuerPublicKey, sequenceNumber, p)
+		// likeReferences, err = f.likeReferencesFunc(parents, issuingTime, f.tangle)
+		// if err != nil {
+		// 	err = errors.Errorf("like references could not be prepared: %w", err)
+		// 	f.Events.Error.Trigger(err)
+		// 	f.issuanceMutex.Unlock()
+		// 	return nil, err
+		// }
+		nonce, errPoW = f.doPOW(parents, nil, nil, issuingTime, issuerPublicKey, sequenceNumber, p)
 	}
 
 	if errPoW != nil {

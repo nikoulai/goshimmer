@@ -88,9 +88,13 @@ func (b *Booker) run() {
 		for {
 			select {
 			case messageID := <-b.bookerQueue:
-				if err := b.BookMessage(messageID); err != nil {
-					b.Events.Error.Trigger(errors.Errorf("failed to book message with %s: %w", messageID, err))
-				}
+				// if err := b.BookMessage(messageID); err != nil {
+				// 	b.Events.Error.Trigger(errors.Errorf("failed to book message with %s: %w", messageID, err))
+				// }
+				b.tangle.Storage.MessageMetadata(messageID).Consume(func(messageMetadata *MessageMetadata) {
+					messageMetadata.SetBooked(true)
+				})
+				b.Events.MessageBooked.Trigger(messageID)
 			case <-b.shutdown:
 				// wait until all messages are booked
 				if len(b.bookerQueue) == 0 {
