@@ -238,13 +238,18 @@ func accessManaRetriever(nodeID identity.ID) float64 {
 	return aMana
 }
 
-func accessManaMapRetriever() (result map[identity.ID]float64) {
-	result = make(map[identity.ID]float64)
-	for stringNodeID, mana := range fixedAccessMana {
-		nodeID, _ := identity.ParseID(stringNodeID)
-		result[nodeID] = mana
+func accessManaMapRetriever() map[identity.ID]float64 {
+	nodeMap := make(map[identity.ID]float64)
+	for rawNodeID, nodeMana := range fixedAccessMana {
+		id := identity.ID{}
+		idRaw, err := base58.Decode(rawNodeID)
+		if err != nil {
+			return nodeMap
+		}
+		copy(id[:], idRaw)
+		nodeMap[id] = nodeMana
 	}
-	return
+	return nodeMap
 }
 
 func totalAccessManaRetriever() float64 {
