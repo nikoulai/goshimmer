@@ -1,0 +1,84 @@
+{
+  "analysis": {
+    "client": {
+      "serverAddress": "peer_master:1888"
+    },
+    "server": {
+      "bindAddress": "0.0.0.0:1888"
+    },
+    "dashboard": {
+      "bindAddress": "0.0.0.0:9000",
+      "dev": false
+    }
+  },
+  "autoPeering": {
+    "entryNodes": [
+      "EYsaGXnUVA9aTYL9FwYEvoQ8d1HCJveQVL7vogu6pqCP@peer_master:14626"
+    ],
+    "bindAddress": "0.0.0.0:14626"
+  },
+  "dashboard": {
+    "bindAddress": "0.0.0.0:8081",
+    "devDashboardAddress": "http://127.0.0.1:9090/",
+    "dev": false,
+    "basicAuth": {
+      "enabled": false,
+      "username": "goshimmer",
+      "password": "goshimmer"
+    }
+  },
+  "database": {
+    "directory": "mainnetdb"
+  },
+  "drng": {
+    "custom": {
+      "instanceID": 111,
+      "threshold": 3,
+      "distributedPubKey": "",
+      "committeeMembers": [
+        "EYsaGXnUVA9aTYL9FwYEvoQ8d1HCJveQVL7vogu6pqCP"
+      ]
+    }
+  },
+  "gossip": {
+    "port": 14666
+  },
+  "logger": {
+    "level": "info",
+    "disableCaller": false,
+    "disableStacktrace": false,
+    "encoding": "console",
+    "outputPaths": [
+      "stdout"
+    ],
+    "disableEvents": true
+  },
+  "metrics": {
+    "manaUpdateInterval": "5s"
+  },
+  "network": {
+    "bindAddress": "0.0.0.0",
+    "externalAddress": "auto"
+  },
+  "node": {
+    "disablePlugins": "portcheck",
+    "enablePlugins": []
+  },
+  "pow": {
+    "difficulty": 2,
+    "numThreads": 1,
+    "timeout": "10s",
+    "parentsRefreshInterval": "300ms"
+  },
+  "webAPI": {
+    "basicAuth": {
+      "enabled": false,
+      "username": "goshimmer",
+      "password": "goshimmer"
+    },
+    "bindAddress": "0.0.0.0:8080"
+  },
+  "faucet": {
+    "powDifficulty": 12
+  }
+}
